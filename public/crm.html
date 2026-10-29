@@ -271,14 +271,24 @@ dialog .tbl-wrap{max-height:none}
 .kb-art li{margin:3px 0}
 @media (max-width:600px){.grpseg button{flex:1 1 45%}}
 @media (max-width:700px){.iq-tbl thead{display:none}.iq-tbl tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}.iq-tbl td{display:block;border:0;padding:3px 12px;min-width:0!important}.iq-tbl td.num{font-size:12px;color:var(--muted)}}
+/* переключатель CRM / Финансы */
+.appsw{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.appsw a{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 18px;border-radius:9px;text-decoration:none;font-weight:600;font-size:15px;color:var(--muted);white-space:nowrap}
+.appsw a i{width:10px;height:10px;border-radius:50%;flex:none}
+.appsw .sw-crm i{background:#2E8A66}.appsw .sw-fin i{background:#3A78C4}
+.appsw a.sw-crm[aria-current="page"]{background:#1F5A48;color:#FFFFFF}
+.appsw a.sw-fin[aria-current="page"]{background:#1E4E8C;color:#FFFFFF}
+.appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
+.appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
+@media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
 </style></head>
 <body>
 <header class="top">
   <div class="wrap" style="padding-bottom:0">
     <div class="bar">
       <div class="brand"><b>Дорогой Город<span class="sect-badge">CRM</span></b><span>Клиенты, заявки, задачи, объекты</span></div>
+      <nav class="appsw" id="appsw" aria-label="Раздел системы"><a href="/" class="sw-crm" aria-current="page"><i></i>CRM</a><a href="/finance" class="sw-fin"><i></i>Финансы</a></nav>
       <div class="right">
-        <nav class="sect" id="sect" aria-label="Разделы"></nav>
         <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
         <div class="who" id="who"></div>
       </div>
@@ -355,7 +365,7 @@ const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>
 /* ---------- шапка и вкладки ---------- */
 const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['inqs','Обращения'],['deals','Сделки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['kb','Справочник'],...(owner()?[['admin','Доступ']]:[])];
 function renderHead(){
-  $('#sect').innerHTML=`<a href="/" aria-current="page">CRM</a>${fin()?'<a href="/finance">Финансы</a>':''}`;
+  $('#appsw').style.display=fin()?'':'none';
   $('#who').innerHTML=ME?`<span><b>${esc(ME.name)}</b><br>${esc(ME.roleName)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`:'';
   if(ME&&ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}
 }
