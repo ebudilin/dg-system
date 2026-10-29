@@ -5,7 +5,7 @@ const { getMeta, setMeta } = require('./db');
 const { def, ApiError, audit, bump, tx, str, J, P } = require('./api');
 
 const API = process.env.NOVOFON_API || 'https://dataapi-jsonrpc.novofon.ru/v2.0';
-const FIELDS = ['id', 'start_time', 'finish_time', 'direction', 'is_lost', 'contact_phone_number', 'virtual_phone_number', 'talk_duration', 'total_duration', 'finish_reason', 'full_record_file_link', 'employees', 'communication_id'];
+const FIELDS = ['id', 'start_time', 'finish_time', 'direction', 'is_lost', 'contact_phone_number', 'virtual_phone_number', 'talk_duration', 'total_duration', 'finish_reason', 'full_record_file_link', 'employees', 'communication_id', 'last_answered_employee_id'];
 
 const S = db => Object.assign({ enabled: false, apiKey: '', defaultUserId: null, lastSync: 0, lastOk: 0, lastError: '', lastCount: 0 }, P(getMeta(db, 'novofon') || 'null') || {});
 const saveS = (db, s) => setMeta(db, 'novofon', J(s));
@@ -45,14 +45,15 @@ function phoneIndex(db) {
   return idx;
 }
 
-function whoFor(db, clientId, s) {
+const spamList = db => P(getMeta(db, 'spamPhones') || '{}') || {};
+function whoFor(db, clientId, s, fallback) {
   // кому поставить «перезвонить»: ответственный по открытой заявке клиента → ответственный по его объекту → дежурный из настроек
   if (clientId) {
     const ld = db.prepare("SELECT data FROM leads WHERE stage IN ('new','work','show','talks') AND instr(data, ?)>0 ORDER BY updated_at DESC LIMIT 1").get('"clientId":"' + clientId + '"');
     if (ld && P(ld.data).ownerId) return P(ld.data).ownerId;
     for (const r of db.prepare('SELECT data FROM objects WHERE instr(data, ?)>0').all('"' + clientId + '"')) { const o = P(r.data); if ((o.owners || []).includes(clientId) && o.responsibleId) return o.responsibleId; }
   }
-  return s.defaultUserId || (db.prepare("SELECT id FROM users WHERE role='owner' AND active=1 ORDER BY id LIMIT 1").get() || {}).id || null;
+  return fallback || s.defaultUserId || (db.prepare("SELECT id FROM users WHERE role='owner' AND active=1 ORDER BY id LIMIT 1").get() || {}).id || null;
 }
 
 function addTask(db, title, assigneeId, clientId, callId) {
@@ -62,7 +63,21 @@ function addTask(db, title, assigneeId, clientId, callId) {
   db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?)').run(id, t.due, 0, assigneeId, now, J(t));
 }
 
-function processCall(db, c, idx, s) {
+// кто из сотрудников отвечает за звонок: поднявший трубку → единственный, кому звонило → ответственный по объекту виртуального номера
+function agentFor(db, c, ctx) {
+  const em = ctx.em || (ctx.em = require('./prefs').empMap(db));
+  const ans = c.last_answered_employee_id != null ? c.last_answered_employee_id : ((c.employees || []).find(e => e.is_answered) || {}).employee_id;
+  if (ans != null && em[String(ans)]) return em[String(ans)];
+  const ids = [...new Set((c.employees || []).map(e => em[String(e.employee_id)]).filter(Boolean))];
+  if (ids.length === 1) return ids[0];
+  const vm = require('./inquiries').vnums(db)[digits(c.virtual_phone_number)];
+  if (vm && vm.objectId) { const o = P((db.prepare('SELECT data FROM objects WHERE id=?').get(vm.objectId) || {}).data || 'null'); if (o && o.responsibleId) return o.responsibleId; }
+  return null;
+}
+const uname = (db, id) => (id && (db.prepare('SELECT name FROM users WHERE id=?').get(Number(id)) || {}).name) || '';
+
+function processCall(db, c, idx, s, ctx) {
+  ctx = ctx || {};
   const id = String(c.id);
   if (db.prepare('SELECT 1 FROM calls WHERE id=?').get(id)) return false;
   if (!c.finish_time) return false; // звонок ещё идёт — заберём в следующий раз
@@ -73,16 +88,23 @@ function processCall(db, c, idx, s) {
   const client = k ? idx[k] : null;
   const emp = (c.employees || []).map(e => e.employee_full_name).filter(Boolean)[0] || '';
   const rec = c.full_record_file_link || '';
-  const data = { id, at, dir, lost, phone, vnumber: String(c.virtual_phone_number || ''), talk: +c.talk_duration || 0, total: +c.total_duration || 0, emp, rec, reason: c.finish_reason || '', comm: c.communication_id || null };
+  const agent = agentFor(db, c, ctx);
+  const ansId = c.last_answered_employee_id != null ? c.last_answered_employee_id : ((c.employees || []).find(e => e.is_answered) || {}).employee_id;
+  const data = { id, at, dir, lost, phone, userId: agent || null, ans: ansId != null ? String(ansId) : null, emps: [...new Set((c.employees || []).map(e => String(e.employee_id)))], vnumber: String(c.virtual_phone_number || ''), talk: +c.talk_duration || 0, total: +c.total_duration || 0, emp, rec, reason: c.finish_reason || '', comm: c.communication_id || null };
   let status = 'ignored';
+  if (k && spamList(db)[k]) {
+    db.prepare('INSERT INTO calls(id,at,direction,is_lost,phone,vnumber,client_id,status,data) VALUES(?,?,?,?,?,?,?,?,?)')
+      .run(id, at, dir, lost ? 1 : 0, phone, data.vnumber, null, 'spam', J(data));
+    return true;
+  }
   if (client) {
     status = 'linked';
     const text = `${dir === 'in' ? 'Входящий' : 'Исходящий'} звонок${lost ? ' — пропущенный' : ', ' + mmss(data.talk)}${emp ? ' · ' + emp : ''} · ${fmtPhone(phone)}`;
-    crm.addActivity(db, null, { type: 'call', text, at, clientId: client.id, userName: 'Телефония', url: rec, callId: id });
-    if (dir === 'in' && lost) addTask(db, `Перезвонить: ${client.name}, ${fmtPhone(phone)} (пропущенный)`, whoFor(db, client.id, s), client.id, id);
+    crm.addActivity(db, null, { type: 'call', text, at, clientId: client.id, userId: agent || null, userName: agent ? 'Телефония · ' + uname(db, agent) : 'Телефония', url: rec, callId: id });
+    if (dir === 'in' && lost) addTask(db, `Перезвонить: ${client.name}, ${fmtPhone(phone)} (пропущенный)`, whoFor(db, client.id, s, agent), client.id, id);
   } else if (dir === 'in' && k) {
     status = 'new';
-    if (lost) addTask(db, `Перезвонить: ${fmtPhone(phone)} — новый номер, пропущенный`, whoFor(db, null, s), '', id);
+    if (lost) addTask(db, `Перезвонить: ${fmtPhone(phone)} — новый номер, пропущенный`, whoFor(db, null, s, agent), '', id);
   }
   db.prepare('INSERT INTO calls(id,at,direction,is_lost,phone,vnumber,client_id,status,data) VALUES(?,?,?,?,?,?,?,?,?)')
     .run(id, at, dir, lost ? 1 : 0, phone, data.vnumber, client ? client.id : null, status, J(data));
@@ -100,8 +122,8 @@ async function sync(db, force) {
     const list = (res && res.data) || [];
     let n = 0;
     tx(db, () => {
-      const idx = phoneIndex(db);
-      list.sort((a, b) => String(a.start_time).localeCompare(String(b.start_time))).forEach(c => { if (processCall(db, c, idx, s)) n++; });
+      const idx = phoneIndex(db), ctx = {};
+      list.sort((a, b) => String(a.start_time).localeCompare(String(b.start_time))).forEach(c => { if (processCall(db, c, idx, s, ctx)) n++; });
       if (n) bump(db);
     });
     Object.assign(s, { lastSync: till, lastOk: till, lastError: '', lastCount: n });
@@ -145,6 +167,28 @@ def('resolveCall', 'crm_w', (db, u, id, action, x) => {
   const row = db.prepare('SELECT * FROM calls WHERE id=?').get(str(id, 64));
   if (!row) throw new ApiError('Звонок не найден.');
   let clientId = str(x.clientId, 64), leadId = '';
+  if (action === 'spam' || action === 'unspam') {
+    tx(db, () => {
+      const k = key10(row.phone), sp = spamList(db);
+      if (action === 'spam') {
+        if (k) sp[k] = { at: Date.now(), by: u.name };
+        const ids = db.prepare("SELECT id FROM calls WHERE phone=? AND status IN ('new','ignored')").all(row.phone).map(r => r.id);
+        ids.forEach(cid => db.prepare("UPDATE calls SET status='spam' WHERE id=?").run(cid));
+        // задачи «Перезвонить» по этим звонкам больше не нужны
+        for (const t of db.prepare('SELECT id, data FROM tasks WHERE done=0').all()) {
+          const d = P(t.data); if (d && d.callId && ids.includes(d.callId)) { d.done = true; d.doneAt = Date.now(); d.updatedAt = Date.now(); d.note = [d.note, 'Закрыта: номер отмечен как спам'].filter(Boolean).join('\n');
+            db.prepare('UPDATE tasks SET done=1, updated_at=?, data=? WHERE id=?').run(Date.now(), J(d), t.id); }
+        }
+      } else {
+        delete sp[k];
+        db.prepare("UPDATE calls SET status='new' WHERE phone=? AND status='spam'").run(row.phone);
+      }
+      setMeta(db, 'spamPhones', J(sp));
+      audit(db, u, action === 'spam' ? 'номер в спам' : 'номер из спама', 'звонок', id, null, { phone: row.phone });
+      bump(db);
+    });
+    return require('./crm').crmLoad(db, u);
+  }
   if (action === 'inquiry') {
     tx(db, () => {
       require('./inquiries').saveTx(db, u, Object.assign({}, x, { id: '', phone: fmtPhone(row.phone), callId: row.id, at: row.at }));
@@ -184,6 +228,15 @@ def('resolveCall', 'crm_w', (db, u, id, action, x) => {
     bump(db);
   });
   return require('./crm').crmLoad(db, u);
+});
+
+// сотрудники в кабинете Novofon (для привязки к пользователям CRM)
+def('novofonEmployees', 'owner', async (db) => {
+  const s = S(db);
+  if (!s.apiKey) throw new ApiError('Сначала подключите Novofon (ключ API).');
+  const r = await rpc(s.apiKey, 'get.employees', {});
+  return ((r && r.data) || []).map(e => ({ id: String(e.id), name: e.full_name || [e.last_name, e.first_name].filter(Boolean).join(' '),
+    ext: (e.extension && e.extension.extension_phone_number) || '', phones: (e.phone_numbers || []).map(p => fmtPhone(p.phone_number)).filter(Boolean) }));
 });
 
 function newCount(db) { return (db.prepare("SELECT COUNT(DISTINCT phone) n FROM calls WHERE status='new'").get() || {}).n || 0; }

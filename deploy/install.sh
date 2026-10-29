@@ -29,6 +29,19 @@ chown root:dg /etc/dg/env; chmod 640 /etc/dg/env
 # PostgreSQL системе не нужен (база — файл SQLite) — освобождаем память
 if systemctl is-enabled postgresql >/dev/null 2>&1; then systemctl disable --now postgresql >/dev/null 2>&1 || true; fi
 
+echo "== Сертификат Минцифры (нужен для мессенджера Max)"
+if [ ! -s /etc/dg/ru_ca.pem ]; then
+  T=$(mktemp -d)
+  if curl -fsS --max-time 25 https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt -o "$T/root.crt" && \
+     curl -fsS --max-time 25 https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt -o "$T/sub.crt" && \
+     grep -q "BEGIN CERTIFICATE" "$T/root.crt"; then
+    cat "$T/root.crt" "$T/sub.crt" > /etc/dg/ru_ca.pem; chmod 644 /etc/dg/ru_ca.pem; echo "   установлен"
+  else
+    echo "!! Не удалось скачать сертификат Минцифры — Max может не подключиться (повторите install.sh позже)"
+  fi
+  rm -rf "$T"
+fi
+
 echo "== Службы"
 install -m 644 "$APP/deploy/dg.service" /etc/systemd/system/dg.service
 install -m 644 "$APP/deploy/dg-update.service" /etc/systemd/system/dg-update.service

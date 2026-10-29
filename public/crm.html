@@ -270,6 +270,13 @@ dialog .tbl-wrap{max-height:none}
 .kb-art ul,.kb-art ol{margin:0 0 10px;padding-left:22px}
 .kb-art li{margin:3px 0}
 @media (max-width:600px){.grpseg button{flex:1 1 45%}}
+.call-acts{display:flex;flex-wrap:wrap;gap:4px}.call-acts button{padding:4px 9px;font-size:12px}.call-acts button.neg{color:var(--neg)}
+@media (max-width:700px){.calls-tbl thead{display:none}.calls-tbl tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}.calls-tbl td{display:inline-block;border:0;padding:3px 8px}.calls-tbl td:last-child{display:block}}
+
+.pres-box{margin:0 0 6px;padding:14px 16px;border-left:4px solid var(--accent)}
+.pres-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.pres-item{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:var(--sunk);border-radius:10px}
+.co-notes{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-left:10px;border-left:3px solid var(--accent-soft);font-size:13px}
 @media (max-width:700px){.iq-tbl thead{display:none}.iq-tbl tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}.iq-tbl td{display:block;border:0;padding:3px 12px;min-width:0!important}.iq-tbl td.num{font-size:12px;color:var(--muted)}}
 /* переключатель CRM / Финансы */
 .appsw{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
@@ -281,6 +288,19 @@ dialog .tbl-wrap{max-height:none}
 .appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
 .appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
 @media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
+/* меню пользователя */
+.me-wrap{position:relative}
+.who .me-chip{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;font-size:12px}
+.who .me-chip:hover{border-color:var(--muted)}
+.me-chip .nm{display:flex;flex-direction:column;line-height:1.2;text-align:left;color:var(--muted)}.me-chip .nm b{color:var(--ink);font-size:13px}
+.ava{border-radius:50%;object-fit:cover;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;vertical-align:middle}
+.me-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:230px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:30;display:flex;flex-direction:column}
+.me-menu[hidden]{display:none}
+.who .me-menu button{border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ink)}
+.who .me-menu button:hover{background:var(--sunk)}
+.me-menu .mh{padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;font-size:12px;color:var(--muted)}.me-menu .mh b{display:block;color:var(--ink);font-size:14px}
+@media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
+.prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 </style></head>
 <body>
 <header class="top">
@@ -366,12 +386,12 @@ const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>
 const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['inqs','Обращения'],['deals','Сделки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['kb','Справочник'],...(owner()?[['admin','Доступ']]:[])];
 function renderHead(){
   $('#appsw').style.display=fin()?'':'none';
-  $('#who').innerHTML=ME?`<span><b>${esc(ME.name)}</b><br>${esc(ME.roleName)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`:'';
+  $('#who').innerHTML=ME?meChip(ME.roleName):'';
   if(ME&&ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}
 }
 function render(){
   if(!TABS().some(t=>t[0]===V.tab))V.tab='today';
-  $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
+  $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('')+(owner()&&fin()?'<a href="/finance#team" title="Отчёт по агентам — в разделе «Финансы»">Команда ↗</a>':'');
   $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',inqs:'+ Обращение'}[V.tab]||'+ Заявка';
   $('#addbtn').hidden=!can()||['admin','calls','kb'].includes(V.tab);
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
@@ -843,6 +863,9 @@ async function submit(){
     else if(c.kind==='call'){if(c.mode==='link'&&!x.clientId)return toast('Выберите клиента.');dlg.close();await run('resolveCall',c.call.id,c.mode,Object.assign({},x,{ownerId:x.ownerId?Number(x.ownerId):null}));CALLS.list=null;render();toast(c.mode==='lead'?'Заявка создана':'Номер привязан к клиенту')}
     else if(c.kind==='inq'){await submitInq()}
     else if(c.kind==='kbitem'){await submitKb()}
+    else if(c.kind==='links'){await submitLinks()}
+    else if(c.kind==='company'){await submitCompany()}
+    else if(c.kind==='coimport'){await submitCoImport()}
     else if(c.kind==='todeal'){dlg.close();await run('leadToDeal',c.lead.id,x);toast('Сделка создана');V.tab='deals';location.hash='deals';render()}
   }catch(_){}
 }
@@ -928,7 +951,7 @@ app.addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.col.
 /* ---------- пароль, выход ---------- */
 document.addEventListener('click',async e=>{
   if(e.target.closest('#logout')){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}
-  if(e.target.closest('#mypw'))openPw(false)});
+});
 function openPw(forced){let d=$('#pwdlg');if(!d){d=document.createElement('dialog');d.id='pwdlg';document.body.appendChild(d)}
   d.innerHTML=`<form class="dlg" method="dialog" id="pwform"><h2>${forced?'Задайте свой пароль':'Смена пароля'}</h2>
     ${forced?'<p class="note" style="margin:0">Вы вошли по временному паролю. Придумайте свой — не короче 10 символов, с буквами и цифрами.</p>':''}
@@ -948,7 +971,7 @@ const ACC={users:null,roles:{},finance:{},audit:null,loading:false,newPw:null,t:
 function genPw(){const a='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint32Array(12));
   let s='';for(let i=0;i<12;i++)s+=a[r[i]%a.length];return /\d/.test(s)&&/[a-z]/i.test(s)?s:genPw()}
 async function accLoad(){if(ACC.loading)return;ACC.loading=true;
-  try{const u=await api('listUsers');ACC.users=u.users;ACC.roles=u.roles;ACC.finance=u.finance;ACC.audit=await api('listAudit',150)}catch(e){toast(e.message)}
+  try{const u=await api('listUsers');ACC.users=u.users;ACC.roles=u.roles;ACC.finance=u.finance;ACC.audit=await api('listAudit',150);ACC.links=await api('listUserLinks')}catch(e){toast(e.message)}
   ACC.loading=false;ACC.t=Date.now();if(V.tab==='admin')render()}
 function vAdmin(){
   if(!owner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
@@ -957,10 +980,11 @@ function vAdmin(){
   const ro=sel=>opt(Object.entries(ACC.roles),sel),fo=sel=>opt(Object.entries(ACC.finance),sel);
   let h=`<h2>Пользователи</h2>`;
   if(ACC.newPw)h+=`<div class="banner" style="margin:0 0 12px">Временный пароль для <b>${esc(ACC.newPw.login)}</b>: <code style="font-size:15px;user-select:all">${esc(ACC.newPw.pw)}</code><br>Передайте его лично. При первом входе система попросит сменить пароль. Больше этот пароль нигде показан не будет. <button type="button" data-acc="hidepw">Скрыть</button></div>`;
-  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль в CRM</th><th>Финансы</th><th>Статус</th><th></th></tr></thead><tbody>
-    ${ACC.users.map(u=>{const me=u.id===ME.id;return `<tr><td><b>${esc(u.name)}</b>${me?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
+  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль в CRM</th><th>Финансы</th><th>Телефония, агент, Max</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${ACC.users.map(u=>{const me=u.id===ME.id,du=D.users.find(x=>x.id===u.id)||{};return `<tr><td>${ava(u.id,du.photo,u.name,26)} <b>${esc(u.name)}</b>${me?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
       <td><select data-acc-role="${u.id}" ${me?'disabled':''}>${ro(u.role)}</select></td>
       <td>${u.role==='owner'?'<span class="muted">полный доступ</span>':`<select data-acc-fin="${u.id}">${fo(u.finance)}</select>`}</td>
+      <td>${linkCell(u)}<button type="button" class="ghost" data-acc-links="${u.id}" style="padding:2px 6px;font-size:12px">Связи…</button></td>
       <td>${u.active?(u.mustChange?'<span class="chip work">ждёт смены пароля</span>':'<span class="chip closed">активен</span>'):'<span class="chip lost">отключён</span>'}</td>
       <td class="r">${me?'':`<button type="button" data-acc="reset" data-id="${u.id}" data-login="${esc(u.login)}">Новый пароль</button> <button type="button" data-acc="toggle" data-id="${u.id}">${u.active?'Отключить':'Включить'}</button>`}</td></tr>`}).join('')}
   </tbody></table></div>
@@ -971,7 +995,7 @@ function vAdmin(){
     <label class="f"><span>Доступ к финансам</span><select id="acc-fin">${fo('none')}</select></label>
     <div class="f full" style="align-items:flex-start"><button type="button" class="primary" data-acc="add">Создать и получить пароль</button></div></div>
     <p class="note" style="margin:8px 0 0"><b>Учредитель</b> — всё, включая финансы, пользователей и настройки. <b>Сотрудник</b> — работает в CRM: заявки, клиенты, задачи, объекты, сделки. <b>Только просмотр</b> — видит CRM, ничего не меняет. Доступ к разделу «Финансы» выдаётся отдельно: нет / просмотр / ввод и правка.</p></div>`;
-  h+=integHtml();
+  h+=integHtml()+maxHtml();
   h+=`<h2>Данные</h2><div class="card"><div class="rows">
     <div class="row"><span>Выгрузить все данные в файл: финансы и CRM (резервная копия)</span><button type="button" data-acc="export">Скачать .json</button></div>
     <div class="row"><span>Восстановить из файла выгрузки. <b>Заменит</b> финансовые данные и клиентов${'; CRM — если он есть в файле'}. Пользователи сохраняются, перед заменой сервер делает копию базы.</span><label><input type="file" id="acc-import" accept=".json,application/json" hidden><span class="like-btn">Загрузить .json…</span></label></div></div>
@@ -1071,17 +1095,39 @@ const ph=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')
 function vCalls(){
   if(!CALLS.list){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки…</div>'}
   if(Date.now()-CALLS.t>30000)setTimeout(callsLoad,0);
-  const fresh={};CALLS.list.filter(c=>c.status==='new').forEach(c=>{const g=fresh[c.phone]||(fresh[c.phone]={phone:c.phone,n:0,lost:0,last:c,first:c});g.n++;if(c.lost)g.lost++;if(c.at>g.last.at)g.last=c;if(c.at<g.first.at)g.first=c});
-  const groups=Object.values(fresh).sort((a,b)=>b.last.at-a.last.at);
-  let h=`<h2>Новые номера</h2><p class="note" style="margin:-4px 0 10px">Входящие звонки с номеров, которых нет в CRM. Разберите каждый: «По объекту» — звонил по нашему объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер уже знакомого клиента; «Не клиент» — спам, курьер, сервис.</p>`;
-  h+=groups.length?`<div class="box tlist">${groups.map(g=>`<div class="trow"><div class="tt"><b class="num">${esc(ph(g.phone))}</b><div class="m">${g.n>1?g.n+' звонка · ':''}последний ${dtFmt(g.last.at)}${g.lost?` · <span class="neg">пропущено: ${g.lost}</span>`:''}${g.last.vnumber?' · на номер '+esc(ph(g.last.vnumber))+((D.vnums||{})[String(g.last.vnumber).replace(/\D/g,'')]?.channel?' ('+esc(D.vnums[String(g.last.vnumber).replace(/\D/g,'')].channel)+')':''):''}${g.last.emp?' · '+esc(g.last.emp):''}</div></div>
-    ${can()?`<div class="r2" style="flex-wrap:wrap;justify-content:flex-end"><button type="button" class="primary" data-call-obj="${esc(g.last.id)}">По объекту</button><button type="button" data-call-lead="${esc(g.last.id)}">Заявка</button><button type="button" data-call-link="${esc(g.last.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(g.last.id)}">Не клиент</button></div>`:''}</div>`).join('')}</div>`:'<div class="card empty">Неразобранных звонков нет.</div>';
-  const all=CALLS.list.slice().sort((a,b)=>b.at-a.at);
-  h+=`<h2>Все звонки за 7 дней</h2>${all.length?`<div class="tbl-wrap"><table><thead><tr><th>Когда</th><th></th><th>Номер</th><th>Клиент</th><th class="r">Разговор</th><th>Сотрудник</th><th>Запись</th>${can()?'<th></th>':''}</tr></thead><tbody>
-    ${all.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>'}</td><td class="num">${esc(ph(c.phone))}</td>
-      <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a>`:c.status==='new'?'<span class="warn">не разобран</span>':'<span class="muted">—</span>'}</td>
-      <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td>${can()?`<td>${c.dir==='in'?`<button type="button" class="ghost" data-call-obj="${esc(c.id)}" title="Привязать к объекту" style="padding:3px 8px;font-size:12px">→ объект</button>`:''}</td>`:''}</tr>`).join('')}</tbody></table></div>`:'<div class="card empty">Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.</div>'}`;
+  const F=V.clf||(V.clf={view:'todo',mine:false}),mine=c=>!F.mine||c.userId===ME.id;
+  const base=CALLS.list.filter(mine),todoAll=base.filter(c=>c.status==='new'),spamAll=base.filter(c=>c.status==='spam');
+  // в «Не разобранных» — один номер одной строкой (последний звонок), в остальных — каждый звонок
+  const byPhone={};todoAll.forEach(c=>{const g=byPhone[c.phone]||(byPhone[c.phone]={n:0,lost:0,last:c});g.n++;if(c.lost)g.lost++;if(c.at>g.last.at)g.last=c});
+  const rows=F.view==='todo'?Object.values(byPhone).map(g=>Object.assign({},g.last,{_n:g.n,_lost:g.lost})):F.view==='spam'?spamAll:base.filter(c=>c.status!=='spam');
+  rows.sort((a,b)=>b.at-a.at);
+  const nTodo=Object.keys(byPhone).length;
+  const ST={new:'<span class="chip work">не разобран</span>',ignored:'<span class="chip">не клиент</span>',spam:'<span class="chip out">спам</span>',lead:'<span class="chip deal">заявка</span>',linked:''};
+  const dirChip=c=>c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>';
+  const vm=c=>(D.vnums||{})[String(c.vnumber||'').replace(/\D/g,'')];
+  const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`
+    :c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`
+    :c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
+  let h=`<div class="toolbar" style="align-items:center">
+    <div class="seg" role="group"><button type="button" data-clv="todo" aria-pressed="${F.view==='todo'}">Не разобранные <b>${nTodo}</b></button><button type="button" data-clv="all" aria-pressed="${F.view==='all'}">Все звонки</button><button type="button" data-clv="spam" aria-pressed="${F.view==='spam'}">Спам <b>${spamAll.length}</b></button></div>
+    <div class="seg" role="group"><button type="button" data-clm="0" aria-pressed="${!F.mine}">Все сотрудники</button><button type="button" data-clm="1" aria-pressed="${F.mine}">Мои</button></div></div>
+  ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
+  if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
+  h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
+    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td>
+      <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vm(c)&&vm(c).channel?' · '+esc(vm(c).channel):''}</div>`:''}</td>
+      <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
+      <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
+      <td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`).join('')}</tbody></table></div>
+    <p class="note">Показаны звонки за 7 дней и все неразобранные.</p>`;
   return h}
+app.addEventListener('click',async e=>{if(V.tab!=='calls')return;
+  const v=e.target.closest('[data-clv]');if(v){V.clf.view=v.dataset.clv;render();return}
+  const m=e.target.closest('[data-clm]');if(m){V.clf.mine=m.dataset.clm==='1';render();return}
+  const s=e.target.closest('[data-call-spam],[data-call-unspam]');if(s){const sp=!!s.dataset.callSpam,id=s.dataset.callSpam||s.dataset.callUnspam;
+    if(sp&&!confirm('Отметить номер как спам? Все звонки с него уйдут в «Спам», задачи «Перезвонить» по ним закроются.'))return;
+    try{await run('resolveCall',id,sp?'spam':'unspam');CALLS.list=null;render();toast(sp?'Номер в спаме':'Номер вернулся в разбор')}catch(_){}}});
+
 const mmss=s=>{s=Math.round(+s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function callDlg(id,mode){const c=CALLS.list.find(x=>x.id===id);if(!c)return;
   openDlg({kind:'call',o:{name:'',kind:'buy',note:'',clientId:'',ownerId:ME.id},call:c,mode,draw:()=>{const x=dlgCtx.o;
@@ -1101,7 +1147,7 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-call-lead
   try{await run('resolveCall',b.dataset.callIgnore,'ignore');CALLS.list=null;render();toast('Номер убран из разбора')}catch(_){}});
 /* ---------- Интеграции (учредитель) ---------- */
 const INTEG={nf:null,cian:null,loading:false};
-async function integLoad(){if(INTEG.loading)return;INTEG.loading=true;try{INTEG.nf=await api('novofonSettings');INTEG.vn=null;INTEG.cian=await api('cianSettings')}catch(e){toast(e.message)}INTEG.loading=false;if(V.tab==='admin')render()}
+async function integLoad(){if(INTEG.loading)return;INTEG.loading=true;try{INTEG.nf=await api('novofonSettings');INTEG.vn=null;INTEG.max=null;INTEG.cian=await api('cianSettings')}catch(e){toast(e.message)}INTEG.loading=false;if(V.tab==='admin')render()}
 function integHtml(){if(!INTEG.nf){integLoad();return '<div class="card"><p class="muted">Загружаю…</p></div>'}
   const n=INTEG.nf,c=INTEG.cian,feed=location.origin+c.feedPath,inFeed=D.objects.filter(o=>o.cian&&o.cian.state==='on').length,ready=D.objects.filter(o=>o.cian&&o.cian.state==='ready');
   return `<h2>Интеграции</h2><div class="cols"><div class="card"><h3>Телефония Novofon</h3>
@@ -1284,12 +1330,18 @@ function vKb(){
   const d=KB.d,ed=d.canEdit,f=V.kb,q=f.q.trim().toLowerCase(),m=s=>!q||String(s||'').toLowerCase().includes(q);
   const prices=d.items.filter(x=>x.kind==='price'&&m(x.group+' '+x.name+' '+x.price+' '+x.note));
   const arts=d.items.filter(x=>x.kind==='article'&&m(x.title+' '+x.cat+' '+x.body));
-  const tpls=d.items.filter(x=>x.kind==='tpl'&&m(x.title+' '+x.note+' '+(d.tplCats[x.cat]||'')+' '+(x.file?x.file.name:'')));
+  const pres=d.items.filter(x=>x.kind==='tpl'&&x.cat==='pres'&&m(x.title+' '+x.note+' '+(x.file?x.file.name:'')));
+  const tpls=d.items.filter(x=>x.kind==='tpl'&&x.cat!=='pres'&&m(x.title+' '+x.note+' '+(d.tplCats[x.cat]||'')+' '+(x.file?x.file.name:'')));
   const grp=(arr,key)=>{const g=[];arr.forEach(x=>{let e=g.find(y=>y.k===x[key]);if(!e)g.push(e={k:x[key],items:[]});e.items.push(x)});return g};
   let h=`<div class="toolbar"><label class="f grow"><span>Поиск по справочнику</span><input id="kb-q" value="${esc(f.q)}" placeholder="Например: аренда, задаток, ЕГРН"></label></div>
-    <div class="seg grpseg" role="group" style="max-width:640px">${[['price','Цены на услуги',prices.length],['article','Инструкции',arts.length],['tpl','Шаблоны документов',tpls.length]].map(([k,l,n])=>`<button type="button" data-kb-sec="${k}" aria-pressed="${f.sec===k}">${l} <b>${n}</b></button>`).join('')}</div>`;
-  if(f.sec==='price'){
+    <div class="seg grpseg" role="group" style="max-width:860px">${[['price','Цены и презентации',prices.length+pres.length],['article','Инструкции',arts.length],['tpl','Шаблоны документов',tpls.length],['company','Сети и арендаторы',d.items.filter(x=>x.kind==='company').length]].map(([k,l,n])=>`<button type="button" data-kb-sec="${k}" aria-pressed="${f.sec===k}">${l} <b>${n}</b></button>`).join('')}</div>`;
+  if(f.sec==='company'){h+=coHtml(d,q)}
+  else if(f.sec==='price'){
     h+=`<div class="r2" style="justify-content:space-between;margin:16px 0 8px;flex-wrap:wrap"><p class="note" style="margin:0">Актуальные цены агентства. Называйте клиенту эти цифры; скидки и особые условия — по согласованию с учредителем.</p>${ed?'<button type="button" class="primary" data-kb-new="price">+ Услуга</button>':''}</div>`;
+    h+=`<div class="card pres-box"><div class="r2" style="justify-content:space-between;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Презентации для клиентов</h3>${ed?'<button type="button" data-kb-new-pres>+ Презентация</button>':''}</div>
+      ${pres.length?`<div class="pres-list">${pres.map(x=>`<div class="pres-item"><div style="flex:1;min-width:0"><b>${esc(x.title)}</b>${x.note?`<div class="muted" style="font-size:12px">${esc(x.note)}</div>`:''}<div class="muted" style="font-size:12px">${x.file?esc(x.file.name)+' · '+fsize(x.file.size)+' · ':''}обновлена ${dtFmt(x.updatedAt).slice(0,8)}</div></div>
+        ${x.file?`<a class="like-btn" href="/files/${esc(x.file.id)}" download style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Скачать</a>`:'<span class="neg" style="font-size:12px">файл не загружен</span>'} ${kbCtl(x,ed)}</div>`).join('')}</div>`
+        :`<p class="muted" style="margin:8px 0 0">${ed?'Загрузите свежую презентацию агентства (PDF или PowerPoint) — сотрудники смогут скачать её и отправить клиенту.':'Презентаций пока нет — их загружает учредитель.'}</p>`}</div>`;
     h+=prices.length?grp(prices,'group').map(g=>`<h2 style="margin-top:14px">${esc(g.k)}</h2><div class="tbl-wrap"><table><thead><tr><th>Услуга</th><th>Стоимость</th><th>Условия</th>${ed?'<th></th>':''}</tr></thead><tbody>
       ${g.items.map(x=>`<tr><td><b>${esc(x.name)}</b></td><td class="kb-price">${esc(x.price)}</td><td class="muted">${esc(x.note)}</td>${ed?`<td class="r" style="white-space:nowrap">${kbCtl(x,ed)}</td>`:''}</tr>`).join('')}</tbody></table></div>`).join(''):'<div class="card empty">Ничего не найдено.</div>';
   }else if(f.sec==='article'){
@@ -1314,7 +1366,7 @@ function vKb(){
 function openKbItem(kind,x){const d=KB.d;x=x?JSON.parse(JSON.stringify(x)):{kind,group:'',name:'',price:'',note:'',cat:kind==='tpl'?'services':'',title:'',body:''};
   openDlg({kind:'kbitem',orig:x.id?x:null,o:x,wide:kind==='article',draw:()=>{const o=dlgCtx.o,orig=dlgCtx.orig;
     const groups=[...new Set(d.items.filter(i=>i.kind==='price').map(i=>i.group))],acats=[...new Set([...d.artCats,...d.items.filter(i=>i.kind==='article').map(i=>i.cat)])];
-    form.innerHTML=`<h2>${orig?'Изменить':'Добавить'}: ${{price:'услуга',article:'инструкция',tpl:'шаблон документа'}[o.kind]}</h2>`+
+    form.innerHTML=`<h2>${orig?'Изменить':'Добавить'}: ${o.kind==='tpl'&&o.cat==='pres'?'презентация':{price:'услуга',article:'инструкция',tpl:'шаблон документа'}[o.kind]}</h2>`+
       (o.kind==='price'?`<div class="fg"><label class="f full"><span>Раздел</span><input name="group" list="kb-groups" value="${esc(o.group)}" placeholder="Например: Аренда"></label>
         <label class="f full"><span>Услуга</span><input name="name" value="${esc(o.name)}"></label>
         <label class="f"><span>Стоимость</span><input name="price" value="${esc(o.price)}" placeholder="150 000 ₽ или 3% от цены"></label>
@@ -1325,7 +1377,7 @@ function openKbItem(kind,x){const d=KB.d;x=x?JSON.parse(JSON.stringify(x)):{kind
         <p class="note" style="margin:0">Оформление: строка с <b>## </b> в начале — подзаголовок; <b>- </b> — пункт списка; <b>1. </b> — нумерованный пункт; <b>**текст**</b> — жирный; пустая строка — новый абзац; ссылки https:// становятся кликабельными.</p>`
       :`<div class="fg"><label class="f full"><span>Название</span><input name="title" value="${esc(o.title)}" placeholder="Договор на оказание услуг по продаже"></label>
         <label class="f"><span>Раздел</span><select name="cat">${opt(Object.entries(d.tplCats),o.cat)}</select></label>
-        <label class="f"><span>Файл (Word, PDF)</span><input type="file" id="kb-file"></label>
+        <label class="f"><span>Файл (${o.cat==='pres'?'PDF или PowerPoint, до 60 МБ':'Word, PDF'})</span><input type="file" id="kb-file"></label>
         <label class="f full"><span>Пояснение</span><input name="note" value="${esc(o.note)}" placeholder="Когда использовать, что не забыть заполнить"></label></div>
         ${orig&&orig.file?`<p class="note" style="margin:0">Сейчас: ${esc(orig.file.name)}. Выберите новый файл, чтобы заменить.</p>`:''}`)+
       `<div class="acts"><div>${orig?`<button type="button" class="danger" data-kb-del>${dlgCtx.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`}})}
@@ -1348,6 +1400,7 @@ app.addEventListener('click',async e=>{
   if(ctl)return;
   const a=e.target.closest('[data-kb-art]');if(a){V.kb.art=a.dataset.kbArt;render();window.scrollTo({top:0});return}
   const n=e.target.closest('[data-kb-new]');if(n){openKbItem(n.dataset.kbNew);return}
+  if(e.target.closest('[data-kb-new-pres]')){openKbItem('tpl',{kind:'tpl',cat:'pres',title:'',note:''});return}
   if(e.target.closest('[data-kb-editors]')){const ids=[...document.querySelectorAll('[data-kb-editor]:checked')].map(i=>+i.value);try{KB.d=await api('kbSetEditors',ids);render();toast('Сохранено')}catch(err){toast(err.message)}return}
 });
 app.addEventListener('input',e=>{if(e.target.id==='kb-q'){V.kb.q=e.target.value;V.kb.art='';render()}});
@@ -1372,9 +1425,164 @@ form.addEventListener('click',e=>{const c=dlgCtx;if(!c||c.kind!=='object')return
   leaveObj(()=>openInq(JSON.parse(JSON.stringify(q)),{fixedObj:true,back:()=>openObject(obj(oid),'inq')}))});
 
 
+/* ---------- Профиль: Max, уведомления, телефония ---------- */
+let PROF=null,profTimer=0;
+async function openProfile(){try{PROF=await api('myProfile')}catch(e){return toast(e.message)}
+  openDlg({kind:'profile',o:Object.assign({name:ME.name},PROF.card),link:null,draw:drawProfile});
+  clearInterval(profTimer);profTimer=setInterval(async()=>{if(!dlgCtx||dlgCtx.kind!=='profile'){clearInterval(profTimer);return}
+    if(dlgCtx.link&&!PROF.maxLinked){try{const p=await api('myProfile');if(p.maxLinked){PROF=p;dlgCtx.link=null;dlgCtx.draw();toast('Max подключён')}}catch(_){}}},3000)}
+function drawProfile(){const c=dlgCtx,p=PROF,k=c.o,N={tasks:'Новые задачи мне (и где я соисполнитель)',leads:'Новые заявки, где я ответственный',calls:'Новые номера, которые мне разобрать',digest:'Утренняя сводка в 9:00 по будням'};
+  form.innerHTML=`<h2>Мой профиль</h2>
+    <div class="card" style="padding:14px"><div class="prof-top">${ava(ME.id,p.photo,ME.name,88)}<div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:16px">${esc(ME.name)}</b><span class="muted" style="font-size:12px">${esc(ME.roleName)} · логин ${esc(ME.login)}</span>
+      <div class="r2" style="flex-wrap:wrap"><label class="like-btn"><input type="file" accept="image/*" hidden id="photo-in">${p.photo?'Заменить фото':'Загрузить фото'}</label>${p.photo?'<button type="button" class="ghost" data-photo-del>Удалить фото</button>':''}</div></div></div>
+    <div class="fg" style="margin-top:12px"><label class="f"><span>Имя и фамилия</span><input name="name" value="${esc(k.name)}"></label>
+      <label class="f"><span>Должность</span><input name="position" value="${esc(k.position)}" placeholder="Агент, ассистент…"></label>
+      <label class="f"><span>Телефон</span><input name="phone" inputmode="tel" value="${esc(k.phone)}"></label>
+      <label class="f"><span>E-mail</span><input name="email" value="${esc(k.email)}"></label>
+      <label class="f full"><span>Другие контакты</span><input name="other" value="${esc(k.other)}" placeholder="Max, Telegram, рабочая почта"></label></div>
+    <div class="r2" style="margin-top:10px;flex-wrap:wrap"><button type="button" class="primary" data-card-save>Сохранить карточку</button><button type="button" data-prof-pw>Сменить пароль</button></div></div>
+    <div class="card" style="padding:14px"><h3>Уведомления в Max</h3>
+    ${p.maxLinked?`<p style="margin:0 0 8px"><span class="chip closed">подключено</span> ${p.maxName?esc(p.maxName):''}</p>
+      <div class="r2" style="flex-wrap:wrap"><button type="button" data-max-test>Прислать проверку</button><button type="button" class="ghost" data-max-off>Отключить</button></div>`
+    :c.link?`<p style="margin:0 0 8px">1. Откройте бота в Max и нажмите «Начать»:</p>${c.link.link?`<p style="margin:0 0 10px"><a class="like-btn" href="${esc(c.link.link)}" target="_blank" rel="noopener" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Открыть бота в Max</a></p>`:''}
+      <p style="margin:0 0 6px">2. Если бот не подхватил код сам — отправьте ему сообщением: <b class="num" style="font-size:18px;user-select:all">${esc(c.link.code)}</b></p>
+      <p class="note" style="margin:0">Код действует 30 минут. Окно обновится само, когда бот вас узнает.</p>`
+    :`<p class="note" style="margin:0 0 8px">Бот агентства будет присылать задачи, заявки и новые звонки прямо в Max.</p><button type="button" class="primary" data-max-link>Подключить Max</button>`}
+    <div class="checks" style="margin-top:12px;flex-direction:column;align-items:flex-start">${Object.entries(N).map(([key,l])=>`<label><input type="checkbox" data-notify="${key}" ${p.notify[key]?'checked':''}> ${l}</label>`).join('')}</div></div>
+    <div class="card" style="padding:14px"><h3>Телефония</h3><p style="margin:0">${p.novofonEmpName?`Вы в Novofon: <b>${esc(p.novofonEmpName)}</b>${p.novofonPhones?' · '+esc(p.novofonPhones):''}. Звонки, которые вы приняли, попадают к вам.`:'<span class="muted">Вы ещё не привязаны к сотруднику Novofon — попросите учредителя («Доступ» → «Связи»).</span>'}</p></div>
+    <div class="acts"><div></div><div><button type="button" data-close>Закрыть</button></div></div>`}
+form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile')return;const b=e.target.closest('button');if(!b)return;
+  try{
+    if(b.hasAttribute('data-card-save')){readForm();PROF=await api('saveMyCard',c.o);apply(await api('crmLoad'));c.draw();toast('Карточка сохранена');return}
+    if(b.hasAttribute('data-photo-del')){if(!confirm('Удалить фото?'))return;readForm();PROF=await api('removeMyPhoto');ME.photo=0;D.me.photo=0;renderHead();c.draw();return}
+  }catch(err){toast(err.message)}});
+form.addEventListener('change',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile'||e.target.id!=='photo-in'||!e.target.files[0])return;
+  try{readForm();const blob=await shrink(e.target.files[0],480,.86);const r=await fetch('/avatar',{method:'POST',credentials:'same-origin',body:blob});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Не удалось загрузить фото');
+    PROF=d.result;ME.photo=PROF.photo;D.me.photo=PROF.photo;const u=D.users.find(x=>x.id===ME.id);if(u)u.photo=PROF.photo;renderHead();c.draw();toast('Фото обновлено')}catch(err){toast(err.message)}});
+
+form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile')return;const b=e.target.closest('button');if(!b)return;
+  try{
+    if(b.hasAttribute('data-max-link')){c.link=await api('maxLinkCode');c.draw();if(c.link.link)window.open(c.link.link,'_blank','noopener');return}
+    if(b.hasAttribute('data-max-test')){await api('maxTest');toast('Сообщение отправлено — проверьте Max');return}
+    if(b.hasAttribute('data-max-off')){if(!confirm('Отключить уведомления в Max?'))return;PROF=await api('maxUnlink');c.draw();return}
+    if(b.hasAttribute('data-prof-pw')){dlg.close();openPw(false);return}
+  }catch(err){toast(err.message)}});
+form.addEventListener('change',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile'||!e.target.dataset.notify)return;
+  try{PROF=await api('saveMyNotify',{[e.target.dataset.notify]:e.target.checked});toast('Сохранено')}catch(err){toast(err.message)}});
+
+/* ---------- Доступ: связи пользователя (Novofon, финансы) ---------- */
+async function openLinks(uid){let links,emps=null,empErr='';
+  try{links=(await api('listUserLinks')).find(x=>x.id===uid)}catch(e){return toast(e.message)}
+  try{emps=await api('novofonEmployees')}catch(e){empErr=e.message}
+  const agents=D.clients.filter(c=>(c.types||[]).includes('agent')).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  if(!links.finAgentId){const g=agents.find(a=>a.name.toLowerCase().split(/\s+/).some(w=>w.length>2&&links.name.toLowerCase().includes(w)));if(g)links.guess=g.id}
+  openDlg({kind:'links',o:{novofonEmpId:links.novofonEmpId,finAgentId:links.finAgentId||links.guess||''},links,emps,draw:()=>{const x=dlgCtx.o;
+    form.innerHTML=`<h2>Связи — ${esc(links.name)}</h2>
+      <label class="f"><span>Сотрудник в Novofon (по нему звонки распределяются на этого пользователя)</span>${emps?`<select name="novofonEmpId">${opt([['','— не привязан —'],...emps.map(e=>[e.id,e.name+(e.ext?' · доб. '+e.ext:'')+(e.phones.length?' · '+e.phones.join(', '):'')])],x.novofonEmpId)}</select>`:`<input name="novofonEmpId" value="${esc(x.novofonEmpId)}" placeholder="ID сотрудника Novofon"><span class="neg" style="font-size:12px">${esc(empErr)}</span>`}</label>
+      <label class="f"><span>Агент в финансах (для заработка в отчёте «Команда»)</span><select name="finAgentId">${opt([['','— не привязан —'],...agents.map(a=>[a.id,a.name])],x.finAgentId)}</select></label>
+      ${links.guess&&!links.finAgentId?'<p class="note" style="margin:0">Агент подобран по имени — проверьте и сохраните.</p>':''}
+      <p class="note" style="margin:0">Max: ${links.maxLinked?'<span class="pos">подключён</span>':'не подключён (сотрудник подключает сам: «Профиль» → «Подключить Max»)'}</p>
+      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`}})}
+async function submitLinks(){const c=dlgCtx,x=c.o;const e=(c.emps||[]).find(e=>e.id===x.novofonEmpId);
+  try{await api('saveUserLinks',c.links.id,{novofonEmpId:x.novofonEmpId,novofonEmpName:e?e.name+(e.ext?' (доб. '+e.ext+')':''):'',novofonPhones:e?e.phones.join(', '):'',finAgentId:x.finAgentId});dlg.close();ACC.links=null;accLinks();toast('Сохранено')}catch(err){toast(err.message)}}
+async function accLinks(){try{ACC.links=await api('listUserLinks');if(V.tab==='admin')render()}catch(_){}}
+const linkCell=u=>{const l=(ACC.links||[]).find(x=>x.id===u.id);if(!l)return '';
+  return `<div style="font-size:12px;line-height:1.5">${l.novofonEmpName?'☎ '+esc(l.novofonEmpName):'<span class="muted">☎ нет</span>'}<br>${l.finAgentId?'₽ '+esc(clName(l.finAgentId)||'агент'):'<span class="muted">₽ нет</span>'} · ${l.maxLinked?'<span class="pos">Max</span>':'<span class="muted">Max нет</span>'}</div>`};
+app.addEventListener('click',e=>{const b=e.target.closest('[data-acc-links]');if(b)openLinks(+b.dataset.accLinks)});
+
+/* ---------- Max в интеграциях ---------- */
+function maxHtml(){if(!INTEG.max){api('maxSettings').then(r=>{INTEG.max=r;if(V.tab==='admin')render()}).catch(e=>toast(e.message));return ''}
+  const m=INTEG.max;
+  return `<div class="card" style="margin-top:12px"><h3>Мессенджер Max — бот уведомлений</h3>
+    <div class="fg"><label class="f full"><span>Токен бота ${m.hasToken?'<b class="pos">— сохранён</b>':''}</span><input type="password" id="mx-token" placeholder="${m.hasToken?'Оставьте пустым, чтобы не менять':'Токен из business.max.ru → Чат-боты → Настройки'}" autocomplete="off"></label>
+      <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" id="mx-on" ${m.enabled||!m.hasToken?'checked':''}> Бот работает</label></label>
+      <details class="f"><summary class="muted" style="font-size:12px;cursor:pointer">Адрес API</summary><input id="mx-base" value="${esc(m.base)}"></details></div>
+    <div class="r2" style="margin-top:8px"><button type="button" class="primary" data-mx-save>Проверить и сохранить</button></div>
+    <p class="note">${m.botName?`Бот: <b>@${esc(m.botName)}</b> · подключили Max: ${m.linked} чел.`:'Ещё не подключено.'}${m.lastError?` <span class="neg">${esc(m.lastError)}</span>`:m.lastOk?` · связь есть (${dtFmt(m.lastOk)})`:''}</p>
+    <p class="note">Как подключить: business.max.ru → профиль организации → «Чат-боты» → создать бота → «Настройки» → скопировать токен сюда. Затем каждый сотрудник в CRM: «Профиль» → «Подключить Max».</p></div>`}
+app.addEventListener('click',async e=>{if(!e.target.closest('[data-mx-save]'))return;const b=e.target.closest('[data-mx-save]');b.disabled=true;b.textContent='Проверяю…';
+  try{INTEG.max=await api('saveMaxSettings',{token:$('#mx-token').value,enabled:$('#mx-on').checked,base:$('#mx-base').value});toast('Бот подключён: @'+INTEG.max.botName)}catch(err){toast(err.message);INTEG.max=null}render()});
+
+/* ---------- Справочник: сети и арендаторы ---------- */
+function coHtml(d,q){const m=s=>!q||String(s||'').toLowerCase().includes(q);
+  const cos=d.items.filter(x=>x.kind==='company'&&m(x.name+' '+x.cat+' '+x.reqs+' '+x.note+' '+(x.contacts||[]).map(k=>k.name+' '+k.role+' '+k.phone+' '+k.email+' '+(k.notes||[]).map(n=>n.text).join(' ')).join(' '))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  let h=`<div class="r2" style="justify-content:space-between;margin:16px 0 8px;flex-wrap:wrap"><p class="note" style="margin:0">Отделы развития сетей и арендаторов: кому предлагать нежилые помещения. В одной компании — несколько контактов, у каждого история комментариев.</p>
+    ${d.canCo?'<div class="r2"><button type="button" data-co-import>Вставить из таблицы</button><button type="button" class="primary" data-co-new>+ Компания</button></div>':''}</div>`;
+  if(!cos.length)return h+`<div class="card empty">${q?'Ничего не найдено.':'Компаний пока нет. Добавьте вручную или вставьте вашу таблицу контактов.'}</div>`;
+  const cats=[...new Set(cos.map(c=>c.cat))].sort((a,b)=>a==='Другое'?1:b==='Другое'?-1:a.localeCompare(b,'ru'));
+  return h+cats.map(cat=>`<h2 style="margin-top:14px">${esc(cat)}</h2><div class="kb-grid">${cos.filter(c=>c.cat===cat).map(c=>{const last=(c.contacts||[]).flatMap(k=>(k.notes||[]).map(n=>Object.assign({who:k.name},n))).sort((a,b)=>b.at-a.at)[0];
+    return `<div class="card kb-card" data-co="${esc(c.id)}"><div class="r2" style="justify-content:space-between;align-items:baseline"><b style="font-size:16px">${esc(c.name)}</b><span class="muted" style="font-size:12px">${(c.contacts||[]).length} конт.</span></div>
+      ${(c.contacts||[]).slice(0,3).map(k=>`<div style="font-size:13px">${esc(k.name||'—')}${k.role?` <span class="muted">· ${esc(k.role)}</span>`:''}</div>`).join('')}
+      ${last?`<div class="muted kb-prev">${dtFmt(last.at).slice(0,8)} ${esc(last.who||'')}: ${esc(last.text.slice(0,120))}</div>`:''}</div>`}).join('')}</div>`).join('')}
+function openCompany(id){const d=KB.d,c=id?d.items.find(x=>x.id===id):null;
+  openDlg({kind:'company',orig:c,o:c?JSON.parse(JSON.stringify(c)):{name:'',cat:'',site:'',reqs:'',note:''},edit:null,wide:true,draw:drawCompany})}
+function drawCompany(){const c=dlgCtx,x=c.o,co=c.orig,w=KB.d.canCo,cats=[...new Set([...KB.d.coCats,...KB.d.items.filter(i=>i.kind==='company').map(i=>i.cat)])];
+  const ct=k=>c.edit===k.id?ctForm(k):`<div class="card" style="padding:12px 14px">
+      <div class="r2" style="justify-content:space-between;align-items:flex-start;flex-wrap:wrap"><div><b>${esc(k.name||'—')}</b>${k.role?` <span class="muted">· ${esc(k.role)}</span>`:''}
+        <div style="font-size:13px;margin-top:2px">${k.phone?`<a class="lnk num" href="tel:${esc(k.phone.replace(/[^\d+]/g,''))}">${esc(k.phone)}</a>`:''}${k.phone&&k.email?' · ':''}${k.email?`<a class="lnk" href="mailto:${esc(k.email)}">${esc(k.email)}</a>`:''}</div></div>
+        ${w?`<div class="r2"><button type="button" class="ghost" data-ct-edit="${esc(k.id)}" title="Изменить">✎</button><button type="button" class="ghost" data-ct-del="${esc(k.id)}" title="Удалить">✕</button></div>`:''}</div>
+      ${(k.notes||[]).length?`<div class="co-notes">${k.notes.slice().reverse().map(n=>`<div><span class="muted num" style="font-size:11px">${dtFmt(n.at)} · ${esc(n.by)}</span><div style="white-space:pre-wrap">${esc(n.text)}</div></div>`).join('')}</div>`:''}
+      ${w?`<div class="r2" style="margin-top:8px"><input data-ct-note="${esc(k.id)}" placeholder="Комментарий: о чём договорились, что предложили"><button type="button" data-ct-send="${esc(k.id)}">Добавить</button></div>`:''}</div>`;
+  const ctForm=k=>`<div class="card" style="padding:12px 14px"><div class="fg">
+      <label class="f"><span>Имя</span><input id="ct-name" value="${esc(k.name||'')}"></label><label class="f"><span>Должность</span><input id="ct-role" value="${esc(k.role||'')}" placeholder="Менеджер по развитию"></label>
+      <label class="f"><span>Телефон</span><input id="ct-phone" inputmode="tel" value="${esc(k.phone||'')}"></label><label class="f"><span>Почта</span><input id="ct-email" value="${esc(k.email||'')}"></label>
+      ${k.id?'':'<label class="f full"><span>Комментарий</span><input id="ct-comment" placeholder="Необязательно"></label>'}</div>
+      <div class="r2" style="margin-top:8px;justify-content:flex-end"><button type="button" data-ct-cancel>Отмена</button><button type="button" class="primary" data-ct-save="${esc(k.id||'')}">${k.id?'Сохранить':'Добавить контакт'}</button></div></div>`;
+  form.innerHTML=`<h2>${co?esc(co.name):'Новая компания'}</h2>
+    <div class="fg"><label class="f"><span>Название сети / компании</span><input name="name" value="${esc(x.name)}" ${w?'':'readonly'}></label>
+      <label class="f"><span>Категория</span><input name="cat" list="co-cats" value="${esc(x.cat)}" placeholder="Продукты, аптеки…" ${w?'':'readonly'}></label>
+      <label class="f full"><span>Сайт / форма для предложений</span><input name="site" value="${esc(x.site)}" placeholder="https://…" ${w?'':'readonly'}></label>
+      <label class="f full"><span>Требования к помещению</span><textarea name="reqs" rows="2" placeholder="Площадь, этаж, витрины, трафик, мощность, парковка" ${w?'':'readonly'}>${esc(x.reqs)}</textarea></label>
+      <label class="f full"><span>Заметки</span><textarea name="note" rows="2" ${w?'':'readonly'}>${esc(x.note)}</textarea></label></div>
+    <datalist id="co-cats">${cats.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+    ${co?`<h3 style="margin-top:6px">Контакты (${(co.contacts||[]).length})</h3><div style="display:flex;flex-direction:column;gap:8px">${(co.contacts||[]).map(ct).join('')}
+      ${w?(c.edit==='new'?ctForm({}):'<div><button type="button" data-ct-new>+ Контакт</button></div>'):''}</div>`:'<p class="note" style="margin:0">Сохраните компанию — потом добавьте контакты.</p>'}
+    <div class="acts"><div>${co&&w?`<button type="button" class="danger" data-co-del>${c.confirmDel?'Точно удалить?':'Удалить компанию'}</button>`:''}</div><div><button type="button" data-close>Закрыть</button>${w?'<button type="submit" class="primary">Сохранить компанию</button>':''}</div></div>`}
+async function submitCompany(){const c=dlgCtx;readForm();const x=c.o;
+  try{KB.d=await api('kbSaveCompany',Object.assign({},x,{id:c.orig?c.orig.id:undefined}));const saved=KB.d.items.find(i=>i.kind==='company'&&i.name.toLowerCase()===x.name.trim().toLowerCase());
+    toast('Сохранено');if(!c.orig&&saved){c.orig=saved;c.o=JSON.parse(JSON.stringify(saved));c.draw()}else{c.orig=saved;c.draw()}render()}catch(e){toast(e.message)}}
+form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='company')return;const b=e.target.closest('button');if(!b)return;
+  const refresh=()=>{readForm();c.orig=KB.d.items.find(i=>i.id===c.orig.id);c.draw();render()};
+  try{
+    if(b.hasAttribute('data-ct-new')){readForm();c.edit='new';c.draw();return}
+    if(b.dataset.ctEdit){readForm();c.edit=b.dataset.ctEdit;c.draw();return}
+    if(b.hasAttribute('data-ct-cancel')){readForm();c.edit=null;c.draw();return}
+    if(b.dataset.ctSave!=null){const k={id:b.dataset.ctSave||undefined,name:$('#ct-name').value,role:$('#ct-role').value,phone:$('#ct-phone').value,email:$('#ct-email').value,comment:$('#ct-comment')?$('#ct-comment').value:''};
+      KB.d=await api('kbSaveContact',c.orig.id,k);c.edit=null;refresh();toast('Контакт сохранён');return}
+    if(b.dataset.ctDel){if(!confirm('Удалить контакт со всеми комментариями?'))return;KB.d=await api('kbDeleteContact',c.orig.id,b.dataset.ctDel);refresh();return}
+    if(b.dataset.ctSend){const inp=form.querySelector(`[data-ct-note="${b.dataset.ctSend}"]`);KB.d=await api('kbContactComment',c.orig.id,b.dataset.ctSend,inp.value);refresh();return}
+    if(b.hasAttribute('data-co-del')){if(!c.confirmDel){c.confirmDel=true;readForm();c.draw();return}KB.d=await api('kbDeleteCompany',c.orig.id);dlg.close();render();toast('Компания удалена');return}
+  }catch(err){toast(err.message)}});
+form.addEventListener('keydown',e=>{if(dlgCtx&&dlgCtx.kind==='company'&&e.key==='Enter'&&e.target.dataset.ctNote){e.preventDefault();const b=form.querySelector(`[data-ct-send="${e.target.dataset.ctNote}"]`);if(b)b.click()}});
+function openCoImport(){openDlg({kind:'coimport',o:{text:''},wide:true,draw:()=>{form.innerHTML=`<h2>Вставить компании из таблицы</h2>
+  <p class="note" style="margin:0">Скопируйте строки из Excel или Google-таблицы и вставьте сюда. Колонки по порядку: <b>Компания · Контакт · Должность · Телефон · Email · Комментарий · Категория</b> (лишние можно оставить пустыми). Несколько контактов одной компании — отдельными строками с тем же названием. Уже существующие компании и контакты не задвоятся.</p>
+  <label class="f"><span>Строки таблицы</span><textarea name="text" rows="12" style="font-family:var(--font-num);font-size:12px" placeholder="Пятёрочка&#9;Иван Петров&#9;Менеджер по развитию&#9;+7 900 000-00-00&#9;ivan@x5.ru&#9;Ищут 200–400 м² в ЮАО&#9;Продукты"></textarea></label>
+  <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Добавить</button></div></div>`}})}
+async function submitCoImport(){readForm();try{KB.d=await api('kbImportCompanies',dlgCtx.o.text);const n=KB.d.imported;dlg.close();render();toast(`Добавлено компаний: ${n.companies}, контактов: ${n.contacts}`)}catch(e){toast(e.message)}}
+app.addEventListener('click',e=>{if(V.tab!=='kb')return;
+  const co=e.target.closest('[data-co]');if(co){openCompany(co.dataset.co);return}
+  if(e.target.closest('[data-co-new]')){openCompany(null);return}
+  if(e.target.closest('[data-co-import]')){openCoImport();return}});
+
+/* ---------- аватар и меню пользователя ---------- */
+const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const ava=(id,ver,name,size)=>ver?`<img class="ava" src="/avatar/${id}.jpg?v=${ver}" alt="" style="width:${size}px;height:${size}px">`:`<span class="ava" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.4)}px">${esc(initials(name))}</span>`;
+function meChip(roleTxt){return `<div class="me-wrap"><button type="button" class="me-chip" id="mechip" aria-haspopup="menu" aria-expanded="false">${ava(ME.id,ME.photo,ME.name,32)}<div class="nm"><b>${esc(ME.name)}</b>${esc(roleTxt)}</div><span class="car" aria-hidden="true" style="color:var(--muted)">▾</span></button>
+  <div class="me-menu" id="memenu" role="menu" hidden><div class="mh"><b>${esc(ME.name)}</b>${esc(roleTxt)}</div><button type="button" data-me="profile">Мой профиль</button><button type="button" data-me="pw">Сменить пароль</button><button type="button" data-me="logout">Выйти</button></div></div>`}
+document.addEventListener('click',async e=>{const menu=$('#memenu');if(!menu)return;
+  if(e.target.closest('#mechip')){menu.hidden=!menu.hidden;$('#mechip').setAttribute('aria-expanded',String(!menu.hidden));return}
+  const it=e.target.closest('[data-me]');
+  if(!e.target.closest('#memenu')||it){menu.hidden=true}
+  if(!it)return;
+  if(it.dataset.me==='profile'){if(typeof openProfile==='function')openProfile();else location.href='/#profile'}
+  else if(it.dataset.me==='pw')openPw(false);
+  else if(it.dataset.me==='logout'){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu');if(m)m.hidden=true}});
+
 /* ---------- запуск ---------- */
 async function init(){$('#sources').innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">`).join('');render();
   try{apply(await api('crmLoad'))}catch(e){$('#app').innerHTML=`<div class="banner">Не удалось загрузить данные: ${esc(e.message)}. Обновите страницу.</div>`;return}
+  if(location.hash==='#profile'){V.tab='today';history.replaceState(null,'','#today');render();openProfile()}
   setInterval(async()=>{if(document.hidden||saving>0||dlgCtx||dragId)return;
     try{const v=await api('getVersion');if(v!==version)apply(await api('crmLoad'))}catch(_){}},20000)}
 init();

@@ -7,7 +7,7 @@ const { def, can, ApiError, audit, bump, str, J, P } = require('./api');
 
 const KINDS = { photo: 'Фото', plan: 'Планировка', doc: 'Документ', tpl: 'Шаблон' };
 const DOC_TYPES = { contract: 'Договор с собственником', egrn: 'Выписка ЕГРН', title: 'Правоустанавливающие документы', id: 'Документы собственника', tech: 'Техпаспорт / план БТИ', other: 'Прочее' };
-const MAX = { photo: 15e6, plan: 15e6, doc: 30e6, tpl: 30e6 };
+const MAX = { photo: 15e6, plan: 15e6, doc: 30e6, tpl: 60e6 };
 const IMG = /^image\/(jpeg|png|webp)$/;
 
 let DIR = null;

@@ -91,7 +91,7 @@ function loadAll(db, user) {
     deals: db.prepare('SELECT data FROM deals').all().map(r => P(r.data)).filter(Boolean),
     clients: db.prepare('SELECT data FROM counterparties').all().map(r => P(r.data)).filter(Boolean),
     plans,
-    me: meOf(user)
+    me: Object.assign(meOf(user), { photo: require('./prefs').get(db, user.id).photo || 0 })
   };
 }
 

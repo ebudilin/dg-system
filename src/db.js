@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 5;
+const SCHEMA = 6;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -153,6 +153,15 @@ function migrate(db) {
         db.prepare('UPDATE inquiries SET data=? WHERE id=?').run(JSON.stringify(q), r.id);
       }
       setMeta(db, 'schema', '5');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 6) {
+    // Настройки пользователя: сотрудник в телефонии, агент в финансах, Max
+    safetyCopy(db, 'schema-6');
+    tx(db, () => {
+      const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+      if (!cols.includes('prefs')) db.exec("ALTER TABLE users ADD COLUMN prefs TEXT NOT NULL DEFAULT '{}'");
+      setMeta(db, 'schema', '6');
     });
   }
 }

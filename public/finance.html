@@ -153,6 +153,28 @@ dialog .tbl-wrap{max-height:none}
 .appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
 .appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
 @media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
+.team-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.team-kpi div{display:flex;flex-direction:column;gap:2px;background:var(--sunk);border-radius:8px;padding:8px 10px}
+.team-kpi span{font-size:12px;color:var(--muted)}.team-kpi b{font-family:var(--font-num);font-size:16px}
+.team-rec{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.team-rec li.neg::marker{color:var(--neg)}.team-rec li.warn::marker{color:var(--warn)}.team-rec li.pos::marker{color:var(--pos)}
+.team-cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));margin-top:14px}
+.team-card{scroll-margin-top:200px;transition:box-shadow .3s}.team-card.flash{box-shadow:0 0 0 3px var(--accent)}
+.team-tbl td,.team-tbl th{white-space:nowrap}
+@media (max-width:420px){.team-cards{grid-template-columns:minmax(0,1fr)}}
+/* меню пользователя */
+.me-wrap{position:relative}
+.who .me-chip{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;font-size:12px}
+.who .me-chip:hover{border-color:var(--muted)}
+.me-chip .nm{display:flex;flex-direction:column;line-height:1.2;text-align:left;color:var(--muted)}.me-chip .nm b{color:var(--ink);font-size:13px}
+.ava{border-radius:50%;object-fit:cover;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;vertical-align:middle}
+.me-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:230px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:30;display:flex;flex-direction:column}
+.me-menu[hidden]{display:none}
+.who .me-menu button{border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--ink)}
+.who .me-menu button:hover{background:var(--sunk)}
+.me-menu .mh{padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;font-size:12px;color:var(--muted)}.me-menu .mh b{display:block;color:var(--ink);font-size:14px}
+@media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
+.prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 </style>
 </head><body>
 
@@ -244,11 +266,11 @@ const CP_SHORT={owner:'Собственник',buyer:'Покупатель',tena
 /* ---------- state ---------- */
 let dbState='connecting', cfg=structuredClone(DEFAULT_CFG), cfgExists=false;
 const opsByMonth={}; let deals={}, plans={}, clients={}, archOps=[];
-const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['settings','Настройки']];
+const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['team','Команда'],['settings','Настройки']];
 let ME=null;
 const isOwner=()=>!!ME&&ME.role==='owner', canEdit=()=>!!ME&&ME.finance==='edit';
 const TABS=ALL_TABS.filter(t=>true);
-function syncTabs(){TABS.length=0;ALL_TABS.forEach(t=>{if((t[0]==='settings'||t[0]==='access')&&!isOwner())return;TABS.push(t)});if(!TABS.some(t=>t[0]===V.tab))V.tab='summary'}
+function syncTabs(){TABS.length=0;ALL_TABS.forEach(t=>{if((t[0]==='settings'||t[0]==='access'||t[0]==='team')&&!isOwner())return;TABS.push(t)});if(!TABS.some(t=>t[0]===V.tab))V.tab='summary'}
 const hashTab=(location.hash||'').slice(1);
 const V={tab:TABS.some(t=>t[0]===hashTab)?hashTab:'summary', month:curMonth(), year:curMonth().slice(0,4), f:{acc:'',cat:'',type:'',q:''}, dealF:'active', cq:'', cpType:''};
 let draft=null, draftDirty=false;
@@ -428,7 +450,7 @@ function render(){
   const app=$('#app');let h='';
   if(dbState==='none')h+=`<div class="banner">Не удалось загрузить данные. ${esc(loadErr)} Обновите страницу; если не помогло — проверьте, что у вас есть доступ к таблице.</div>`;
   if(dbState==='connecting')h+=`<div class="banner" style="background:var(--sunk)">Загружаю данные…</div>`;
-  h+=({summary:vSummary,ops:vOps,deals:vDeals,clients:vClients,cash:vCash,pnl:vPnl,plan:vPlan,settings:vSettings,access:vAccess}[V.tab])();
+  h+=({summary:vSummary,ops:vOps,deals:vDeals,clients:vClients,cash:vCash,pnl:vPnl,plan:vPlan,settings:vSettings,access:vAccess,team:vTeam}[V.tab])();
   app.innerHTML=h;
   const rw=app.querySelector('.report');if(rw&&V.year===curMonth().slice(0,4)){const i=+curMonth().slice(5,7);const th=rw.querySelectorAll('th')[i];if(th)rw.scrollLeft=Math.max(0,th.offsetLeft-rw.clientWidth+th.offsetWidth*2)}
 }
@@ -1005,7 +1027,7 @@ async function saveCfg(){
 function renderWho(){const el=$('#who');if(!el||!ME)return;
   document.body.classList.toggle('ro',!canEdit());
   const short=ME.role==='owner'?'учредитель':('финансы: '+(ME.finance==='edit'?'ввод':'просмотр'));
-  el.innerHTML=`<span><b>${esc(ME.name)}</b><br>${esc(short)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`;
+  el.innerHTML=meChip(short);
   if(ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}}
 document.addEventListener('click',async e=>{
   if(e.target.closest('#logout')){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}
@@ -1080,6 +1102,100 @@ $('#app').addEventListener('click',async e=>{const b=e.target.closest('[data-acc
   }catch(err){toast(err.message)}});
 
 window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(TABS.some(t=>t[0]===k)&&k!==V.tab){V.tab=k;render()}});
+/* ---------- Команда: работа и результат каждого агента (только учредитель) ---------- */
+const TEAM={d:null,t:0,loading:false,open:null};
+V.tp=V.tp||'m';
+async function teamLoad(){if(TEAM.loading)return;TEAM.loading=true;try{TEAM.d=await api('teamData');TEAM.t=Date.now()}catch(e){toast(e.message)}TEAM.loading=false;if(V.tab==='team')render()}
+function teamRange(){const m=V.month;if(V.tp==='q'){const q=Math.floor((+m.slice(5,7)-1)/3)*3+1,s=m.slice(0,4)+'-'+pad(q);return {from:s+'-01',to:addM(s,3)+'-01',label:(Math.floor((q-1)/3)+1)+' квартал '+m.slice(0,4)}}
+  if(V.tp==='y')return {from:m.slice(0,4)+'-01-01',to:(+m.slice(0,4)+1)+'-01-01',label:m.slice(0,4)+' год'};
+  if(V.tp==='r')return {from:addM(m,-11)+'-01',to:addM(m,1)+'-01',label:'12 месяцев по '+mLabel(m).toLowerCase()};
+  return {from:m+'-01',to:addM(m,1)+'-01',label:mLabel(m)}}
+const SHOWN_ST=['shown','thinking','talks','deposit','deal'];
+function agentStats(u,d,R){
+  const now=Date.now(),td=todayStr(),D30=now-30*864e5,inR=ms=>{const s=new Date(ms+3*3600e3).toISOString().slice(0,10);return s>=R.from&&s<R.to};
+  const objs=d.objects.filter(o=>o.responsibleId===u.id),work=objs.filter(o=>['active','deposit','paused'].includes(o.status)),ids=new Set(objs.map(o=>o.id));
+  const leadsOpen=d.leads.filter(l=>l.ownerId===u.id&&['new','work','show','talks'].includes(l.stage));
+  const openT=d.tasks.filter(t=>!t.done),mineT=openT.filter(t=>t.assigneeId===u.id||(t.coIds||[]).map(Number).includes(u.id));
+  const overdue=mineT.filter(t=>t.due&&t.due<td),noStep=leadsOpen.filter(l=>!openT.some(t=>t.leadId===l.id));
+  const calls=d.calls.filter(c=>c.userId===u.id),c30=calls.filter(c=>c.at>=D30),missed=c30.filter(c=>c.dir==='in'&&c.lost),unproc=calls.filter(c=>c.status==='new');
+  const lateCb=overdue.filter(t=>/^Перезвонить/.test(t.title));
+  const inq=d.inquiries.filter(q=>ids.has(q.objectId)),inqR=inq.filter(q=>inR(q.at)),showsR=inqR.filter(q=>SHOWN_ST.includes(q.stage)||(q.stage==='declined'&&q.showTaskId));
+  const cand=inq.filter(q=>q.who!=='agent'&&['declined','noreply'].includes(q.stage)&&!q.leadId&&q.svc!=='refused');
+  const lastOwner=o=>{const oc=(d.objContact||{})[o.id]||{};return Math.max(oc.call||0,oc.report||0,...(o.owners||[]).map(id=>(d.lastContact||{})[id]||0))};
+  const ownersLate=work.filter(o=>{const l=lastOwner(o)||o.activeSince||o.createdAt||0;return now-l>14*864e5});
+  const noPhoto=work.filter(o=>!((d.files||{})[o.id]&&(d.files||{})[o.id].photo));
+  const stale=work.filter(o=>o.status==='active'&&o.activeSince&&now-o.activeSince>60*864e5&&now-Math.max(o.activeSince,...(o.priceHistory||[]).map(p=>p.at||0))>30*864e5);
+  // деньги — из финансов, по агенту, к которому привязан пользователь
+  const cp=u.finAgentId;let earned=0,company=0,closed=[],inWork=[],pipe=0;
+  if(cp){const mine=Object.values(deals).filter(x=>dealAgents(x).some(a=>a.agentId===cp));
+    mine.forEach(x=>{const st=dealStats(x);if(x.status==='work'||x.status==='deal'){inWork.push(x);pipe+=st.left}
+      if(x.status==='closed'){const last=st.ops.filter(o=>o.type==='in').map(o=>o.date).sort().pop()||x.date||'';if(last>=R.from&&last<R.to)closed.push(x)}});
+    for(const o of reportOps()){if(o.type!=='in'||o.date<R.from||o.date>=R.to)continue;const acc=agentAccruals(o),my=acc.filter(a=>a.agentId===cp).reduce((s,a)=>s+a.amount,0);
+      const dd=o.dealId?deals[o.dealId]:null,inDeal=dd&&dealAgents(dd).some(a=>a.agentId===cp);if(!my&&!inDeal)continue;
+      const tot=acc.reduce((s,a)=>s+a.amount,0),share=tot>0?my/tot:1/Math.max(1,dealAgents(dd).length);
+      earned+=my;company+=(o.amount-taxAccrual(o)-tot)*share}}
+  // порядок в работе: 100 минус штрафы
+  let order=100;order-=Math.min(30,overdue.length*5);order-=Math.min(20,noStep.length*5);order-=Math.min(20,unproc.length*5);order-=Math.min(15,ownersLate.length*5);order-=Math.min(15,noPhoto.length*5);order=Math.max(0,order);
+  // рекомендации
+  const rec=[],nm=o=>o.title||o.address||'объект',list=a=>a.slice(0,3).map(nm).join(', ')+(a.length>3?` и ещё ${a.length-3}`:'');
+  if(!cp)rec.push(['warn','Не привязан к агенту в финансах — заработок не считается. CRM → «Доступ» → «Связи».']);
+  if(overdue.length)rec.push([overdue.length>=3?'neg':'warn',`Просрочено задач: ${overdue.length}${lateCb.length?`, из них перезвонить — ${lateCb.length}`:''}. Разобрать: закрыть сделанное, перенести остальное.`]);
+  if(unproc.length)rec.push(['neg',`Не разобрано новых номеров: ${unproc.length}. Каждый звонок — в обращение по объекту, заявку или «не клиент».`]);
+  if(noStep.length)rec.push(['warn',`У ${noStep.length} заявок нет следующего шага — поставить задачи.`]);
+  if(ownersLate.length)rec.push(['warn',`Собственники без новостей больше 2 недель: ${list(ownersLate)}. Позвонить и отправить отчёт.`]);
+  if(stale.length)rec.push(['warn',`Долго в экспозиции без пересмотра цены: ${list(stale)}. Обсудить цену с собственником на основе звонков и показов.`]);
+  if(noPhoto.length)rec.push(['warn',`Нет фото в карточке: ${list(noPhoto)}.`]);
+  if(cand.length>=1)rec.push(['pos',`${cand.length} прямых интересантов, которым объект не подошёл, — предложить им подбор. Это готовые клиенты.`]);
+  if(inqR.length>=5&&showsR.length===0)rec.push(['warn',`Обращений за период ${inqR.length}, а показов нет — проработать разговор по скрипту из справочника и сразу приглашать на показ.`]);
+  if(inWork.length&&!closed.length&&V.tp!=='m')rec.push(['warn',`${inWork.length} сделок в работе и ни одной закрытой за период — разобрать вместе, что мешает дожать.`]);
+  if(!work.length&&!leadsOpen.length)rec.push(['neg','Нет объектов и заявок в работе — дать заявки или поставить цель по привлечению собственников.']);
+  if(!rec.length||rec.every(r=>r[0]==='pos'))rec.push(['pos','В работе порядок. Можно давать больше заявок и объектов.']);
+  return {u,objs,work,leadsOpen,mineT,overdue,noStep,c30,missed,unproc,inqR,showsR,cand,ownersLate,noPhoto,stale,earned,company,closed,inWork,pipe,order,rec}}
+function vTeam(){
+  if(!isOwner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
+  if(!TEAM.d){teamLoad();return '<div class="card empty">Загружаю данные по команде…</div>'}
+  if(Date.now()-TEAM.t>60000)setTimeout(teamLoad,0);
+  const d=TEAM.d,R=teamRange(),users=d.users.filter(u=>u.active&&u.role!=='viewer');
+  const S=users.map(u=>agentStats(u,d,R)).sort((a,b)=>(b.company+b.earned)-(a.company+a.earned)||a.u.name.localeCompare(b.u.name,'ru'));
+  const tot=k=>S.reduce((s,x)=>s+(typeof x[k]==='number'?x[k]:x[k].length),0);
+  const oc=o=>o>=80?'pos':o>=50?'warn':'neg';
+  let h=`<div class="toolbar" style="margin-top:14px"><div class="seg" role="group">${[['m','Месяц'],['q','Квартал'],['y','Год'],['r','12 месяцев']].map(([k,l])=>`<button type="button" data-tp="${k}" aria-pressed="${V.tp===k}">${l}</button>`).join('')}</div>
+    <span class="muted" style="align-self:center">Результат — за ${esc(R.label.toLowerCase())}; работа — на сегодня. Период листается стрелками вверху.</span></div>
+  <div class="tiles" style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <div class="tile"><span class="k">Закрыто сделок</span><span class="v">${tot('closed')}</span><span class="s">в работе: ${tot('inWork')}</span></div>
+    <div class="tile"><span class="k">Заработали агенты</span><span class="v">${moneyS(tot('earned'))}</span><span class="s">начислено за период</span></div>
+    <div class="tile"><span class="k">Заработала компания</span><span class="v">${moneyS(tot('company'))}</span><span class="s">после налога и агентских</span></div>
+    <div class="tile"><span class="k">Просрочено задач</span><span class="v ${tot('overdue')?'neg':''}">${tot('overdue')}</span><span class="s">не разобрано номеров: ${tot('unproc')}</span></div></div>
+  <div class="tbl-wrap" style="margin-top:14px"><table class="team-tbl"><thead><tr><th>Агент</th><th class="r">Объекты</th><th class="r">Заявки</th><th class="r">Сделки</th><th class="r">Задачи / просроч.</th><th class="r">Звонки 30 дн. / не разобр.</th><th class="r">Обращения / показы</th><th class="r">Закрыто</th><th class="r">Заработал</th><th class="r">Компании</th><th class="r">Порядок</th></tr></thead><tbody>
+  ${S.map(x=>`<tr class="click" data-agent="${x.u.id}"><td>${ava(x.u.id,x.u.photo,x.u.name,26)} <b>${esc(x.u.name)}</b>${x.u.finAgentId?'':' <span class="muted" style="font-size:11px">нет связи с финансами</span>'}</td>
+    <td class="r num">${x.work.length}</td><td class="r num">${x.leadsOpen.length}${x.noStep.length?` <span class="warn" title="без следующего шага">(${x.noStep.length})</span>`:''}</td><td class="r num">${x.inWork.length}</td>
+    <td class="r num">${x.mineT.length} / <span class="${x.overdue.length?'neg':''}">${x.overdue.length}</span></td><td class="r num">${x.c30.length} / <span class="${x.unproc.length?'neg':''}">${x.unproc.length}</span></td>
+    <td class="r num">${x.inqR.length} / ${x.showsR.length}</td><td class="r num">${x.closed.length}</td><td class="r num">${money(x.earned)}</td><td class="r num">${money(x.company)}</td>
+    <td class="r"><span class="chip ${oc(x.order)==='pos'?'in':oc(x.order)==='neg'?'out':'work'}">${x.order}</span></td></tr>`).join('')}</tbody></table></div>
+  <p class="note">«Порядок» — 100 баллов минус просроченные задачи, заявки без следующего шага, неразобранные звонки, собственники без новостей и объекты без фото. Нажмите на агента — ниже его разбор и рекомендации.</p>`;
+  h+=`<div class="team-cards">${S.map(x=>`<div class="card team-card" id="ag-${x.u.id}"><div class="r2" style="justify-content:space-between;align-items:baseline;flex-wrap:wrap"><h3 style="font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink);margin:0;display:flex;align-items:center;gap:8px">${ava(x.u.id,x.u.photo,x.u.name,36)}${esc(x.u.name)}</h3><span class="chip ${oc(x.order)==='pos'?'in':oc(x.order)==='neg'?'out':'work'}">Порядок ${x.order}</span></div>
+    <div class="team-kpi"><div><span>Заработал</span><b>${money(x.earned)}</b></div><div><span>Для компании</span><b>${money(x.company)}</b></div><div><span>Закрыто сделок</span><b>${x.closed.length}</b></div><div><span>В работе, к получению</span><b>${moneyS(x.pipe)}</b></div></div>
+    <ul class="team-rec">${x.rec.map(([t,txt])=>`<li class="${t}">${esc(txt)}</li>`).join('')}</ul>
+    ${x.closed.length?`<p class="note" style="margin:6px 0 0">Закрыты: ${x.closed.map(dd=>esc(dealLabel(dd))).join('; ')}</p>`:''}</div>`).join('')}</div>`;
+  return h}
+document.addEventListener('click',e=>{if(V.tab!=='team')return;const t=e.target.closest('[data-tp]');if(t){V.tp=t.dataset.tp;render();return}
+  const a=e.target.closest('[data-agent]');if(a){const el=document.getElementById('ag-'+a.dataset.agent);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1200)}}});
+
+/* ---------- аватар и меню пользователя ---------- */
+const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const ava=(id,ver,name,size)=>ver?`<img class="ava" src="/avatar/${id}.jpg?v=${ver}" alt="" style="width:${size}px;height:${size}px">`:`<span class="ava" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.4)}px">${esc(initials(name))}</span>`;
+function meChip(roleTxt){return `<div class="me-wrap"><button type="button" class="me-chip" id="mechip" aria-haspopup="menu" aria-expanded="false">${ava(ME.id,ME.photo,ME.name,32)}<div class="nm"><b>${esc(ME.name)}</b>${esc(roleTxt)}</div><span class="car" aria-hidden="true" style="color:var(--muted)">▾</span></button>
+  <div class="me-menu" id="memenu" role="menu" hidden><div class="mh"><b>${esc(ME.name)}</b>${esc(roleTxt)}</div><button type="button" data-me="profile">Мой профиль</button><button type="button" data-me="pw">Сменить пароль</button><button type="button" data-me="logout">Выйти</button></div></div>`}
+document.addEventListener('click',async e=>{const menu=$('#memenu');if(!menu)return;
+  if(e.target.closest('#mechip')){menu.hidden=!menu.hidden;$('#mechip').setAttribute('aria-expanded',String(!menu.hidden));return}
+  const it=e.target.closest('[data-me]');
+  if(!e.target.closest('#memenu')||it){menu.hidden=true}
+  if(!it)return;
+  if(it.dataset.me==='profile'){if(typeof openProfile==='function')openProfile();else location.href='/#profile'}
+  else if(it.dataset.me==='pw')openPw(false);
+  else if(it.dataset.me==='logout'){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu');if(m)m.hidden=true}});
+
 init();
 })();
 </script>

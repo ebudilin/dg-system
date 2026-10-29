@@ -12,6 +12,9 @@ const CIAN = require('./cian');
 const NOVOFON = require('./novofon');
 require('./inquiries');
 const KB = require('./kb');
+require('./prefs');
+const MAX = require('./max');
+require('./team');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -23,6 +26,7 @@ const db = open(DB_FILE);
 setInterval(() => { try { auth.purgeSessions(db); } catch (_) {} }, 3600e3).unref();
 KB.seed(db);
 NOVOFON.start(db);
+MAX.start(db);
 
 const pages = {};
 function page(name) {
@@ -43,11 +47,11 @@ function send(res, status, body, type, extra) {
 }
 const json = (res, status, obj, extra) => send(res, status, JSON.stringify(obj), 'application/json; charset=utf-8', extra);
 
-function readBody(req, limit) {
+function readBody(req, limit, raw) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
     req.on('data', c => { size += c.length; if (size > limit) { reject(new ApiError('Слишком большой запрос.', 413)); req.destroy(); } else chunks.push(c); });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('end', () => { const b = Buffer.concat(chunks); resolve(raw ? b : b.toString('utf8')); });
     req.on('error', reject);
   });
 }
@@ -136,12 +140,28 @@ async function handle(req, res) {
     if (!FILES.serve(db, res, mm[1], !!mm[2], SEC_HEADERS)) send(res, 404, 'Файл не найден');
     return;
   }
+  // фото сотрудников
+  mm = p.match(/^\/avatar\/(\d+)\.jpg$/);
+  if (mm && req.method === 'GET') {
+    if (!currentUser(req)) return send(res, 401, 'Войдите в систему');
+    const f = require('./prefs').avatarPath(db, mm[1]);
+    if (!fs.existsSync(f)) return send(res, 404, 'Нет фото');
+    res.writeHead(200, Object.assign({}, SEC_HEADERS, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=86400', 'Content-Length': fs.statSync(f).size }));
+    return fs.createReadStream(f).pipe(res);
+  }
+  if (p === '/avatar' && req.method === 'POST') {
+    const u = currentUser(req);
+    if (!u) return json(res, 401, { error: 'Сессия закончилась. Войдите заново.' });
+    if (!sameOrigin(req)) return json(res, 403, { error: 'Запрос отклонён.' });
+    const body = await readBody(req, 3e6, true);
+    return json(res, 200, { result: require('./prefs').saveAvatar(db, u, body) });
+  }
   if (p === '/upload' && req.method === 'POST') {
     const u = currentUser(req);
     if (!u) return json(res, 401, { error: 'Сессия закончилась. Войдите заново.' });
     if (!sameOrigin(req)) return json(res, 403, { error: 'Запрос отклонён.' });
     const body = await new Promise((resolve, reject) => { const ch = []; let n = 0;
-      req.on('data', c => { n += c.length; if (n > 32e6) { reject(new ApiError('Файл больше 30 МБ.', 413)); req.destroy(); } else ch.push(c); });
+      req.on('data', c => { n += c.length; if (n > 62e6) { reject(new ApiError('Файл больше 60 МБ.', 413)); req.destroy(); } else ch.push(c); });
       req.on('end', () => resolve(Buffer.concat(ch))); req.on('error', reject); });
     return json(res, 200, { result: FILES.upload(db, u, url.searchParams, body) });
   }

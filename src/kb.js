@@ -3,11 +3,12 @@
 // Читают все; правят учредитель и те, кому он разрешил.
 const fs = require('node:fs');
 const { getMeta, setMeta } = require('./db');
-const { def, ApiError, audit, bump, tx, str, J, P } = require('./api');
+const { def, can, ApiError, audit, bump, tx, str, J, P } = require('./api');
 
 const KINDS = ['price', 'article', 'tpl'];
-const TPL_CATS = { services: 'Договоры на услуги агентства', sale: 'Купля-продажа', rent: 'Аренда и наём', deposit: 'Аванс и задаток', acts: 'Акты, расписки, согласия', other: 'Прочее' };
+const TPL_CATS = { pres: 'Презентации для клиентов', services: 'Договоры на услуги агентства', sale: 'Купля-продажа', rent: 'Аренда и наём', deposit: 'Аванс и задаток', acts: 'Акты, расписки, согласия', other: 'Прочее' };
 const ART_CATS = ['Работа в CRM', 'Звонки и показы', 'Сделки', 'Прочее'];
+const CO_CATS = ['Продукты', 'Аптеки', 'Банки', 'Кафе и рестораны', 'Фастфуд', 'Одежда и обувь', 'Косметика', 'Алкоголь и табак', 'Пункты выдачи', 'Фитнес', 'Медицина', 'Другое'];
 const now = () => Date.now();
 const uid = p => p + '_' + now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -25,7 +26,7 @@ function load(db, u) {
   return {
     items: items(db).map(x => x.kind === 'tpl' ? Object.assign(x, { file: file(db, x.fileId) }) : x),
     canEdit: canEdit(db, u), editors: u.role === 'owner' ? editors(db) : undefined,
-    tplCats: TPL_CATS, artCats: ART_CATS
+    tplCats: TPL_CATS, artCats: ART_CATS, coCats: CO_CATS, canCo: can(u, 'crm_w')
   };
 }
 
@@ -218,5 +219,98 @@ function seed(db) {
     setMeta(db, 'kbSeeded', '1');
   });
 }
+
+/* ---------- сети и арендаторы: компания и несколько контактов с комментариями ---------- */
+const cuid = p => p + '_' + now().toString(36) + Math.random().toString(36).slice(2, 7);
+function cleanContact(c, prev) {
+  return { id: (prev && prev.id) || str(c.id, 64) || cuid('ct'), name: str(c.name, 200).trim(), role: str(c.role, 200).trim(), phone: str(c.phone, 100).trim(),
+    email: str(c.email, 200).trim(), notes: (prev && prev.notes) || [] };
+}
+function getCo(db, id) { const r = db.prepare("SELECT data FROM kb WHERE id=? AND kind='company'").get(str(id, 64)); return r ? P(r.data) : null; }
+function putCo(db, c) { c.updatedAt = now(); db.prepare('INSERT INTO kb(id,kind,sort,updated_at,data) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at, data=excluded.data').run(c.id, 'company', c.sort || 0, c.updatedAt, J(c)); }
+const needW = u => { if (!can(u, 'crm_w')) throw new ApiError('Недостаточно прав.', 403); };
+
+def('kbSaveCompany', null, (db, u, x) => {
+  needW(u);
+  tx(db, () => {
+    const prev = x && x.id ? getCo(db, x.id) : null;
+    const c = { id: (prev && prev.id) || cuid('co'), kind: 'company', sort: (prev && prev.sort) || now(), name: str(x.name, 200).trim(), cat: str(x.cat, 100).trim() || 'Другое',
+      site: str(x.site, 300).trim(), reqs: str(x.reqs, 3000), note: str(x.note, 3000), by: (prev && prev.by) || u.name, contacts: (prev && prev.contacts) || [] };
+    if (!c.name) throw new ApiError('Укажите название компании.');
+    const dup = db.prepare("SELECT data FROM kb WHERE kind='company'").all().map(r => P(r.data)).find(o => o && o.id !== c.id && o.name.toLowerCase() === c.name.toLowerCase());
+    if (dup) throw new ApiError(`Компания «${dup.name}» уже есть в справочнике.`);
+    putCo(db, c);
+    audit(db, u, prev ? 'изменение' : 'создание', 'компания', c.id, prev, c);
+    bump(db);
+  });
+  return load(db, u);
+});
+def('kbDeleteCompany', null, (db, u, id) => {
+  needW(u);
+  const c = getCo(db, id);
+  if (!c) return load(db, u);
+  if (c.contacts.length && !canEdit(db, u)) throw new ApiError('Компанию с контактами удаляет учредитель или редактор справочника.');
+  db.prepare('DELETE FROM kb WHERE id=?').run(c.id);
+  audit(db, u, 'удаление', 'компания', c.id, c, null); bump(db);
+  return load(db, u);
+});
+def('kbSaveContact', null, (db, u, companyId, x) => {
+  needW(u);
+  tx(db, () => {
+    const c = getCo(db, companyId); if (!c) throw new ApiError('Компания не найдена.');
+    const i = x && x.id ? c.contacts.findIndex(k => k.id === x.id) : -1;
+    const k = cleanContact(x || {}, i >= 0 ? c.contacts[i] : null);
+    if (!k.name && !k.phone && !k.email) throw new ApiError('Укажите имя, телефон или почту контакта.');
+    if (i >= 0) c.contacts[i] = k; else { k.by = u.name; k.at = now(); c.contacts.push(k); }
+    if (x && String(x.comment || '').trim()) k.notes.push({ text: str(x.comment, 2000).trim(), by: u.name, at: now() });
+    putCo(db, c); audit(db, u, i >= 0 ? 'изменение контакта' : 'новый контакт', 'компания', c.id, null, k); bump(db);
+  });
+  return load(db, u);
+});
+def('kbDeleteContact', null, (db, u, companyId, contactId) => {
+  needW(u);
+  const c = getCo(db, companyId); if (!c) throw new ApiError('Компания не найдена.');
+  const k = c.contacts.find(x => x.id === contactId);
+  c.contacts = c.contacts.filter(x => x.id !== contactId);
+  putCo(db, c); audit(db, u, 'удаление контакта', 'компания', c.id, k, null); bump(db);
+  return load(db, u);
+});
+def('kbContactComment', null, (db, u, companyId, contactId, text) => {
+  needW(u);
+  const c = getCo(db, companyId); if (!c) throw new ApiError('Компания не найдена.');
+  const k = c.contacts.find(x => x.id === contactId); if (!k) throw new ApiError('Контакт не найден.');
+  if (!String(text || '').trim()) throw new ApiError('Напишите комментарий.');
+  k.notes.push({ text: str(text, 2000).trim(), by: u.name, at: now() });
+  putCo(db, c); bump(db);
+  return load(db, u);
+});
+// вставка из таблицы: Компания | Контакт | Должность | Телефон | Email | Комментарий | Категория
+def('kbImportCompanies', null, (db, u, text) => {
+  needW(u);
+  const rows = String(text || '').split(/\r?\n/).map(l => l.split(/\t|;/).map(x => x.trim())).filter(r => r[0]);
+  if (rows.length && /компан|сеть|название/i.test(rows[0][0])) rows.shift();
+  if (!rows.length) throw new ApiError('Вставьте строки из таблицы: Компания, Контакт, Должность, Телефон, Email, Комментарий, Категория.');
+  let nCo = 0, nCt = 0;
+  tx(db, () => {
+    const all = db.prepare("SELECT data FROM kb WHERE kind='company'").all().map(r => P(r.data)).filter(Boolean);
+    const byName = {}; all.forEach(c => { byName[c.name.toLowerCase()] = c; });
+    const touched = new Set();
+    rows.slice(0, 2000).forEach(([name, cname, role, phone, email, comment, cat]) => {
+      let c = byName[name.toLowerCase()];
+      if (!c) { c = { id: cuid('co'), kind: 'company', sort: now(), name: str(name, 200), cat: str(cat, 100) || 'Другое', site: '', reqs: '', note: '', by: u.name, contacts: [] }; byName[name.toLowerCase()] = c; nCo++; }
+      else if (cat && c.cat === 'Другое') c.cat = str(cat, 100);
+      if (cname || phone || email) {
+        const ex = c.contacts.find(k => (phone && k.phone && k.phone.replace(/\D/g, '').slice(-10) === phone.replace(/\D/g, '').slice(-10)) || (cname && k.name.toLowerCase() === cname.toLowerCase()));
+        if (!ex) { const k = cleanContact({ name: cname, role, phone, email }); k.by = u.name; k.at = now(); if (comment) k.notes.push({ text: str(comment, 2000), by: u.name, at: now() }); c.contacts.push(k); nCt++; }
+        else if (comment && !ex.notes.some(n => n.text === comment)) ex.notes.push({ text: str(comment, 2000), by: u.name, at: now() });
+      }
+      touched.add(c);
+    });
+    touched.forEach(c => putCo(db, c));
+    audit(db, u, 'импорт компаний', 'справочник', null, null, { companies: nCo, contacts: nCt });
+    bump(db);
+  });
+  return Object.assign(load(db, u), { imported: { companies: nCo, contacts: nCt } });
+});
 
 module.exports = { canEdit, seed, items };

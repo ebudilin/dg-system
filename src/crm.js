@@ -36,8 +36,8 @@ function crmLoad(db, u) {
   const monthAgo = now() - 45 * 86400e3;
   return {
     version: Number(getMeta(db, 'version') || 0),
-    me: meOf(u),
-    users: db.prepare('SELECT id, name, active FROM users ORDER BY name').all().map(r => ({ id: r.id, name: r.name, active: !!r.active })),
+    me: Object.assign(meOf(u), { photo: require('./prefs').get(db, u.id).photo || 0 }),
+    users: db.prepare('SELECT id, name, active, prefs FROM users ORDER BY name').all().map(r => { const p = P(r.prefs || '{}') || {}; return { id: r.id, name: r.name, active: !!r.active, photo: p.photo || 0, position: (p.card && p.card.position) || '' }; }),
     clients: rows('counterparties'),
     deals: rows('deals').map(d => stripDeal(d, fin)),
     leads: rows('leads', 'updated_at DESC'),
@@ -159,6 +159,7 @@ function cleanLead(db, l, prev) {
     stageAt: (prev && prev.stage === l.stage && prev.stageAt) || now(),
     updatedAt: now()
   };
+  if (prev && prev.mxSent) x.mxSent = prev.mxSent;
   return x;
 }
 
@@ -324,6 +325,7 @@ def('saveTask', 'crm_w', (db, u, t) => {
       createdBy: (prev && prev.createdBy) || u.id, createdAt: (prev && prev.createdAt) || now(), updatedAt: now()
     };
     if (prev && prev.tipKey) x.tipKey = prev.tipKey;
+    if (prev && prev.mxSent) x.mxSent = prev.mxSent;
     // соисполнители: если не переданы — оставляем прежних
     const co = Array.isArray(t.coIds) ? t.coIds : ((prev && prev.coIds) || []);
     x.coIds = [...new Set(co.map(Number))].filter(id => id && id !== x.assigneeId && userExists(db, id)).slice(0, 10);
