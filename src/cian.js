@@ -15,6 +15,8 @@ function settings(db) {
 }
 
 const digits = s => String(s || '').replace(/\D/g, '');
+// телефон в объявлении: виртуальный номер ответственного агента, иначе общий из настроек
+const forObj = (db, o, s) => Object.assign({}, s, { phone: require('./prefs').adPhone(db, o.responsibleId) || s.phone });
 const num = v => (v === '' || v == null || isNaN(+v)) ? null : +v;
 const esc = s => String(s == null ? '' : s).replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]))
   .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
@@ -83,9 +85,9 @@ function feed(db) {
     const o = P(r.data);
     if (!o || !o.cian || o.cian.state !== 'on') continue;
     if (!['active', 'deposit'].includes(o.status)) continue; // остановленные, срывы и проданные снимаются автоматически
-    const files = FILES.objectFiles(db, o.id);
-    if (check(o, files, s).length) continue;
-    out.push(objectXml(o, files, s));
+    const files = FILES.objectFiles(db, o.id), so = forObj(db, o, s);
+    if (check(o, files, so).length) continue;
+    out.push(objectXml(o, files, so));
   }
   return `<?xml version="1.0" encoding="UTF-8"?>\n<feed>\n<feed_version>2</feed_version>\n${out.join('\n')}\n</feed>\n`;
 }
@@ -94,10 +96,10 @@ function feed(db) {
 def('cianStatus', null, (db, u, objectId) => {
   const row = db.prepare('SELECT data FROM objects WHERE id=?').get(str(objectId, 64));
   if (!row) throw new ApiError('Объект не найден.');
-  const o = P(row.data), s = settings(db), files = FILES.objectFiles(db, o.id);
+  const o = P(row.data), s = forObj(db, P(row.data), settings(db)), files = FILES.objectFiles(db, o.id);
   const problems = check(o, files, s);
   return { state: (o.cian && o.cian.state) || 'off', cian: o.cian || null, problems, inFeed: !problems.length && o.cian && o.cian.state === 'on' && ['active', 'deposit'].includes(o.status),
-    preview: objectXml(o, files, s), states: STATES };
+    preview: objectXml(o, files, s), states: STATES, phone: s.phone, agentPhone: !!require('./prefs').adPhone(db, o.responsibleId) };
 });
 
 // staff: off ↔ ready; включить выгрузку (on) — только учредитель
@@ -108,7 +110,7 @@ def('setCianState', 'crm_w', (db, u, objectId, state) => {
     const row = db.prepare('SELECT data FROM objects WHERE id=?').get(str(objectId, 64));
     if (!row) throw new ApiError('Объект не найден.');
     const o = P(row.data);
-    if (state === 'on') { const pr = check(o, FILES.objectFiles(db, o.id), settings(db)); if (pr.length) throw new ApiError('Не хватает: ' + pr.join(', ') + '.'); }
+    if (state === 'on') { const pr = check(o, FILES.objectFiles(db, o.id), forObj(db, o, settings(db))); if (pr.length) throw new ApiError('Не хватает: ' + pr.join(', ') + '.'); }
     const prev = o.cian || null;
     o.cian = { state, by: u.name, at: Date.now() };
     db.prepare('UPDATE objects SET data=?, updated_at=? WHERE id=?').run(J(o), Date.now(), o.id);

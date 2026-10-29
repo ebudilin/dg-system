@@ -44,7 +44,7 @@ function crmLoad(db, u) {
     tasks: db.prepare('SELECT data FROM tasks WHERE done=0 OR updated_at>? ORDER BY due').all(monthAgo).map(r => P(r.data)).filter(Boolean),
     objects: rows('objects', 'updated_at DESC'),
     inq: require('./inquiries').inquiryCounts(db),
-    vnums: require('./inquiries').vnums(db),
+    vnums: require('./prefs').vnumMap(db),
     files: require('./files').counts(db),
     newCalls: require('./novofon').newCount(db),
     lastContact: lastContacts(db),

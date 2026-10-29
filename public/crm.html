@@ -1084,6 +1084,7 @@ function cianHtml(){const c=dlgCtx;if(!c.orig)return '<p class="muted">Снач�
     <div class="r2">${can()&&s.state==='off'?'<button type="button" data-cian="ready">Готов к выгрузке</button>':''}${owner()&&s.state!=='on'?`<button type="button" class="primary" data-cian="on" ${s.problems.length?'disabled title="Сначала заполните недостающее"':''}>Выгружать на ЦИАН</button>`:''}${can()&&s.state!=='off'?`<button type="button" class="danger" data-cian="off">${s.state==='on'?'Снять с выгрузки':'Отменить'}</button>`:''}</div></div>
     ${s.problems.length?`<div class="banner" style="margin:10px 0 0">Для выгрузки не хватает: <b>${esc(s.problems.join(', '))}</b>.</div>`:`<p class="note" style="margin:10px 0 0;${s.state==='on'?'color:var(--pos)':''}">${s.inFeed?'Объект в фиде ЦИАН. Изменения в карточке ЦИАН подхватит при следующей проверке фида.':s.state==='on'?'Выгрузка включена, но объект не в фиде: в фид идут только объекты со статусом «Активный» или «Задаток / бронь».':'Все обязательные поля заполнены.'}</p>`}
     ${s.state==='on'&&!owner()?'':''}
+    <p class="note" style="margin:8px 0 0">Телефон в объявлении: <b class="num">${esc(s.phone||'—')}</b> ${s.agentPhone?'— номер ответственного агента':'— общий номер агентства (у ответственного не закреплён свой номер: «Доступ» → «Связи…»)'}</p>
     <p class="note" style="margin:8px 0 0">Порядок: агент заполняет карточку и нажимает «Готов к выгрузке» → учредитель проверяет и включает выгрузку. Статусы «Остановлен», «Срыв», «Реализован» снимают объект из фида автоматически.</p>
     <details style="margin-top:8px"><summary class="muted" style="font-size:12px;cursor:pointer">Что уйдёт на ЦИАН (XML)</summary><pre class="xml">${esc(s.preview)}</pre></details></div>
     <p class="note">Другие площадки (Авито, Яндекс Недвижимость, Домклик) подключим так же, когда понадобится.</p>`}
@@ -1104,7 +1105,7 @@ function vCalls(){
   const nTodo=Object.keys(byPhone).length;
   const ST={new:'<span class="chip work">не разобран</span>',ignored:'<span class="chip">не клиент</span>',spam:'<span class="chip out">спам</span>',lead:'<span class="chip deal">заявка</span>',linked:''};
   const dirChip=c=>c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>';
-  const vm=c=>(D.vnums||{})[String(c.vnumber||'').replace(/\D/g,'')];
+  const vOwner=c=>{let d=String(c.vnumber||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);const id=(D.vnums||{})[d];return id?uName(id):''};
   const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`
     :c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`
     :c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
@@ -1115,7 +1116,7 @@ function vCalls(){
   if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
   h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
     ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td>
-      <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vm(c)&&vm(c).channel?' · '+esc(vm(c).channel):''}</div>`:''}</td>
+      <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vOwner(c)?' · номер '+esc(vOwner(c)):''}</div>`:''}</td>
       <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
       <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
       <td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`).join('')}</tbody></table></div>
@@ -1156,11 +1157,10 @@ function integHtml(){if(!INTEG.nf){integLoad();return '<div class="card"><p clas
       <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" id="nf-on" ${n.enabled?'checked':''}> Забирать звонки каждые 3 минуты</label></label></div>
     <div class="r2" style="margin-top:8px"><button type="button" class="primary" data-nf-save>Сохранить</button><button type="button" data-nf-sync ${n.hasKey?'':'disabled'}>Проверить и загрузить сейчас</button></div>
     <p class="note">${n.lastSync?`Последняя загрузка: ${dtFmt(n.lastSync)} — ${n.lastError?`<span class="neg">${esc(n.lastError)}</span>`:`успешно, новых звонков: ${n.lastCount}`}`:'Ещё не подключено.'}</p>
-    ${vnumHtml()}
     <p class="note">Где взять ключ: кабинет Novofon → настройки пользователя-администратора → вкладка API → «Использовать ключ API». Там же в «Настройки → Правила и настройки безопасности → API» добавьте IP сервера <b class="num">79.174.86.166</b> в белый список.</p></div>
     <div class="card"><h3>ЦИАН — XML-фид</h3>
     <label class="f"><span>Ссылка на фид (её указывают в ЦИАН)</span><div class="r2"><input id="cian-feed" value="${esc(feed)}" readonly><button type="button" data-copy-feed>Копировать</button></div></label>
-    <div class="fg" style="margin-top:8px"><label class="f"><span>Телефон в объявлениях</span><input id="cian-phone" value="${esc(c.phone)}"></label>
+    <div class="fg" style="margin-top:8px"><label class="f"><span>Общий телефон (если у агента нет своего номера)</span><input id="cian-phone" value="${esc(c.phone)}"></label>
       <div class="f" style="justify-content:flex-end"><button type="button" data-cian-save>Сохранить телефон</button></div></div>
     <p class="note">В фиде сейчас объектов: <b>${inFeed}</b>. ${ready.length?`Ждут вашего решения: ${ready.map(o=>`<a class="lnk" data-open-object="${esc(o.id)}">${esc(objName(o))}</a>`).join(', ')}.`:''}</p>
     <p class="note"><button type="button" class="ghost" data-cian-token style="padding:2px 6px;font-size:12px">Сменить ссылку на фид</button> — если ссылка попала не туда. Старая перестанет работать, новую нужно указать в ЦИАН.</p></div></div>`}
@@ -1303,8 +1303,8 @@ app.addEventListener('click',async e=>{
   if(e.target.closest('[data-qcand]')){V.qf.cand=!V.qf.cand;render();return}
   const l=e.target.closest('[data-iq-lead]');if(l){try{await run('inquiryToLead',l.dataset.iqLead);IQ.list=null;render();toast('Заявка на подбор создана — она во вкладке «Заявки»')}catch(_){}return}
   const r=e.target.closest('[data-iq-refuse]');if(r){try{await run('setInquirySvc',r.dataset.iqRefuse.split(','),'refused');IQ.list=null;render();toast('Отмечено: от услуг отказался')}catch(_){}return}
-  const co=e.target.closest('[data-call-obj]');if(co){const c=CALLS.list.find(x=>x.id===co.dataset.callObj);if(!c)return;const vm=(D.vnums||{})[String(c.vnumber||'').replace(/\D/g,'')]||{};
-    openInq({objectId:vm.objectId&&obj(vm.objectId)?vm.objectId:'',phone:ph(c.phone),channel:vm.channel||'',name:c.clientId&&cl(c.clientId)?clName(c.clientId):''},{call:c});return}
+  const co=e.target.closest('[data-call-obj]');if(co){const c=CALLS.list.find(x=>x.id===co.dataset.callObj);if(!c)return;
+    openInq({objectId:'',phone:ph(c.phone),channel:'',name:c.clientId&&cl(c.clientId)?clName(c.clientId):''},{call:c});return}
 });
 app.addEventListener('change',e=>{const t=e.target,m={'qf-who':'who','qf-stage':'stage','qf-obj':'obj','qf-days':'days'};if(m[t.id]){V.qf[m[t.id]]=t.value;render();return}if(t.id==='qf-cand'){V.qf.cand=t.checked;render()}});
 app.addEventListener('input',e=>{if(e.target.id==='qf-q'){V.qf.q=e.target.value;render()}});
@@ -1449,7 +1449,7 @@ function drawProfile(){const c=dlgCtx,p=PROF,k=c.o,N={tasks:'Новые зада
       <p class="note" style="margin:0">Код действует 30 минут. Окно обновится само, когда бот вас узнает.</p>`
     :`<p class="note" style="margin:0 0 8px">Бот агентства будет присылать задачи, заявки и новые звонки прямо в Max.</p><button type="button" class="primary" data-max-link>Подключить Max</button>`}
     <div class="checks" style="margin-top:12px;flex-direction:column;align-items:flex-start">${Object.entries(N).map(([key,l])=>`<label><input type="checkbox" data-notify="${key}" ${p.notify[key]?'checked':''}> ${l}</label>`).join('')}</div></div>
-    <div class="card" style="padding:14px"><h3>Телефония</h3><p style="margin:0">${p.novofonEmpName?`Вы в Novofon: <b>${esc(p.novofonEmpName)}</b>${p.novofonPhones?' · '+esc(p.novofonPhones):''}. Звонки, которые вы приняли, попадают к вам.`:'<span class="muted">Вы ещё не привязаны к сотруднику Novofon — попросите учредителя («Доступ» → «Связи»).</span>'}</p></div>
+    <div class="card" style="padding:14px"><h3>Телефония</h3>${(p.vnums||[]).length?`<p style="margin:0 0 6px">Ваш номер для клиентов: <b class="num">${p.vnums.map(esc).join(', ')}</b> — он стоит в ваших объявлениях, звонки на него приходят к вам.</p>`:''}<p style="margin:0">${p.novofonEmpName?`Вы в Novofon: <b>${esc(p.novofonEmpName)}</b>${p.novofonPhones?' · '+esc(p.novofonPhones):''}. Звонки, которые вы приняли, попадают к вам.`:'<span class="muted">Вы ещё не привязаны к сотруднику Novofon — попросите учредителя («Доступ» → «Связи»).</span>'}</p></div>
     <div class="acts"><div></div><div><button type="button" data-close>Закрыть</button></div></div>`}
 form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile')return;const b=e.target.closest('button');if(!b)return;
   try{
@@ -1474,20 +1474,28 @@ form.addEventListener('change',async e=>{const c=dlgCtx;if(!c||c.kind!=='profile
 async function openLinks(uid){let links,emps=null,empErr='';
   try{links=(await api('listUserLinks')).find(x=>x.id===uid)}catch(e){return toast(e.message)}
   try{emps=await api('novofonEmployees')}catch(e){empErr=e.message}
+  let seen=[];try{seen=(await api('vnumList')).map(v=>v.v)}catch(_){}
+  const norm=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===10)d='7'+d;if(d.length===11&&d[0]==='8')d='7'+d.slice(1);return d.length===11?d:''};
+  const mine=(links.vnums||[]).map(norm);seen=[...new Set([...mine,...seen.map(norm).filter(Boolean)])];
   const agents=D.clients.filter(c=>(c.types||[]).includes('agent')).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
   if(!links.finAgentId){const g=agents.find(a=>a.name.toLowerCase().split(/\s+/).some(w=>w.length>2&&links.name.toLowerCase().includes(w)));if(g)links.guess=g.id}
-  openDlg({kind:'links',o:{novofonEmpId:links.novofonEmpId,finAgentId:links.finAgentId||links.guess||''},links,emps,draw:()=>{const x=dlgCtx.o;
+  openDlg({kind:'links',o:{novofonEmpId:links.novofonEmpId,finAgentId:links.finAgentId||links.guess||'',vn:mine.slice(),vnExtra:''},links,emps,seen,draw:()=>{const x=dlgCtx.o,VM=D.vnums||{};
     form.innerHTML=`<h2>Связи — ${esc(links.name)}</h2>
       <label class="f"><span>Сотрудник в Novofon (по нему звонки распределяются на этого пользователя)</span>${emps?`<select name="novofonEmpId">${opt([['','— не привязан —'],...emps.map(e=>[e.id,e.name+(e.ext?' · доб. '+e.ext:'')+(e.phones.length?' · '+e.phones.join(', '):'')])],x.novofonEmpId)}</select>`:`<input name="novofonEmpId" value="${esc(x.novofonEmpId)}" placeholder="ID сотрудника Novofon"><span class="neg" style="font-size:12px">${esc(empErr)}</span>`}</label>
+      <div class="f"><span style="font-size:12px;color:var(--muted)">Виртуальные номера Novofon этого сотрудника — звонки на них попадают к нему, и этот же номер ставится в его объявления</span>
+        <div class="checks" style="flex-direction:column;align-items:flex-start;margin-top:4px">${seen.length?seen.map(n=>{const other=VM[n]&&VM[n]!==links.id?(D.users.find(u=>u.id===VM[n])||{}).name:'';
+          return `<label${other?' class="muted"':''}><input type="checkbox" data-vn-pick value="${n}" ${x.vn.includes(n)?'checked':''} ${other?'disabled':''}> <span class="num">${esc(ph(n))}</span>${other?' — у '+esc(other):''}</label>`}).join(''):'<span class="muted" style="font-size:12px">Номера появятся в списке после первых звонков на них. Можно вписать вручную ниже.</span>'}</div>
+        <input name="vnExtra" value="${esc(x.vnExtra)}" placeholder="Добавить номер вручную: +7 967 555-35-52" style="margin-top:6px"></div>
       <label class="f"><span>Агент в финансах (для заработка в отчёте «Команда»)</span><select name="finAgentId">${opt([['','— не привязан —'],...agents.map(a=>[a.id,a.name])],x.finAgentId)}</select></label>
       ${links.guess&&!links.finAgentId?'<p class="note" style="margin:0">Агент подобран по имени — проверьте и сохраните.</p>':''}
       <p class="note" style="margin:0">Max: ${links.maxLinked?'<span class="pos">подключён</span>':'не подключён (сотрудник подключает сам: «Профиль» → «Подключить Max»)'}</p>
       <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`}})}
 async function submitLinks(){const c=dlgCtx,x=c.o;const e=(c.emps||[]).find(e=>e.id===x.novofonEmpId);
-  try{await api('saveUserLinks',c.links.id,{novofonEmpId:x.novofonEmpId,novofonEmpName:e?e.name+(e.ext?' (доб. '+e.ext+')':''):'',novofonPhones:e?e.phones.join(', '):'',finAgentId:x.finAgentId});dlg.close();ACC.links=null;accLinks();toast('Сохранено')}catch(err){toast(err.message)}}
+  const vn=[...form.querySelectorAll('[data-vn-pick]:checked')].map(i=>i.value).concat(String(x.vnExtra||'').split(/[,;]/).filter(s=>s.trim()));
+  try{await api('saveUserLinks',c.links.id,{vnums:vn,novofonEmpId:x.novofonEmpId,novofonEmpName:e?e.name+(e.ext?' (доб. '+e.ext+')':''):'',novofonPhones:e?e.phones.join(', '):'',finAgentId:x.finAgentId});dlg.close();ACC.links=null;accLinks();apply(await api('crmLoad'));toast('Сохранено')}catch(err){toast(err.message)}}
 async function accLinks(){try{ACC.links=await api('listUserLinks');if(V.tab==='admin')render()}catch(_){}}
 const linkCell=u=>{const l=(ACC.links||[]).find(x=>x.id===u.id);if(!l)return '';
-  return `<div style="font-size:12px;line-height:1.5">${l.novofonEmpName?'☎ '+esc(l.novofonEmpName):'<span class="muted">☎ нет</span>'}<br>${l.finAgentId?'₽ '+esc(clName(l.finAgentId)||'агент'):'<span class="muted">₽ нет</span>'} · ${l.maxLinked?'<span class="pos">Max</span>':'<span class="muted">Max нет</span>'}</div>`};
+  return `<div style="font-size:12px;line-height:1.5">${(l.vnums||[]).length?'<span class="num">'+l.vnums.map(esc).join(', ')+'</span><br>':'<span class="muted">номер не закреплён</span><br>'}${l.novofonEmpName?'☎ '+esc(l.novofonEmpName):'<span class="muted">☎ нет</span>'}<br>${l.finAgentId?'₽ '+esc(clName(l.finAgentId)||'агент'):'<span class="muted">₽ нет</span>'} · ${l.maxLinked?'<span class="pos">Max</span>':'<span class="muted">Max нет</span>'}</div>`};
 app.addEventListener('click',e=>{const b=e.target.closest('[data-acc-links]');if(b)openLinks(+b.dataset.accLinks)});
 
 /* ---------- Max в интеграциях ---------- */

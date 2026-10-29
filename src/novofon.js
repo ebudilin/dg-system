@@ -63,15 +63,18 @@ function addTask(db, title, assigneeId, clientId, callId) {
   db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?)').run(id, t.due, 0, assigneeId, now, J(t));
 }
 
-// кто из сотрудников отвечает за звонок: поднявший трубку → единственный, кому звонило → ответственный по объекту виртуального номера
+// кто отвечает за звонок: владелец виртуального номера → поднявший трубку → единственный, кому звонило
 function agentFor(db, c, ctx) {
-  const em = ctx.em || (ctx.em = require('./prefs').empMap(db));
+  const PR = require('./prefs');
+  // 1) у каждого сотрудника свой виртуальный номер: звонок на его номер — его клиент
+  const vm = ctx.vm || (ctx.vm = PR.vnumMap(db));
+  const byNum = vm[PR.normPhone(c.virtual_phone_number)];
+  if (byNum) return byNum;
+  const em = ctx.em || (ctx.em = PR.empMap(db));
   const ans = c.last_answered_employee_id != null ? c.last_answered_employee_id : ((c.employees || []).find(e => e.is_answered) || {}).employee_id;
   if (ans != null && em[String(ans)]) return em[String(ans)];
   const ids = [...new Set((c.employees || []).map(e => em[String(e.employee_id)]).filter(Boolean))];
   if (ids.length === 1) return ids[0];
-  const vm = require('./inquiries').vnums(db)[digits(c.virtual_phone_number)];
-  if (vm && vm.objectId) { const o = P((db.prepare('SELECT data FROM objects WHERE id=?').get(vm.objectId) || {}).data || 'null'); if (o && o.responsibleId) return o.responsibleId; }
   return null;
 }
 const uname = (db, id) => (id && (db.prepare('SELECT name FROM users WHERE id=?').get(Number(id)) || {}).name) || '';
@@ -234,7 +237,8 @@ def('resolveCall', 'crm_w', (db, u, id, action, x) => {
 def('novofonEmployees', 'owner', async (db) => {
   const s = S(db);
   if (!s.apiKey) throw new ApiError('Сначала подключите Novofon (ключ API).');
-  const r = await rpc(s.apiKey, 'get.employees', {});
+  let r;
+  try { r = await rpc(s.apiKey, 'get.employees', {}); } catch (e) { throw new ApiError('Не удалось получить сотрудников из Novofon: ' + (e.cause ? 'нет связи с Novofon' : e.message)); }
   return ((r && r.data) || []).map(e => ({ id: String(e.id), name: e.full_name || [e.last_name, e.first_name].filter(Boolean).join(' '),
     ext: (e.extension && e.extension.extension_phone_number) || '', phones: (e.phone_numbers || []).map(p => fmtPhone(p.phone_number)).filter(Boolean) }));
 });
