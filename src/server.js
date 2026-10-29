@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { open } = require('./db');
 const auth = require('./auth');
-const { F, ApiError } = require('./api');
+const { F, ApiError, can } = require('./api');
+require('./crm');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -98,9 +99,16 @@ async function handle(req, res) {
     return json(res, 200, { ok: true }, { 'Set-Cookie': sessionCookie(req, '', 0) });
   }
 
-  if (p === '/' || p === '/index.html') {
+  if (p === '/' || p === '/index.html' || p === '/crm') {
     if (!currentUser(req)) return send(res, 302, '', null, { Location: '/login' });
-    return send(res, 200, page('index.html'), 'text/html; charset=utf-8');
+    return send(res, 200, page('crm.html'), 'text/html; charset=utf-8');
+  }
+
+  if (p === '/finance') {
+    const u = currentUser(req);
+    if (!u) return send(res, 302, '', null, { Location: '/login' });
+    if (!can(u, 'fin_r')) return send(res, 302, '', null, { Location: '/' });
+    return send(res, 200, page('finance.html'), 'text/html; charset=utf-8');
   }
 
   if (p === '/favicon.ico') return send(res, 204, '');
@@ -112,7 +120,7 @@ async function handle(req, res) {
     if (!sameOrigin(req)) return json(res, 403, { error: 'Запрос отклонён.' });
     const f = F[m[1]];
     if (!f) return json(res, 404, { error: 'Нет такой функции.' });
-    if (f.roles && !f.roles.has(u.role)) return json(res, 403, { error: 'Недостаточно прав для этого действия.' });
+    if (!can(u, f.roles)) return json(res, 403, { error: 'Недостаточно прав для этого действия.' });
     const raw = await readBody(req, m[1] === 'importData' ? 50e6 : 2e6);
     let args = [];
     if (raw) { try { args = JSON.parse(raw); } catch (_) { throw new ApiError('Неверный формат запроса.'); } }

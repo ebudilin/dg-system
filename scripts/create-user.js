@@ -34,8 +34,8 @@ function ask(rl, q, hidden) {
   const bad = auth.validatePassword(p1); if (bad) { console.error(bad); process.exit(1); }
   const p2 = await ask(rl, 'Пароль ещё раз: ', true);
   if (p1 !== p2) { console.error('Пароли не совпадают.'); process.exit(1); }
-  db.prepare('INSERT INTO users(login,name,role,pass_hash,active,must_change,created_at) VALUES(?,?,?,?,1,0,?)')
-    .run(login, name || login, role, auth.hashPassword(p1), Date.now());
+  db.prepare('INSERT INTO users(login,name,role,finance,pass_hash,active,must_change,created_at) VALUES(?,?,?,?,?,1,0,?)')
+    .run(login, name || login, role, role === 'owner' ? 'edit' : 'none', auth.hashPassword(p1), Date.now());
   db.prepare('INSERT INTO audit(at,user_name,action,entity,entity_id) VALUES(?,?,?,?,?)').run(Date.now(), 'сервер', 'создание', 'пользователь', login);
   console.log(`Готово: ${name || login} (${login}), роль ${auth.ROLES[role]}.`);
   rl.close();

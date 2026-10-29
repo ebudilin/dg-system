@@ -4,8 +4,14 @@
 const { getMeta, setMeta, tx } = require('./db');
 const auth = require('./auth');
 
-const CAN_EDIT = new Set(['owner', 'accountant']);
-const OWNER = new Set(['owner']);
+// Права: null — любой вошедший; crm_w — правка CRM; fin_r / fin_w — просмотр / правка финансов; owner — только учредитель.
+const PERMS = {
+  crm_w: u => u.role === 'owner' || u.role === 'staff',
+  fin_r: u => u.finance === 'view' || u.finance === 'edit',
+  fin_w: u => u.finance === 'edit',
+  owner: u => u.role === 'owner'
+};
+const can = (u, perm) => !perm || (PERMS[perm] ? PERMS[perm](u) : false);
 const CP_TYPES = ['owner', 'buyer', 'tenant', 'agent', 'partner', 'founder', 'employee', 'investor'];
 
 class ApiError extends Error { constructor(msg, status) { super(msg); this.status = status || 400; } }
@@ -66,6 +72,9 @@ function archName(beforeDate) {
 }
 
 /* ---------- чтение ---------- */
+const meOf = user => ({ id: user.id, login: user.login, name: user.name, role: user.role, roleName: auth.ROLES[user.role] || user.role,
+  finance: user.finance, financeName: auth.FINANCE[user.finance] || '', mustChange: user.mustChange });
+
 function loadAll(db, user) {
   const ops = [], archOps = [];
   for (const r of db.prepare('SELECT data, archive, include FROM ops ORDER BY date, created_at').all()) {
@@ -81,7 +90,7 @@ function loadAll(db, user) {
     deals: db.prepare('SELECT data FROM deals').all().map(r => P(r.data)).filter(Boolean),
     clients: db.prepare('SELECT data FROM counterparties').all().map(r => P(r.data)).filter(Boolean),
     plans,
-    me: { id: user.id, login: user.login, name: user.name, role: user.role, roleName: auth.ROLES[user.role] || user.role, mustChange: user.mustChange }
+    me: meOf(user)
   };
 }
 
@@ -90,9 +99,9 @@ const F = {};
 const def = (name, roles, fn) => { F[name] = { roles, fn }; };
 
 def('getVersion', null, (db) => Number(getMeta(db, 'version') || 0));
-def('loadAll', null, (db, u) => loadAll(db, u));
+def('loadAll', 'fin_r', (db, u) => loadAll(db, u));
 
-def('saveOp', CAN_EDIT, (db, u, o) => {
+def('saveOp', 'fin_w', (db, u, o) => {
   const op = cleanOp(o);
   tx(db, () => {
     const prev = db.prepare('SELECT data, archive FROM ops WHERE id=?').get(op.id);
@@ -105,7 +114,7 @@ def('saveOp', CAN_EDIT, (db, u, o) => {
   return loadAll(db, u);
 });
 
-def('deleteOp', CAN_EDIT, (db, u, id) => {
+def('deleteOp', 'fin_w', (db, u, id) => {
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM ops WHERE id=? AND archive IS NULL').get(str(id, 64));
     if (!prev) return;
@@ -116,7 +125,7 @@ def('deleteOp', CAN_EDIT, (db, u, id) => {
   return loadAll(db, u);
 });
 
-def('saveArchOp', CAN_EDIT, (db, u, o, _names, sheet, include) => {
+def('saveArchOp', 'fin_w', (db, u, o, _names, sheet, include) => {
   const op = cleanOp(o);
   sheet = str(sheet, 100);
   if (sheet.indexOf('Архив до ') !== 0) throw new ApiError('Неверный архив.');
@@ -132,7 +141,7 @@ def('saveArchOp', CAN_EDIT, (db, u, o, _names, sheet, include) => {
   return loadAll(db, u);
 });
 
-def('setArchInclude', CAN_EDIT, (db, u, sheet, ids, include) => {
+def('setArchInclude', 'fin_w', (db, u, sheet, ids, include) => {
   sheet = str(sheet, 100);
   ids = (Array.isArray(ids) ? ids : []).map(i => str(i, 64));
   tx(db, () => {
@@ -144,7 +153,7 @@ def('setArchInclude', CAN_EDIT, (db, u, sheet, ids, include) => {
   return loadAll(db, u);
 });
 
-def('saveDeal', CAN_EDIT, (db, u, d) => {
+def('saveDeal', 'fin_w', (db, u, d) => {
   const deal = cleanDeal(d);
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM deals WHERE id=?').get(deal.id);
@@ -155,7 +164,7 @@ def('saveDeal', CAN_EDIT, (db, u, d) => {
   return loadAll(db, u);
 });
 
-def('deleteDeal', CAN_EDIT, (db, u, id) => {
+def('deleteDeal', 'fin_w', (db, u, id) => {
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM deals WHERE id=?').get(str(id, 64));
     if (!prev) return;
@@ -166,7 +175,7 @@ def('deleteDeal', CAN_EDIT, (db, u, id) => {
   return loadAll(db, u);
 });
 
-def('saveClient', CAN_EDIT, (db, u, c) => {
+function saveClientTx(db, u, c) {
   const cp = cleanClient(c);
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM counterparties WHERE id=?').get(cp.id);
@@ -179,10 +188,19 @@ def('saveClient', CAN_EDIT, (db, u, c) => {
     audit(db, u, prev ? 'изменение' : 'создание', 'контрагент', cp.id, prev ? P(prev.data) : null, cp);
     bump(db);
   });
-  return loadAll(db, u);
-});
+  return cp;
+}
+def('saveClient', 'fin_w', (db, u, c) => { saveClientTx(db, u, c); return loadAll(db, u); });
 
-def('deleteClient', CAN_EDIT, (db, u, id) => {
+function clientInUse(db, id) {
+  const needle = '"' + id + '"';
+  const q = (t) => db.prepare(`SELECT 1 FROM ${t} WHERE instr(data, ?) > 0 LIMIT 1`).get(needle);
+  return q('deals') || q('ops') || q('leads') || q('objects') || q('tasks')
+    || db.prepare('SELECT 1 FROM activities WHERE client_id=? LIMIT 1').get(id);
+}
+function deleteClientTx(db, u, id) {
+  id = str(id, 64);
+  if (clientInUse(db, id)) throw new ApiError('Контрагент используется в сделках, операциях, заявках или объектах — удалить нельзя.');
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM counterparties WHERE id=?').get(str(id, 64));
     if (!prev) return;
@@ -190,10 +208,10 @@ def('deleteClient', CAN_EDIT, (db, u, id) => {
     audit(db, u, 'удаление', 'контрагент', id, P(prev.data), null);
     bump(db);
   });
-  return loadAll(db, u);
-});
+}
+def('deleteClient', 'fin_w', (db, u, id) => { deleteClientTx(db, u, id); return loadAll(db, u); });
 
-def('savePlan', CAN_EDIT, (db, u, month, lines) => {
+def('savePlan', 'fin_w', (db, u, month, lines) => {
   if (!/^\d{4}-\d{2}$/.test(String(month))) throw new ApiError('Неверный месяц плана.');
   tx(db, () => {
     db.prepare('INSERT INTO plans(month,lines) VALUES(?,?) ON CONFLICT(month) DO UPDATE SET lines=excluded.lines').run(month, J(lines || {}));
@@ -203,7 +221,7 @@ def('savePlan', CAN_EDIT, (db, u, month, lines) => {
   return loadAll(db, u);
 });
 
-def('saveConfig', OWNER, (db, u, cfg) => {
+def('saveConfig', 'owner', (db, u, cfg) => {
   if (!cfg || !Array.isArray(cfg.accounts) || !Array.isArray(cfg.categories)) throw new ApiError('Неполные настройки.');
   tx(db, () => {
     const prev = P(getMeta(db, 'cfg') || 'null');
@@ -214,7 +232,7 @@ def('saveConfig', OWNER, (db, u, cfg) => {
   return loadAll(db, u);
 });
 
-def('closePeriod', OWNER, (db, u, beforeDate, cfg) => {
+def('closePeriod', 'owner', (db, u, beforeDate, cfg) => {
   if (!isDate(beforeDate)) throw new ApiError('Неверная дата закрытия периода.');
   if (!cfg || !Array.isArray(cfg.accounts) || !Array.isArray(cfg.categories)) throw new ApiError('Неполные настройки.');
   tx(db, () => {
@@ -238,37 +256,38 @@ def('changeOwnPassword', null, (db, u, oldPw, newPw) => {
   return { ok: true };
 });
 
-const userRow = r => ({ id: r.id, login: r.login, name: r.name, role: r.role, roleName: auth.ROLES[r.role] || r.role, active: !!r.active, mustChange: !!r.must_change, createdAt: r.created_at });
+const userRow = r => ({ id: r.id, login: r.login, name: r.name, role: r.role, roleName: auth.ROLES[r.role] || r.role, finance: auth.finLevel(r), active: !!r.active, mustChange: !!r.must_change, createdAt: r.created_at });
 
-def('listUsers', OWNER, (db) => ({
-  roles: auth.ROLES,
+def('listUsers', 'owner', (db) => ({
+  roles: auth.ROLES, finance: auth.FINANCE,
   users: db.prepare('SELECT * FROM users ORDER BY active DESC, name').all().map(userRow)
 }));
 
-def('saveUser', OWNER, (db, u, x) => {
+def('saveUser', 'owner', (db, u, x) => {
   if (!x || !String(x.name || '').trim()) throw new ApiError('Укажите имя пользователя.');
   if (!auth.ROLES[x.role]) throw new ApiError('Неизвестная роль.');
   const name = str(x.name, 100).trim();
+  const fin = x.role === 'owner' ? 'edit' : (auth.FINANCE[x.finance] ? x.finance : 'none');
   if (x.id) {
     const prev = db.prepare('SELECT * FROM users WHERE id=?').get(Number(x.id));
     if (!prev) throw new ApiError('Пользователь не найден.');
     if (prev.id === u.id && (x.role !== 'owner' || x.active === false)) throw new ApiError('Нельзя снять с себя права учредителя или отключить себя.');
-    db.prepare('UPDATE users SET name=?, role=?, active=? WHERE id=?').run(name, x.role, x.active === false ? 0 : 1, prev.id);
+    db.prepare('UPDATE users SET name=?, role=?, finance=?, active=? WHERE id=?').run(name, x.role, fin, x.active === false ? 0 : 1, prev.id);
     if (x.active === false) auth.dropUserSessions(db, prev.id, '');
-    audit(db, u, 'изменение', 'пользователь', prev.id, userRow(prev), { name, role: x.role, active: x.active !== false });
+    audit(db, u, 'изменение', 'пользователь', prev.id, userRow(prev), { name, role: x.role, finance: fin, active: x.active !== false });
   } else {
     const login = str(x.login, 64).trim().toLowerCase();
     if (!/^[a-z0-9._-]{3,64}$/.test(login)) throw new ApiError('Логин: от 3 символов, латинские буквы, цифры, точка, дефис.');
     if (db.prepare('SELECT 1 FROM users WHERE login=?').get(login)) throw new ApiError('Такой логин уже есть.');
     const bad = auth.validatePassword(x.password); if (bad) throw new ApiError(bad);
-    const r = db.prepare('INSERT INTO users(login,name,role,pass_hash,active,must_change,created_at) VALUES(?,?,?,?,1,1,?)')
-      .run(login, name, x.role, auth.hashPassword(x.password), Date.now());
-    audit(db, u, 'создание', 'пользователь', r.lastInsertRowid, null, { login, name, role: x.role });
+    const r = db.prepare('INSERT INTO users(login,name,role,finance,pass_hash,active,must_change,created_at) VALUES(?,?,?,?,?,1,1,?)')
+      .run(login, name, x.role, fin, auth.hashPassword(x.password), Date.now());
+    audit(db, u, 'создание', 'пользователь', r.lastInsertRowid, null, { login, name, role: x.role, finance: fin });
   }
   return F.listUsers.fn(db, u);
 });
 
-def('resetUserPassword', OWNER, (db, u, id, pw) => {
+def('resetUserPassword', 'owner', (db, u, id, pw) => {
   const prev = db.prepare('SELECT * FROM users WHERE id=?').get(Number(id));
   if (!prev) throw new ApiError('Пользователь не найден.');
   const bad = auth.validatePassword(pw); if (bad) throw new ApiError(bad);
@@ -278,17 +297,27 @@ def('resetUserPassword', OWNER, (db, u, id, pw) => {
   return F.listUsers.fn(db, u);
 });
 
-def('listAudit', OWNER, (db, u, limit) => db.prepare('SELECT id,at,user_name,action,entity,entity_id FROM audit ORDER BY id DESC LIMIT ?')
+def('listAudit', 'owner', (db, u, limit) => db.prepare('SELECT id,at,user_name,action,entity,entity_id FROM audit ORDER BY id DESC LIMIT ?')
   .all(Math.min(500, Math.max(1, Number(limit) || 200))));
 
 /* ---------- импорт / экспорт ---------- */
-def('exportData', OWNER, (db, u) => {
-  const d = loadAll(db, u); delete d.me; d.exportedAt = new Date().toISOString(); return d;
+const CRM_TABLES = ['leads', 'tasks', 'objects', 'activities'];
+function exportCrm(db) {
+  const out = {};
+  CRM_TABLES.forEach(t => { out[t] = db.prepare(`SELECT data FROM ${t}`).all().map(r => P(r.data)).filter(Boolean); });
+  return out;
+}
+
+def('exportData', 'owner', (db, u) => {
+  const d = loadAll(db, u); delete d.me;
+  d.crm = exportCrm(db);
+  d.exportedAt = new Date().toISOString(); return d;
 });
 
-def('importData', OWNER, (db, u, data, confirm) => {
-  if (confirm !== 'ЗАМЕНИТЬ') throw new ApiError('Для импорта нужно подтверждение.');
-  if (!data || !Array.isArray(data.ops) || !Array.isArray(data.deals) || !Array.isArray(data.clients)) throw new ApiError('Файл импорта не похож на выгрузку системы.');
+def('importData', 'owner', (db, u, data, confirm) => {
+  if (confirm !== 'ЗАМЕНИТЬ') throw new ApiError('Для восстановления нужно подтверждение.');
+  if (!data || !Array.isArray(data.ops) || !Array.isArray(data.deals) || !Array.isArray(data.clients)) throw new ApiError('Файл не похож на выгрузку системы.');
+  require('./db').safetyCopy(db, 'import');
   const counts = {};
   tx(db, () => {
     db.exec('DELETE FROM ops; DELETE FROM deals; DELETE FROM counterparties; DELETE FROM plans;');
@@ -307,10 +336,16 @@ def('importData', OWNER, (db, u, data, confirm) => {
     Object.entries(data.plans || {}).forEach(([m, p]) => { if (/^\d{4}-\d{2}$/.test(m)) insP.run(m, J((p && p.lines) || {})); });
     if (data.cfg) setMeta(db, 'cfg', J(data.cfg));
     Object.assign(counts, { ops: n, archOps: a, deals: data.deals.length, clients: data.clients.length, plans: Object.keys(data.plans || {}).length });
-    audit(db, u, 'импорт данных', 'система', null, null, counts);
+    // CRM восстанавливается, только если он есть в файле; иначе заявки, задачи, объекты и история не трогаются
+    if (data.crm && typeof data.crm === 'object') {
+      const crm = require('./crm');
+      crm.restore(db, data.crm);
+      CRM_TABLES.forEach(t => { counts[t] = (data.crm[t] || []).length; });
+    }
+    audit(db, u, 'восстановление из файла', 'система', null, null, counts);
     bump(db);
   });
   return counts;
 });
 
-module.exports = { F, ApiError, loadAll };
+module.exports = { F, def, can, ApiError, loadAll, meOf, audit, bump, tx, str, isDate, numOrBlank, J, P, cleanDeal, saveClientTx, deleteClientTx };

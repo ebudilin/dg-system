@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRM · Дорогой Город</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+
+/* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --sunk:#F6F8F7; --ink:#15201C; --muted:#5B6863; --line:#D8DFDC;
+  --accent:#1F5A48; --accent-ink:#FFFFFF; --accent-soft:#DDEBE5;
+  --pos:#1D7A45; --neg:#B0302A; --warn:#9A6400; --pos-soft:#E0F1E6; --neg-soft:#F7E3E1; --warn-soft:#F5ECD8;
+  --font-ui:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-num:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
+  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
+  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
+  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
+  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font-ui);margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:14px 10px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand b{font-size:18px;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:12px}
+.who{display:flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);font-weight:600}
+.who span{line-height:1.25;text-align:right}
+.acc-tbl td,.acc-tbl th{white-space:nowrap}
+@media (max-width:700px){.who span{display:none}}
+.like-btn{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px;white-space:nowrap}
+.period{display:flex;align-items:center;gap:6px}
+.period button:not(.primary){width:32px;height:32px;padding:0}
+.period{flex-wrap:wrap}
+.period .lbl{min-width:132px;text-align:center;font-weight:600}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{padding:7px 12px;border-radius:999px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:500}
+nav.tabs a:hover{color:var(--ink);background:var(--surface)}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.danger{color:var(--neg);border-color:var(--neg)}
+button.ghost{border-color:transparent;background:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0;width:100%}
+input[type=number]{font-family:var(--font-num)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label.f>span{letter-spacing:.02em}
+h2{font-size:17px;margin:24px 0 10px;text-wrap:balance}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+.banner{margin-top:16px;padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);border:1px solid var(--line)}
+.grid{display:grid;gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--font-num);font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.hero{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tile.hero .k,.tile.hero .s{color:var(--accent-ink);opacity:.8}
+.cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;margin-top:12px}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row.total{font-weight:600}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--sunk);white-space:nowrap}
+td.r,th.r{text-align:right}
+tr.sec td{background:var(--sunk);font-weight:600}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.chip.in{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.chip.out{background:var(--neg-soft);color:var(--neg);border-color:transparent}
+.chip.tr{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.chip.work{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.deal{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.chip.closed{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:18px 0 12px}
+.toolbar>*{flex:0 1 auto}
+.toolbar .grow{flex:1 1 200px}
+.toolbar select,.toolbar input{width:auto;min-width:150px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.meter{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:80px;margin-top:5px}
+.meter i{display:block;height:100%;background:var(--accent)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
+dialog::backdrop{background:rgba(10,16,14,.45)}
+.dlg{padding:18px;display:flex;flex-direction:column;gap:12px}
+.dlg h2{margin:0}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fg .full{grid-column:1/-1}
+@media (max-width:480px){.fg{grid-template-columns:minmax(0,1fr)}}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.acts{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.acts>div{display:flex;gap:8px}
+.set-list{display:flex;flex-direction:column;gap:8px}
+.set-row{display:grid;gap:8px;align-items:end}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;max-width:calc(100vw - 32px)}
+.note{font-size:12px;color:var(--muted);margin-top:8px;max-width:70ch}
+@media (prefers-reduced-motion:no-preference){.meter i{transition:width .3s}}
+
+/* CRM */
+.top .right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sect{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.sect a{padding:6px 14px;text-decoration:none;color:var(--muted);font-weight:500}
+.sect a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.who{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);font-weight:600}
+.who span{line-height:1.25;text-align:right}
+.who button{padding:5px 10px;font-size:12px}
+@media (max-width:700px){.who span{display:none}}
+body.ro [data-need-w]{display:none!important}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:18px}
+@media (max-width:860px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile.click{cursor:pointer}.tile.click:hover{border-color:var(--muted)}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:10px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.col{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:8px;min-height:120px;display:flex;flex-direction:column;gap:8px}
+.col.over{outline:2px dashed var(--accent);outline-offset:-2px}
+.col-h{display:flex;justify-content:space-between;align-items:baseline;padding:2px 4px 4px;font-weight:600}
+.col-h small{color:var(--muted);font-weight:500;font-family:var(--font-num)}
+.lc{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 10px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.lc:hover{border-color:var(--muted)}
+.lc[draggable="true"]{cursor:grab}
+.lc b{font-weight:600;font-size:13px}
+.lc .m{font-size:12px;color:var(--muted)}
+.lc .nx{font-size:12px}
+.lc .nx.late{color:var(--neg)}
+.chip.st-new{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.chip.st-won{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.chip.st-lost{background:var(--neg-soft);color:var(--neg);border-color:transparent}
+.chip.lost{background:var(--neg-soft);color:var(--neg);border-color:transparent}
+.tlist{display:flex;flex-direction:column}
+.trow{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surface)}
+.trow:last-child{border-bottom:0}
+.trow input[type=checkbox]{width:18px;height:18px;margin-top:1px;flex:none;accent-color:var(--accent)}
+.trow .tt{flex:1;min-width:0;cursor:pointer}
+.trow .tt .m{font-size:12px;color:var(--muted)}
+.trow.done .tt b{text-decoration:line-through;color:var(--muted)}
+.trow .due{font-family:var(--font-num);font-size:12px;white-space:nowrap}
+.trow .due.late{color:var(--neg);font-weight:600}
+.grp{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin:16px 0 6px}
+.box{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+dialog.wide{width:min(860px,calc(100vw - 24px))}
+.dlg2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.dlg2{grid-template-columns:minmax(0,1fr)}}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.side .card{padding:12px}
+.feed{display:flex;flex-direction:column;gap:0;max-height:340px;overflow:auto}
+.fi{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.fi:last-child{border-bottom:0}
+.fi .h{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}
+.fi .tx{white-space:pre-wrap;margin-top:2px}
+.fi.ev .tx{color:var(--muted)}
+.addnote{display:flex;flex-direction:column;gap:6px}
+.addnote .r{display:flex;gap:6px}
+.addnote .r select{width:auto}
+.links{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.links a{color:var(--ink);text-decoration:none;border-bottom:1px dashed var(--line);cursor:pointer;align-self:flex-start}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink)}
+.checks label{display:flex;gap:6px;align-items:center}
+.checks input{width:auto}
+.toolbar input[type=checkbox]{min-width:0;width:auto}
+.qadd{display:grid;grid-template-columns:minmax(0,1fr) 150px 170px auto;gap:8px;margin:18px 0 6px}
+@media (max-width:700px){.qadd{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.qadd input:first-child{grid-column:1/-1}}
+.like-btn{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;white-space:nowrap}
+.acc-tbl td,.acc-tbl th{white-space:nowrap}
+.acc-tbl select{width:auto}
+
+</style></head>
+<body>
+<header class="top">
+  <div class="wrap" style="padding-bottom:0">
+    <div class="bar">
+      <div class="brand"><b>Дорогой Город</b><span>Клиенты, заявки, задачи, объекты</span></div>
+      <div class="right">
+        <nav class="sect" id="sect" aria-label="Разделы"></nav>
+        <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
+        <div class="who" id="who"></div>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<dialog id="dlg"><form class="dlg" id="dlgform" method="dialog"></form></dialog>
+<datalist id="sources"></datalist>
+<div class="toast" id="toast" hidden></div>
+<script>
+(()=>{'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NF=new Intl.NumberFormat('ru-RU');
+const money=n=>(n===''||n==null)?'':NF.format(Math.round(+n||0))+' ₽';
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const dFmt=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4):'';
+const dtFmt=ms=>{const d=new Date(ms);return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2)+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
+const dueLbl=t=>{if(!t.due)return '';const td=today();if(t.due===td)return 'сегодня'+(t.time?' '+t.time:'');if(t.due===addDays(td,1))return 'завтра'+(t.time?' '+t.time:'');return dFmt(t.due)+(t.time?' '+t.time:'')};
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3500)}
+
+const DEAL_KINDS=['Вторичка','Новостройка','Коммерция','Аренда','Загородная','Юр. сопровождение'];
+const DEAL_ST={work:'В работе',deal:'Договор подписан',closed:'Закрыта',lost:'Сорвалась'};
+const CP_TYPES=[['owner','Собственник'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор']];
+const SOURCES=['Рекомендация','Повторный клиент','Авито','ЦИАН','Яндекс Недвижимость','Сайт dorogoigorod.ru','Сайт fedset.ru','Instagram / Reels','Telegram','Звонок','Партнёр / агент','Застройщик'];
+const OPEN_STAGES=['new','work','show','talks'];
+
+let D=null, ME=null, version=null, saving=0, dlgCtx=null;
+const V={tab:(location.hash||'').slice(1)||'today', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:''}, of:{q:'',kind:'',offer:'',status:'active'}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
+const can=()=>!!ME&&(ME.role==='owner'||ME.role==='staff');
+const fin=()=>!!ME&&(ME.finance==='view'||ME.finance==='edit');
+const finW=()=>!!ME&&ME.finance==='edit';
+const owner=()=>!!ME&&ME.role==='owner';
+
+/* ---------- сервер ---------- */
+async function api(fn,...args){
+  let r;try{r=await fetch('/api/'+fn,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(args)})}
+  catch(e){throw new Error('Нет связи с сервером. Проверьте интернет.')}
+  if(r.status===401){location.href='/login';throw new Error('Сессия закончилась.')}
+  let d=null;try{d=await r.json()}catch(_){}
+  if(!r.ok)throw new Error((d&&d.error)||('Ошибка сервера ('+r.status+')'));
+  return d.result}
+async function run(fn,...args){saving++;try{const res=await api(fn,...args);if(res&&res.version!=null&&res.leads)apply(res);return res}catch(e){toast(e.message);throw e}finally{saving--}}
+function apply(d){D=d;version=d.version;ME=d.me;document.body.classList.toggle('ro',!can());renderHead();render();if(dlgCtx&&dlgCtx.refresh)dlgCtx.refresh()}
+
+/* ---------- справочники ---------- */
+const byId=(arr,id)=>arr.find(x=>x.id===id);
+const cl=id=>D&&byId(D.clients,id);
+const clName=id=>{const c=cl(id);return c?c.name:''};
+const usr=id=>D&&D.users.find(u=>u.id===id);
+const uName=id=>{const u=usr(id);return u?u.name:''};
+const obj=id=>D&&byId(D.objects,id);
+const objName=o=>o?(o.title||o.address||'Объект'):'';
+const lead=id=>D&&byId(D.leads,id);
+const deal=id=>D&&byId(D.deals,id);
+const dealName=d=>d?((d.client||clName(d.clientId)||'Сделка')+(d.object?' · '+d.object:'')):'';
+const openTasks=f=>D.tasks.filter(t=>!t.done&&f(t)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')||(a.time||'').localeCompare(b.time||''));
+const nextTask=f=>openTasks(f)[0];
+const agentsList=()=>D.clients.filter(c=>(c.types||[]).includes('agent')).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(sel??'')?'selected':''}>${esc(l)}</option>`).join('');
+const usersOpt=sel=>opt(D.users.filter(u=>u.active||u.id===sel).map(u=>[u.id,u.name]),sel);
+const clientsOpt=(sel,empty)=>opt([['',empty||'— не выбран —'],...D.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(c=>[c.id,c.name])],sel);
+const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
+
+/* ---------- шапка и вкладки ---------- */
+const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],...(owner()?[['admin','Доступ']]:[])];
+function renderHead(){
+  $('#sect').innerHTML=`<a href="/" aria-current="page">CRM</a>${fin()?'<a href="/finance">Финансы</a>':''}`;
+  $('#who').innerHTML=ME?`<span><b>${esc(ME.name)}</b><br>${esc(ME.roleName)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`:'';
+  if(ME&&ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}
+}
+function render(){
+  if(!TABS().some(t=>t[0]===V.tab))V.tab='today';
+  $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
+  $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект'}[V.tab]||'+ Заявка';
+  $('#addbtn').hidden=!can()||V.tab==='deals'||V.tab==='admin';
+  if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
+  const keep=document.activeElement&&document.activeElement.id,pos=keep&&document.activeElement.selectionStart;
+  $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,admin:vAdmin}[V.tab])();
+  if(keep){const el=document.getElementById(keep);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}
+}
+
+/* ---------- Сегодня ---------- */
+function taskRow(t){
+  const late=t.due&&t.due<today();
+  const link=t.leadId&&lead(t.leadId)?'Заявка: '+lead(t.leadId).title:t.clientId&&cl(t.clientId)?'Клиент: '+clName(t.clientId):t.dealId&&deal(t.dealId)?'Сделка: '+dealName(deal(t.dealId)):t.objectId&&obj(t.objectId)?'Объект: '+objName(obj(t.objectId)):'';
+  return `<div class="trow ${t.done?'done':''}"><input type="checkbox" data-done="${esc(t.id)}" ${t.done?'checked':''} ${can()?'':'disabled'} aria-label="Выполнено">
+    <div class="tt" data-open-task="${esc(t.id)}"><b>${esc(t.title)}</b><div class="m">${esc([link,V.tf.who==='all'||V.tab!=='tasks'?uName(t.assigneeId):''].filter(Boolean).join(' · '))}</div></div>
+    <div class="due ${late&&!t.done?'late':''}">${esc(dueLbl(t))}</div></div>`}
+function vToday(){
+  const td=today(),mine=t=>t.assigneeId===ME.id;
+  const late=openTasks(t=>mine(t)&&t.due&&t.due<td),now=openTasks(t=>mine(t)&&t.due===td),soon=openTasks(t=>mine(t)&&t.due>td&&t.due<=addDays(td,7));
+  const open=D.leads.filter(l=>OPEN_STAGES.includes(l.stage)),fresh=open.filter(l=>l.stage==='new');
+  const noStep=open.filter(l=>!nextTask(t=>t.leadId===l.id));
+  let h=`<div class="tiles">
+    <div class="tile click" data-go="tasks"><span class="k">Мои задачи на сегодня</span><span class="v">${now.length}</span><span class="s">${late.length?`<span class="neg">просрочено: ${late.length}</span>`:'просроченных нет'}</span></div>
+    <div class="tile click" data-go="leads"><span class="k">Заявки в работе</span><span class="v">${open.length}</span><span class="s">новых: ${fresh.length}</span></div>
+    <div class="tile click" data-go="leads"><span class="k">Заявки без следующего шага</span><span class="v ${noStep.length?'warn':''}">${noStep.length}</span><span class="s">нет открытой задачи</span></div>
+    <div class="tile click" data-go="objects"><span class="k">Объекты в работе</span><span class="v">${D.objects.filter(o=>o.status==='active').length}</span><span class="s">всего в базе: ${D.objects.length}</span></div></div>`;
+  h+=`<div class="cols">`;
+  h+=`<div><div class="grp">Мои задачи</div>`;
+  if(!late.length&&!now.length&&!soon.length)h+=`<div class="card empty">На ближайшую неделю задач нет.</div>`;
+  if(late.length)h+=`<div class="grp neg" style="margin-top:6px">Просрочено</div><div class="box tlist">${late.map(taskRow).join('')}</div>`;
+  if(now.length)h+=`<div class="grp">Сегодня</div><div class="box tlist">${now.map(taskRow).join('')}</div>`;
+  if(soon.length)h+=`<div class="grp">Ближайшие 7 дней</div><div class="box tlist">${soon.map(taskRow).join('')}</div>`;
+  h+=`</div><div><div class="grp">Новые заявки</div>${fresh.length?`<div class="box tlist">${fresh.map(l=>`<div class="trow"><div class="tt" data-open-lead="${esc(l.id)}"><b>${esc(l.title)}</b><div class="m">${esc([l.source,uName(l.ownerId),dFmt(new Date(l.createdAt).toISOString().slice(0,10))].filter(Boolean).join(' · '))}</div></div></div>`).join('')}</div>`:'<div class="card empty">Новых заявок нет.</div>'}
+    ${noStep.length?`<div class="grp">Нет следующего шага</div><div class="box tlist">${noStep.slice(0,12).map(l=>`<div class="trow"><div class="tt" data-open-lead="${esc(l.id)}"><b>${esc(l.title)}</b><div class="m">${esc(D.dict.stages[l.stage])} · ${esc(uName(l.ownerId)||'без ответственного')}</div></div></div>`).join('')}</div>`:''}</div></div>`;
+  return h}
+
+/* ---------- Заявки ---------- */
+function vLeads(){
+  const f=V.lf,q=f.q.trim().toLowerCase();
+  let list=D.leads.filter(l=>(!f.owner||String(l.ownerId)===f.owner)&&(!f.kind||l.kind===f.kind)&&(!q||(l.title+' '+clName(l.clientId)+' '+(cl(l.clientId)||{}).phone+' '+l.source+' '+l.note).toLowerCase().includes(q)));
+  const st=Object.entries(D.dict.stages).filter(([k])=>k!=='lost'||f.lost);
+  let h=`<div class="toolbar"><label class="f grow"><span>Поиск</span><input id="lf-q" value="${esc(f.q)}" placeholder="Клиент, телефон, источник"></label>
+    <label class="f"><span>Ответственный</span><select id="lf-owner">${opt([['','Все'],...D.users.filter(u=>u.active).map(u=>[u.id,u.name])],f.owner)}</select></label>
+    <label class="f"><span>Тип</span><select id="lf-kind">${opt([['','Все'],...Object.entries(D.dict.leadKinds)],f.kind)}</select></label>
+    <label class="checks" style="align-self:center"><label><input type="checkbox" id="lf-lost" ${f.lost?'checked':''}> Показать отказы</label></label></div>`;
+  h+=`<div class="board">${st.map(([k,lbl])=>{const items=list.filter(l=>l.stage===k);const sum=items.reduce((s,l)=>s+(+l.budget||0),0);
+    return `<div class="col" data-stage="${k}"><div class="col-h"><span>${esc(lbl)}</span><small>${items.length}${sum?' · '+NF.format(Math.round(sum/1e6*10)/10)+' млн':''}</small></div>
+      ${items.map(leadCard).join('')||'<div class="muted" style="font-size:12px;padding:4px">Пусто</div>'}</div>`}).join('')}</div>
+    <p class="note">Перетаскивайте карточки между колонками, чтобы сменить этап. На телефоне этап меняется в карточке заявки.</p>`;
+  return h}
+function leadCard(l){
+  const t=nextTask(x=>x.leadId===l.id),late=t&&t.due&&t.due<today();
+  return `<div class="lc" data-open-lead="${esc(l.id)}" ${can()?'draggable="true"':''} data-lead="${esc(l.id)}">
+    <b>${esc(l.title)}</b>
+    <div class="m">${esc([D.dict.leadKinds[l.kind],l.budget?money(l.budget):'',l.source].filter(Boolean).join(' · '))}</div>
+    <div class="m">${esc(uName(l.ownerId)||'без ответственного')}</div>
+    ${l.stage==='lost'?`<div class="m neg">${esc(l.lostReason)}</div>`:l.stage==='won'?(l.dealId?'<div class="m pos">Сделка создана</div>':''):t?`<div class="nx ${late?'late':''}">→ ${esc(t.title)}${t.due?' · '+esc(dueLbl(t)):''}</div>`:'<div class="nx warn">Нет следующего шага</div>'}
+  </div>`}
+
+/* ---------- Задачи ---------- */
+function vTasks(){
+  const f=V.tf,td=today(),who=t=>f.who==='all'||t.assigneeId===ME.id;
+  let h=can()?`<div class="qadd"><input id="qt-title" placeholder="Новая задача: позвонить, отправить подборку…" aria-label="Новая задача"><input id="qt-due" type="date" value="${td}" aria-label="Срок"><select id="qt-who" aria-label="Исполнитель">${usersOpt(ME.id)}</select><button class="primary" data-qadd data-need-w>Добавить</button></div>`:'';
+  h+=`<div class="toolbar" style="margin-top:6px"><div class="seg" role="group"><button data-tw="me" aria-pressed="${f.who==='me'}">Мои</button><button data-tw="all" aria-pressed="${f.who==='all'}">Все</button></div>
+    <label class="checks" style="align-self:center"><label><input type="checkbox" id="tf-done" ${f.done?'checked':''}> Показать выполненные</label></label></div>`;
+  const open=openTasks(who);
+  const groups=[['Просрочено',t=>t.due&&t.due<td],['Сегодня',t=>t.due===td],['Завтра',t=>t.due===addDays(td,1)],['На неделе',t=>t.due>addDays(td,1)&&t.due<=addDays(td,7)],['Позже',t=>t.due>addDays(td,7)],['Без срока',t=>!t.due]];
+  let any=false;
+  for(const [g,fn] of groups){const it=open.filter(fn);if(!it.length)continue;any=true;h+=`<div class="grp ${g==='Просрочено'?'neg':''}">${g} · ${it.length}</div><div class="box tlist">${it.map(taskRow).join('')}</div>`}
+  if(!any)h+=`<div class="card empty">Открытых задач нет.</div>`;
+  if(f.done){const dn=D.tasks.filter(t=>t.done&&who(t)).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));h+=`<div class="grp">Выполнено за 45 дней · ${dn.length}</div>${dn.length?`<div class="box tlist">${dn.map(taskRow).join('')}</div>`:''}`}
+  return h}
+
+/* ---------- Клиенты ---------- */
+function vClients(){
+  const f=V.cf,q=f.q.trim().toLowerCase();
+  const list=D.clients.filter(c=>(!f.type||(c.types||[]).includes(f.type))&&(!q||(c.name+' '+c.phone+' '+c.email+' '+c.other+' '+c.note).toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  let h=`<div class="toolbar"><label class="f grow"><span>Поиск</span><input id="cf-q" value="${esc(f.q)}" placeholder="Имя, телефон, почта"></label>
+    <label class="f"><span>Тип</span><select id="cf-type">${opt([['','Все'],...CP_TYPES],f.type)}</select></label></div>`;
+  if(!list.length)return h+'<div class="card empty">Никого не нашлось.</div>';
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Имя</th><th>Тип</th><th>Телефон</th><th>Заявки</th><th>Сделки</th><th>Следующий шаг</th></tr></thead><tbody>
+    ${list.map(c=>{const ls=D.leads.filter(l=>l.clientId===c.id),ds=D.deals.filter(d=>d.clientId===c.id),t=nextTask(x=>x.clientId===c.id||ls.some(l=>l.id===x.leadId));
+      return `<tr class="click" data-open-client="${esc(c.id)}"><td><b>${esc(c.name)}</b></td><td class="muted">${esc((c.types||[]).map(k=>(CP_TYPES.find(x=>x[0]===k)||[,k])[1]).join(', '))}</td><td class="num">${esc(c.phone)}</td>
+      <td>${ls.filter(l=>OPEN_STAGES.includes(l.stage)).length||''}${ls.length?` <span class="muted">/ ${ls.length}</span>`:''}</td><td>${ds.length||''}</td><td>${t?esc(t.title)+' <span class="muted">'+esc(dueLbl(t))+'</span>':''}</td></tr>`}).join('')}
+  </tbody></table></div><p class="note">Всего: ${list.length}</p>`;
+  return h}
+
+/* ---------- Объекты ---------- */
+function vObjects(){
+  const f=V.of,q=f.q.trim().toLowerCase();
+  const list=D.objects.filter(o=>(!f.kind||o.kind===f.kind)&&(!f.offer||o.offer===f.offer)&&(!f.status||o.status===f.status)&&(!q||(o.title+' '+o.address+' '+o.metro+' '+o.developer+' '+clName(o.ownerId)).toLowerCase().includes(q)));
+  let h=`<div class="toolbar"><label class="f grow"><span>Поиск</span><input id="of-q" value="${esc(f.q)}" placeholder="Название, адрес, метро, застройщик"></label>
+    <label class="f"><span>Вид</span><select id="of-kind">${opt([['','Все'],...Object.entries(D.dict.objKinds)],f.kind)}</select></label>
+    <label class="f"><span>Сделка</span><select id="of-offer">${opt([['','Все'],['sale','Продажа'],['rent','Аренда']],f.offer)}</select></label>
+    <label class="f"><span>Статус</span><select id="of-status">${opt([['','Все'],...Object.entries(D.dict.objStatus)],f.status)}</select></label></div>`;
+  if(!list.length)return h+`<div class="card empty">${D.objects.length?'По фильтру ничего нет.':'Объектов пока нет. Добавьте первый кнопкой «+ Объект».'}</div>`;
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Вид</th><th class="r">Площадь</th><th class="r">Цена</th><th>Собственник / застройщик</th><th>Статус</th><th>Заявки</th></tr></thead><tbody>
+    ${list.map(o=>`<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b>${o.title&&o.address?`<div class="muted" style="font-size:12px">${esc(o.address)}${o.metro?' · м. '+esc(o.metro):''}</div>`:''}</td>
+      <td>${esc(D.dict.objKinds[o.kind])}<div class="muted" style="font-size:12px">${o.offer==='rent'?'аренда':'продажа'}</div></td><td class="r num">${o.area?esc(o.area)+' м²':''}</td><td class="r num">${money(o.price)}${o.offer==='rent'&&o.price?'<div class="muted" style="font-size:11px">в месяц</div>':''}</td>
+      <td>${esc(clName(o.ownerId)||o.developer)}</td><td><span class="chip ${o.status==='active'?'work':o.status==='closed'?'closed':''}">${esc(D.dict.objStatus[o.status])}</span></td><td>${D.leads.filter(l=>l.objectId===o.id).length||''}</td></tr>`).join('')}
+  </tbody></table></div>`;
+  return h}
+
+/* ---------- Сделки ---------- */
+function dealAgentsTxt(d){return [d.agentId,...(d.extra||[]).map(e=>e.agentId)].filter(Boolean).map(clName).filter(Boolean).join(', ')}
+function vDeals(){
+  const f=V.df,q=f.q.trim().toLowerCase();
+  const list=D.deals.filter(d=>(f.st==='all'||(f.st==='open'?(d.status==='work'||d.status==='deal'):d.status===f.st))&&(!q||(dealName(d)+' '+dealAgentsTxt(d)+' '+d.note).toLowerCase().includes(q))).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let h=`<div class="toolbar"><label class="f grow"><span>Поиск</span><input id="df-q" value="${esc(f.q)}" placeholder="Клиент, объект, агент"></label>
+    <div class="seg" role="group">${[['open','В работе'],['closed','Закрытые'],['lost','Сорвались'],['all','Все']].map(([k,l])=>`<button data-dst="${k}" aria-pressed="${f.st===k}">${l}</button>`).join('')}</div></div>`;
+  if(!list.length)return h+'<div class="card empty">Сделок нет. Сделка создаётся из заявки на этапе «Договор».</div>';
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th>Клиент / объект</th><th>Тип</th><th>Агенты</th><th>Статус</th>${fin()?'<th class="r">Комиссия</th>':''}<th>Следующий шаг</th></tr></thead><tbody>
+    ${list.map(d=>{const t=nextTask(x=>x.dealId===d.id);return `<tr class="click" data-open-deal="${esc(d.id)}"><td class="num">${dFmt(d.date)}</td><td><b>${esc(d.client||clName(d.clientId))}</b>${d.object?`<div class="muted" style="font-size:12px">${esc(d.object)}</div>`:''}</td>
+      <td>${esc(d.kind)}</td><td>${esc(dealAgentsTxt(d))}</td><td><span class="chip ${d.status}">${esc(DEAL_ST[d.status]||d.status)}</span></td>${fin()?`<td class="r num">${money(d.commission)}</td>`:''}<td>${t?esc(t.title)+' <span class="muted">'+esc(dueLbl(t))+'</span>':''}</td></tr>`}).join('')}
+  </tbody></table></div>`;
+  return h}
+
+/* ---------- диалоги ---------- */
+const dlg=$('#dlg'),form=$('#dlgform');
+function openDlg(ctx){dlgCtx=ctx;dlg.classList.toggle('wide',!!ctx.wide);ctx.draw();if(!dlg.open)dlg.showModal();if(ctx.feed)loadFeed()}
+dlg.addEventListener('close',()=>{dlgCtx=null});
+function readForm(){const o=dlgCtx.o;form.querySelectorAll('[name]').forEach(el=>{if(el.type==='checkbox'){if(el.dataset.multi!=null){o[el.name]=o[el.name]||[];}else o[el.name]=el.checked}else o[el.name]=el.value});
+  const multi={};form.querySelectorAll('input[type=checkbox][data-multi]').forEach(el=>{(multi[el.name]=multi[el.name]||[]);if(el.checked)multi[el.name].push(el.value)});Object.assign(o,multi)}
+const acts=(del)=>`<div class="acts" style="margin-top:4px"><div>${del&&can()?`<button type="button" class="danger" data-del>${dlgCtx&&dlgCtx.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div><div><button type="button" data-close>${can()?'Отмена':'Закрыть'}</button>${can()?'<button type="submit" class="primary">Сохранить</button>':''}</div></div>`;
+
+// боковая панель: задачи и история
+function sidePanel(link){
+  const ts=openTasks(t=>Object.entries(link).some(([k,v])=>v&&t[k]===v));
+  return `<div class="side"><div class="card"><h3>Задачи</h3>${ts.length?`<div class="box tlist" style="margin-bottom:8px">${ts.map(taskRow).join('')}</div>`:'<p class="muted" style="margin:0 0 8px;font-size:13px">Открытых задач нет.</p>'}
+      ${can()?`<div class="addnote"><input id="st-title" placeholder="Следующий шаг: позвонить, показ…"><div class="r"><input id="st-due" type="date" value="${today()}"><select id="st-who">${usersOpt(ME.id)}</select><button type="button" data-side-task>+</button></div></div>`:''}</div>
+    <div class="card"><h3>История</h3>${can()?`<div class="addnote"><div class="r"><select id="nt-type">${opt(Object.entries(D.dict.actTypes).filter(([k])=>k!=='event'),'call')}</select></div><textarea id="nt-text" rows="2" placeholder="Что обсудили, договорённости…"></textarea><div class="r" style="justify-content:flex-end"><button type="button" data-add-note>Добавить запись</button></div></div>`:''}
+      <div class="feed" id="feed"><p class="muted" style="font-size:13px">Загружаю…</p></div></div></div>`}
+async function loadFeed(){if(!dlgCtx||!dlgCtx.feed)return;const ctx=dlgCtx;
+  try{const items=await api('listActivities',ctx.feed);if(dlgCtx!==ctx)return;
+    $('#feed').innerHTML=items.length?items.map(a=>`<div class="fi ${a.type==='event'?'ev':''}"><div class="h"><span>${esc(D.dict.actTypes[a.type]||'')}${a.userName?' · '+esc(a.userName):''}</span><span>${dtFmt(a.at)}${(a.userId===ME.id||owner())&&a.type!=='event'&&can()?` <a href="#" data-del-act="${esc(a.id)}" title="Удалить" style="color:var(--muted)">✕</a>`:''}</span></div><div class="tx">${esc(a.text)}</div></div>`).join(''):'<p class="muted" style="font-size:13px;margin:0">Записей пока нет.</p>'}
+  catch(e){$('#feed').innerHTML='<p class="neg">'+esc(e.message)+'</p>'}}
+
+/* заявка */
+function openLead(l,preset){
+  const x=l?Object.assign({},l):Object.assign({id:'',title:'',clientId:'',kind:'buy',source:'',budget:'',stage:'new',ownerId:ME.id,objectId:'',note:'',lostReason:'',newClientName:'',newClientPhone:''},preset||{});
+  openDlg({kind:'lead',orig:l||null,o:x,wide:!!l,feed:l?{leadId:l.id,clientId:l.clientId||undefined}:null,draw:drawLead,refresh:()=>{if(dlgCtx.orig){const n=lead(dlgCtx.orig.id);if(n)dlgCtx.orig=n}}});
+}
+function drawLead(){const x=dlgCtx.o,l=dlgCtx.orig;
+  const fields=`<div class="fg">
+    <div class="f full" style="display:flex;flex-direction:column;gap:4px"><label class="f" for="l-client"><span>Клиент</span></label><select id="l-client" name="clientId">${clientsOpt(x.clientId,'— новый клиент —')}</select></div>
+    ${!x.clientId?`<label class="f"><span>Имя нового клиента</span><input name="newClientName" value="${esc(x.newClientName||'')}" placeholder="Иван Петров"></label><label class="f"><span>Телефон</span><input name="newClientPhone" value="${esc(x.newClientPhone||'')}" inputmode="tel" placeholder="+7…"></label>`:''}
+    <label class="f"><span>Что нужно</span><select name="kind">${opt(Object.entries(D.dict.leadKinds),x.kind)}</select></label>
+    <label class="f"><span>Источник</span><input name="source" list="sources" value="${esc(x.source)}" placeholder="Откуда пришёл"></label>
+    <label class="f"><span>Бюджет, ₽</span><input name="budget" type="number" inputmode="decimal" value="${esc(x.budget)}"></label>
+    <label class="f"><span>Ответственный</span><select name="ownerId">${opt([['','— нет —'],...D.users.filter(u=>u.active||u.id===x.ownerId).map(u=>[u.id,u.name])],x.ownerId)}</select></label>
+    <label class="f"><span>Этап</span><select name="stage" id="l-stage">${opt(Object.entries(D.dict.stages),x.stage)}</select></label>
+    <label class="f"><span>Объект</span><select name="objectId">${objectsOpt(x.objectId)}</select></label>
+    ${x.stage==='lost'?`<label class="f full"><span>Причина отказа</span><input name="lostReason" value="${esc(x.lostReason)}" placeholder="Купил сам, передумал, не устроила цена…"></label>`:''}
+    <label class="f full"><span>Название (если пусто — составится само)</span><input name="title" value="${esc(x.title)}"></label>
+    <label class="f full"><span>Что ищет / комментарий</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label></div>
+    ${l&&l.dealId&&deal(l.dealId)?`<div class="links"><a data-open-deal="${esc(l.dealId)}">Сделка: ${esc(dealName(deal(l.dealId)))}</a></div>`:''}
+    ${l&&!l.dealId&&can()&&l.stage!=='lost'?`<div><button type="button" data-to-deal>Заключили договор → создать сделку</button></div>`:''}
+    ${l&&l.clientId?`<div class="links"><a data-open-client="${esc(l.clientId)}">Карточка клиента: ${esc(clName(l.clientId))}</a></div>`:''}`;
+  form.innerHTML=`<h2>${l?esc(l.title):'Новая заявка'}</h2>${l?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({leadId:l.id})}</div>`:fields}${acts(!!l)}`}
+
+/* клиент */
+function openClient(c){
+  const x=c?Object.assign({},c):{id:'',name:'',types:[],birth:'',phone:'',email:'',other:'',note:'',agentShare:''};
+  openDlg({kind:'client',orig:c||null,o:x,wide:!!c,feed:c?{clientId:c.id}:null,draw:drawClient});
+}
+function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
+  const ls=c?D.leads.filter(l=>l.clientId===c.id):[],ds=c?D.deals.filter(d=>d.clientId===c.id):[],os=c?D.objects.filter(o=>o.ownerId===c.id):[];
+  const fields=`<div class="fg"><label class="f full"><span>ФИО / название</span><input name="name" value="${esc(x.name)}" required></label>
+    <label class="f"><span>Телефон</span><input name="phone" value="${esc(x.phone)}" inputmode="tel"></label>
+    <label class="f"><span>Email</span><input name="email" type="email" value="${esc(x.email)}"></label>
+    <label class="f"><span>Дата рождения</span><input name="birth" type="date" value="${esc(x.birth)}"></label>
+    <label class="f"><span>Другие контакты</span><input name="other" value="${esc(x.other)}" placeholder="Telegram, WhatsApp"></label>
+    <div class="f full"><span style="font-size:12px;color:var(--muted)">Кто это</span><div class="checks">${CP_TYPES.map(([k,l])=>`<label><input type="checkbox" name="types" data-multi value="${k}" ${(x.types||[]).includes(k)?'checked':''}> ${l}</label>`).join('')}</div></div>
+    <label class="f full"><span>Заметка</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label></div>
+    ${c?`<div class="links">${ls.map(l=>`<a data-open-lead="${esc(l.id)}">Заявка: ${esc(l.title)} — ${esc(D.dict.stages[l.stage])}</a>`).join('')}
+      ${ds.map(d=>`<a data-open-deal="${esc(d.id)}">Сделка: ${esc(dealName(d))} — ${esc(DEAL_ST[d.status]||'')}</a>`).join('')}
+      ${os.map(o=>`<a data-open-object="${esc(o.id)}">Объект: ${esc(objName(o))}</a>`).join('')}
+      ${can()?`<a data-new-lead-for="${esc(c.id)}">+ Новая заявка для этого клиента</a>`:''}</div>`:''}`;
+  form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
+
+/* объект */
+function openObject(o){
+  const x=o?Object.assign({},o):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'active',area:'',price:'',rooms:'',floor:'',ownerId:'',developer:'',link:'',note:''};
+  openDlg({kind:'object',orig:o||null,o:x,wide:!!o,feed:o?{objectId:o.id}:null,draw:drawObject});
+}
+function drawObject(){const x=dlgCtx.o,o=dlgCtx.orig;
+  const ls=o?D.leads.filter(l=>l.objectId===o.id):[];
+  const fields=`<div class="fg"><label class="f full"><span>Название</span><input name="title" value="${esc(x.title)}" placeholder="2-к квартира в ЖК…, офис 120 м² в Stone…"></label>
+    <label class="f full"><span>Адрес</span><input name="address" value="${esc(x.address)}"></label>
+    <label class="f"><span>Метро</span><input name="metro" value="${esc(x.metro)}"></label>
+    <label class="f"><span>Вид</span><select name="kind">${opt(Object.entries(D.dict.objKinds),x.kind)}</select></label>
+    <label class="f"><span>Сделка</span><select name="offer">${opt([['sale','Продажа'],['rent','Аренда']],x.offer)}</select></label>
+    <label class="f"><span>Статус</span><select name="status">${opt(Object.entries(D.dict.objStatus),x.status)}</select></label>
+    <label class="f"><span>Площадь, м²</span><input name="area" type="number" inputmode="decimal" value="${esc(x.area)}"></label>
+    <label class="f"><span>${x.offer==='rent'?'Ставка в месяц, ₽':'Цена, ₽'}</span><input name="price" type="number" inputmode="decimal" value="${esc(x.price)}"></label>
+    <label class="f"><span>Комнат</span><input name="rooms" value="${esc(x.rooms)}"></label>
+    <label class="f"><span>Этаж</span><input name="floor" value="${esc(x.floor)}" placeholder="5 из 12"></label>
+    <label class="f"><span>Собственник</span><select name="ownerId">${clientsOpt(x.ownerId)}</select></label>
+    <label class="f"><span>Застройщик / БЦ</span><input name="developer" value="${esc(x.developer)}"></label>
+    <label class="f full"><span>Ссылка (объявление, презентация)</span><input name="link" type="url" value="${esc(x.link)}"></label>
+    <label class="f full"><span>Описание</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label></div>
+    ${x.link?`<div class="links"><a href="${esc(x.link)}" target="_blank" rel="noopener">Открыть ссылку ↗</a></div>`:''}
+    ${ls.length?`<div class="links">${ls.map(l=>`<a data-open-lead="${esc(l.id)}">Заявка: ${esc(l.title)} — ${esc(D.dict.stages[l.stage])}</a>`).join('')}</div>`:''}`;
+  form.innerHTML=`<h2>${o?esc(objName(o)):'Новый объект'}</h2>${o?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({objectId:o.id})}</div>`:fields}${acts(!!o)}`}
+
+/* сделка */
+function openDeal(d){const x=Object.assign({},d);
+  const ex=x.extra||[];x.agent2Id=(ex[0]||{}).agentId||'';x.agent3Id=(ex[1]||{}).agentId||'';
+  openDlg({kind:'deal',orig:d,o:x,wide:true,feed:{dealId:d.id},draw:drawDeal});
+}
+function drawDeal(){const x=dlgCtx.o,d=dlgCtx.orig,ag=agentsList(),agOpt=v=>opt([['','— нет —'],...ag.map(a=>[a.id,a.name])],v);
+  const ld=D.leads.find(l=>l.dealId===d.id);
+  const fields=`<div class="fg"><label class="f full"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId)}</select></label>
+    <label class="f full"><span>Объект</span><input name="object" value="${esc(x.object)}"></label>
+    <label class="f"><span>Тип</span><select name="kind">${opt(DEAL_KINDS.map(k=>[k,k]),x.kind)}</select></label>
+    <label class="f"><span>Статус</span><select name="status">${opt(Object.entries(DEAL_ST),x.status)}</select></label>
+    <label class="f"><span>Дата договора</span><input name="date" type="date" value="${esc(x.date)}"></label>
+    <label class="f"><span>Ожидаем оплату</span><input name="expected" type="date" value="${esc(x.expected)}"></label>
+    <label class="f"><span>Агент</span><select name="agentId">${agOpt(x.agentId)}</select></label>
+    <label class="f"><span>Агент 2</span><select name="agent2Id">${agOpt(x.agent2Id)}</select></label>
+    <label class="f"><span>Агент 3</span><select name="agent3Id">${agOpt(x.agent3Id)}</select></label>
+    ${fin()?`<label class="f"><span>Комиссия агентства, ₽</span><input name="commission" type="number" value="${esc(x.commission)}" ${finW()?'':'disabled'}></label>`:''}
+    <label class="f full"><span>Заметка</span><textarea name="note" rows="2">${esc(x.note)}</textarea></label></div>
+    <div class="links">${ld?`<a data-open-lead="${esc(ld.id)}">Заявка: ${esc(ld.title)}</a>`:''}${x.clientId?`<a data-open-client="${esc(x.clientId)}">Карточка клиента</a>`:''}${fin()?'<a href="/finance#deals">Доли агентов и платежи — в разделе «Финансы»</a>':''}</div>`;
+  form.innerHTML=`<h2>${esc(dealName(d))}</h2><div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({dealId:d.id})}</div>${acts(false)}`}
+
+/* задача */
+function openTask(t,preset){
+  const x=t?Object.assign({},t):Object.assign({id:'',title:'',note:'',due:today(),time:'',assigneeId:ME.id,clientId:'',leadId:'',dealId:'',objectId:'',done:false},preset||{});
+  openDlg({kind:'task',orig:t||null,o:x,draw:drawTask});
+}
+function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
+  form.innerHTML=`<h2>${t?'Задача':'Новая задача'}</h2><div class="fg">
+    <label class="f full"><span>Что сделать</span><input name="title" value="${esc(x.title)}" required></label>
+    <label class="f"><span>Срок</span><input name="due" type="date" value="${esc(x.due)}"></label>
+    <label class="f"><span>Время</span><input name="time" type="time" value="${esc(x.time)}"></label>
+    <label class="f full"><span>Исполнитель</span><select name="assigneeId">${usersOpt(x.assigneeId)}</select></label>
+    <label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId)}</select></label>
+    <label class="f"><span>Заявка</span><select name="leadId">${opt([['','— нет —'],...D.leads.filter(l=>OPEN_STAGES.includes(l.stage)||l.id===x.leadId).map(l=>[l.id,l.title])],x.leadId)}</select></label>
+    <label class="f"><span>Сделка</span><select name="dealId">${opt([['','— нет —'],...D.deals.filter(d=>d.status==='work'||d.status==='deal'||d.id===x.dealId).map(d=>[d.id,dealName(d)])],x.dealId)}</select></label>
+    <label class="f"><span>Объект</span><select name="objectId">${objectsOpt(x.objectId)}</select></label>
+    <label class="f full"><span>Подробности</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label>
+    ${t?`<label class="checks full"><label><input type="checkbox" name="done" ${x.done?'checked':''}> Выполнено</label></label>`:''}</div>
+    ${t?`<p class="note" style="margin:0">Поставил: ${esc(uName(t.createdBy))}, ${dtFmt(t.createdAt)}</p>`:''}${acts(!!t)}`}
+
+/* оформление сделки из заявки */
+function openToDeal(l){
+  const x={object:objName(obj(l.objectId))||'',kind:{buy:'Вторичка',sell:'Вторичка',rent:'Аренда',lease:'Аренда',commercial:'Коммерция',legal:'Юр. сопровождение'}[l.kind]||'Вторичка',date:today(),commission:'',agentId:''};
+  openDlg({kind:'todeal',lead:l,o:x,draw:()=>{const ag=agentsList();
+    form.innerHTML=`<h2>Сделка по заявке</h2><p class="note" style="margin:0">${esc(l.title)}. Заявка перейдёт на этап «Договор», в разделе «Сделки» появится новая сделка.</p><div class="fg">
+      <label class="f full"><span>Объект</span><input name="object" value="${esc(x.object)}"></label>
+      <label class="f"><span>Тип</span><select name="kind">${opt(DEAL_KINDS.map(k=>[k,k]),x.kind)}</select></label>
+      <label class="f"><span>Дата договора</span><input name="date" type="date" value="${esc(x.date)}"></label>
+      <label class="f"><span>Агент</span><select name="agentId">${opt([['','— нет —'],...ag.map(a=>[a.id,a.name])],x.agentId)}</select></label>
+      ${finW()?`<label class="f"><span>Комиссия агентства, ₽</span><input name="commission" type="number" value="${esc(x.commission)}"></label>`:''}</div>
+      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Создать сделку</button></div></div>`}});
+}
+
+/* сохранение */
+async function submit(){
+  readForm();const c=dlgCtx,x=c.o;
+  try{
+    if(c.kind==='lead'){if(!x.clientId&&!String(x.newClientName||'').trim())return toast('Выберите клиента или впишите имя нового.');
+      if(x.stage==='lost'&&!String(x.lostReason||'').trim()){c.draw();return toast('Укажите причину отказа.')}
+      dlg.close();await run('saveLead',Object.assign({},x,{id:c.orig?c.orig.id:undefined,ownerId:x.ownerId?Number(x.ownerId):null}));toast('Заявка сохранена')}
+    else if(c.kind==='client'){if(!x.name.trim())return toast('Укажите имя.');dlg.close();await run('crmSaveClient',Object.assign({},c.orig||{},x,{id:c.orig?c.orig.id:'cl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),createdAt:c.orig?c.orig.createdAt:Date.now()}));toast('Клиент сохранён')}
+    else if(c.kind==='object'){dlg.close();await run('saveObject',Object.assign({},x,{id:c.orig?c.orig.id:undefined}));toast('Объект сохранён')}
+    else if(c.kind==='task'){if(!x.title.trim())return toast('Напишите, что сделать.');dlg.close();await run('saveTask',Object.assign({},x,{id:c.orig?c.orig.id:undefined,assigneeId:Number(x.assigneeId),done:!!x.done}));toast('Задача сохранена')}
+    else if(c.kind==='deal'){const o=c.orig;const extra=[x.agent2Id,x.agent3Id].filter(Boolean).map(a=>Object.assign({agentId:a},(o.extra||[]).find(e=>e.agentId===a)||{}));
+      const ids=[x.agentId,...extra.map(e=>e.agentId)].filter(Boolean);if(new Set(ids).size!==ids.length)return toast('Один и тот же агент выбран дважды.');
+      dlg.close();await run('crmSaveDeal',Object.assign({},o,{clientId:x.clientId,object:x.object,kind:x.kind,status:x.status,date:x.date,expected:x.expected,note:x.note,agentId:x.agentId,extra},finW()?{commission:x.commission}:{}));toast('Сделка сохранена')}
+    else if(c.kind==='todeal'){dlg.close();await run('leadToDeal',c.lead.id,x);toast('Сделка создана');V.tab='deals';location.hash='deals';render()}
+  }catch(_){}
+}
+async function del(){const c=dlgCtx;if(!c.confirmDel){c.confirmDel=true;readForm();c.draw();return}
+  const fn={lead:'deleteLead',client:'crmDeleteClient',object:'deleteObject',task:'deleteTask'}[c.kind];if(!fn)return;
+  dlg.close();try{await run(fn,c.orig.id);toast('Удалено')}catch(_){}}
+
+form.addEventListener('submit',e=>{e.preventDefault();submit()});
+form.addEventListener('change',e=>{const n=e.target.name;if(!dlgCtx)return;
+  if((dlgCtx.kind==='lead'&&(n==='clientId'||n==='stage'))||(dlgCtx.kind==='object'&&n==='offer')){readForm();dlgCtx.draw();if(dlgCtx.feed)loadFeed()}});
+form.addEventListener('click',async e=>{const b=e.target.closest('button,a');if(!b)return;
+  if(b.hasAttribute('data-close')){dlg.close();return}
+  if(b.hasAttribute('data-del')){del();return}
+  if(b.hasAttribute('data-to-deal')){openToDeal(dlgCtx.orig);return}
+  if(b.dataset.delAct){e.preventDefault();if(!confirm('Удалить запись из истории?'))return;try{await api('deleteActivity',b.dataset.delAct);loadFeed()}catch(err){toast(err.message)}return}
+  if(b.hasAttribute('data-add-note')){const text=$('#nt-text').value.trim();if(!text)return toast('Напишите текст записи.');const f=dlgCtx.feed;
+    try{await api('saveActivity',Object.assign({type:$('#nt-type').value,text},f));$('#nt-text').value='';loadFeed()}catch(err){toast(err.message)}return}
+  if(b.hasAttribute('data-side-task')){const title=$('#st-title').value.trim();if(!title)return toast('Напишите задачу.');const f=dlgCtx.feed,o=dlgCtx.orig;
+    const link={leadId:f.leadId||'',clientId:f.clientId||(o&&o.clientId)||'',dealId:f.dealId||'',objectId:f.objectId||''};
+    try{readForm();await run('saveTask',Object.assign({title,due:$('#st-due').value,assigneeId:Number($('#st-who').value)},link));dlgCtx&&dlgCtx.draw();loadFeed();toast('Задача добавлена')}catch(_){}return}
+  const jump=b.dataset.openLead||b.dataset.openClient||b.dataset.openDeal||b.dataset.openObject||b.dataset.newLeadFor;
+  if(jump&&!b.href){e.preventDefault();
+    if(b.dataset.openLead)openLead(lead(b.dataset.openLead));else if(b.dataset.openClient)openClient(cl(b.dataset.openClient));
+    else if(b.dataset.openDeal)openDeal(deal(b.dataset.openDeal));else if(b.dataset.openObject)openObject(obj(b.dataset.openObject));
+    else if(b.dataset.newLeadFor)openLead(null,{clientId:b.dataset.newLeadFor});}
+});
+form.addEventListener('change',async e=>{const cb=e.target.closest('[data-done]');if(cb){e.stopPropagation();await toggleDone(cb.dataset.done,cb.checked);dlgCtx&&dlgCtx.draw();if(dlgCtx&&dlgCtx.feed)loadFeed()}},true);
+form.addEventListener('click',e=>{const t=e.target.closest('[data-open-task]');if(t)openTask(D.tasks.find(x=>x.id===t.dataset.openTask))});
+
+async function toggleDone(id,val){const t=D.tasks.find(x=>x.id===id);if(!t)return;try{await run('saveTask',Object.assign({},t,{done:val}));toast(val?'Готово':'Задача снова открыта')}catch(_){render()}}
+
+/* ---------- события страницы ---------- */
+$('#tabs').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(!a)return;e.preventDefault();V.tab=a.dataset.tab;history.replaceState(null,'','#'+V.tab);render()});
+window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(k&&k!==V.tab){V.tab=k;render()}});
+$('#addbtn').addEventListener('click',()=>{if(V.tab==='tasks')openTask();else if(V.tab==='clients')openClient();else if(V.tab==='objects')openObject();else openLead()});
+const app=$('#app');
+app.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');if(g){V.tab=g.dataset.go;history.replaceState(null,'','#'+V.tab);render();return}
+  const tw=e.target.closest('[data-tw]');if(tw){V.tf.who=tw.dataset.tw;render();return}
+  const ds=e.target.closest('[data-dst]');if(ds){V.df.st=ds.dataset.dst;render();return}
+  if(e.target.closest('[data-qadd]')){qadd();return}
+  const o=e.target.closest('[data-open-lead],[data-open-client],[data-open-object],[data-open-deal],[data-open-task]');if(!o||e.target.closest('input[type=checkbox]'))return;
+  if(o.dataset.openLead)openLead(lead(o.dataset.openLead));else if(o.dataset.openClient)openClient(cl(o.dataset.openClient));
+  else if(o.dataset.openObject)openObject(obj(o.dataset.openObject));else if(o.dataset.openDeal)openDeal(deal(o.dataset.openDeal));
+  else if(o.dataset.openTask)openTask(D.tasks.find(x=>x.id===o.dataset.openTask));
+});
+app.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.done!=null){toggleDone(t.dataset.done,t.checked);return}
+  const map={'lf-owner':['lf','owner'],'lf-kind':['lf','kind'],'cf-type':['cf','type'],'of-kind':['of','kind'],'of-offer':['of','offer'],'of-status':['of','status']};
+  if(map[t.id]){V[map[t.id][0]][map[t.id][1]]=t.value;render();return}
+  if(t.id==='lf-lost'){V.lf.lost=t.checked;render();return}
+  if(t.id==='tf-done'){V.tf.done=t.checked;render();return}
+});
+app.addEventListener('input',e=>{const t=e.target,map={'lf-q':'lf','cf-q':'cf','of-q':'of','df-q':'df'};if(map[t.id]){V[map[t.id]].q=t.value;render()}});
+app.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='qt-title'){e.preventDefault();qadd()}});
+async function qadd(){const title=$('#qt-title').value.trim();if(!title)return toast('Напишите задачу.');
+  try{await run('saveTask',{title,due:$('#qt-due').value,assigneeId:Number($('#qt-who').value)});toast('Задача добавлена')}catch(_){}}
+// перетаскивание заявок
+let dragId=null;
+app.addEventListener('dragstart',e=>{const c=e.target.closest('[data-lead]');if(!c)return;dragId=c.dataset.lead;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)});
+app.addEventListener('dragover',e=>{const col=e.target.closest('.col');if(!col||!dragId)return;e.preventDefault();document.querySelectorAll('.col.over').forEach(x=>x!==col&&x.classList.remove('over'));col.classList.add('over')});
+app.addEventListener('dragleave',e=>{const col=e.target.closest('.col');if(col&&!col.contains(e.relatedTarget))col.classList.remove('over')});
+app.addEventListener('drop',async e=>{const col=e.target.closest('.col');if(!col||!dragId)return;e.preventDefault();col.classList.remove('over');
+  const id=dragId;dragId=null;const l=lead(id),st=col.dataset.stage;if(!l||l.stage===st)return;
+  if(st==='won'&&!l.dealId){openToDeal(l);return}
+  let reason='';if(st==='lost'){reason=prompt('Причина отказа:')||'';if(!reason.trim())return toast('Без причины отказа этап не меняется.')}
+  try{await run('setLeadStage',id,st,reason);toast('Этап: '+D.dict.stages[st])}catch(_){}});
+app.addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'))});
+
+/* ---------- пароль, выход ---------- */
+document.addEventListener('click',async e=>{
+  if(e.target.closest('#logout')){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}
+  if(e.target.closest('#mypw'))openPw(false)});
+function openPw(forced){let d=$('#pwdlg');if(!d){d=document.createElement('dialog');d.id='pwdlg';document.body.appendChild(d)}
+  d.innerHTML=`<form class="dlg" method="dialog" id="pwform"><h2>${forced?'Задайте свой пароль':'Смена пароля'}</h2>
+    ${forced?'<p class="note" style="margin:0">Вы вошли по временному паролю. Придумайте свой — не короче 10 символов, с буквами и цифрами.</p>':''}
+    <div class="fg"><label class="f full"><span>Текущий пароль</span><input type="password" name="old" autocomplete="current-password" required></label>
+    <label class="f full"><span>Новый пароль</span><input type="password" name="n1" autocomplete="new-password" required minlength="10"></label>
+    <label class="f full"><span>Новый пароль ещё раз</span><input type="password" name="n2" autocomplete="new-password" required minlength="10"></label></div>
+    <div class="acts"><div></div><div>${forced?'':'<button type="button" data-pw-close>Отмена</button>'}<button type="submit" class="primary">Сохранить</button></div></div></form>`;
+  d.querySelector('[data-pw-close]')?.addEventListener('click',()=>d.close());
+  if(forced)d.addEventListener('cancel',ev=>ev.preventDefault());
+  d.querySelector('#pwform').addEventListener('submit',async ev=>{ev.preventDefault();const f=new FormData(ev.target);
+    if(f.get('n1')!==f.get('n2'))return toast('Новые пароли не совпадают.');
+    try{await api('changeOwnPassword',f.get('old'),f.get('n1'));ME.mustChange=false;d.close();toast('Пароль изменён')}catch(err){toast(err.message)}});
+  d.showModal()}
+
+/* ---------- Доступ (учредитель) ---------- */
+const ACC={users:null,roles:{},finance:{},audit:null,loading:false,newPw:null,t:0};
+function genPw(){const a='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint32Array(12));
+  let s='';for(let i=0;i<12;i++)s+=a[r[i]%a.length];return /\d/.test(s)&&/[a-z]/i.test(s)?s:genPw()}
+async function accLoad(){if(ACC.loading)return;ACC.loading=true;
+  try{const u=await api('listUsers');ACC.users=u.users;ACC.roles=u.roles;ACC.finance=u.finance;ACC.audit=await api('listAudit',150)}catch(e){toast(e.message)}
+  ACC.loading=false;ACC.t=Date.now();if(V.tab==='admin')render()}
+function vAdmin(){
+  if(!owner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
+  if(!ACC.users){accLoad();return '<div class="card empty" style="margin-top:18px">Загружаю…</div>'}
+  if(Date.now()-ACC.t>10000)setTimeout(accLoad,0);
+  const ro=sel=>opt(Object.entries(ACC.roles),sel),fo=sel=>opt(Object.entries(ACC.finance),sel);
+  let h=`<h2>Пользователи</h2>`;
+  if(ACC.newPw)h+=`<div class="banner" style="margin:0 0 12px">Временный пароль для <b>${esc(ACC.newPw.login)}</b>: <code style="font-size:15px;user-select:all">${esc(ACC.newPw.pw)}</code><br>Передайте его лично. При первом входе система попросит сменить пароль. Больше этот пароль нигде показан не будет. <button type="button" data-acc="hidepw">Скрыть</button></div>`;
+  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль в CRM</th><th>Финансы</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${ACC.users.map(u=>{const me=u.id===ME.id;return `<tr><td><b>${esc(u.name)}</b>${me?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
+      <td><select data-acc-role="${u.id}" ${me?'disabled':''}>${ro(u.role)}</select></td>
+      <td>${u.role==='owner'?'<span class="muted">полный доступ</span>':`<select data-acc-fin="${u.id}">${fo(u.finance)}</select>`}</td>
+      <td>${u.active?(u.mustChange?'<span class="chip work">ждёт смены пароля</span>':'<span class="chip closed">активен</span>'):'<span class="chip lost">отключён</span>'}</td>
+      <td class="r">${me?'':`<button type="button" data-acc="reset" data-id="${u.id}" data-login="${esc(u.login)}">Новый пароль</button> <button type="button" data-acc="toggle" data-id="${u.id}">${u.active?'Отключить':'Включить'}</button>`}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <div class="card" style="margin-top:12px"><h3>Добавить пользователя</h3><div class="fg">
+    <label class="f"><span>Имя</span><input id="acc-name" placeholder="Имя Фамилия"></label>
+    <label class="f"><span>Логин (латиницей)</span><input id="acc-login" placeholder="ivan" autocapitalize="off" autocomplete="off"></label>
+    <label class="f"><span>Роль в CRM</span><select id="acc-role">${ro('staff')}</select></label>
+    <label class="f"><span>Доступ к финансам</span><select id="acc-fin">${fo('none')}</select></label>
+    <div class="f full" style="align-items:flex-start"><button type="button" class="primary" data-acc="add">Создать и получить пароль</button></div></div>
+    <p class="note" style="margin:8px 0 0"><b>Учредитель</b> — всё, включая финансы, пользователей и настройки. <b>Сотрудник</b> — работает в CRM: заявки, клиенты, задачи, объекты, сделки. <b>Только просмотр</b> — видит CRM, ничего не меняет. Доступ к разделу «Финансы» выдаётся отдельно: нет / просмотр / ввод и правка.</p></div>`;
+  h+=`<h2>Данные</h2><div class="card"><div class="rows">
+    <div class="row"><span>Выгрузить все данные в файл: финансы и CRM (резервная копия)</span><button type="button" data-acc="export">Скачать .json</button></div>
+    <div class="row"><span>Восстановить из файла выгрузки. <b>Заменит</b> финансовые данные и клиентов${'; CRM — если он есть в файле'}. Пользователи сохраняются, перед заменой сервер делает копию базы.</span><label><input type="file" id="acc-import" accept=".json,application/json" hidden><span class="like-btn">Загрузить .json…</span></label></div></div>
+    <p class="note" style="margin:8px 0 0">Сервер сам делает резервную копию базы каждую ночь.</p></div>`;
+  h+=`<h2>Журнал изменений</h2><div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead><tbody>
+    ${(ACC.audit||[]).map(a=>`<tr><td class="num">${dtFmt(a.at)}</td><td>${esc(a.user_name||'')}</td><td>${esc(a.action)}</td><td class="muted">${esc([a.entity,a.entity_id].filter(Boolean).join(' · '))}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Пока пусто</td></tr>'}
+  </tbody></table></div><p class="note">Последние 150 записей.</p>`;
+  return h}
+app.addEventListener('change',async e=>{
+  const r=e.target.closest('[data-acc-role],[data-acc-fin]');
+  if(r){const id=Number(r.dataset.accRole||r.dataset.accFin),u=ACC.users.find(x=>x.id===id);
+    const upd=Object.assign({id:u.id,name:u.name,role:u.role,finance:u.finance,active:u.active},r.dataset.accRole?{role:r.value}:{finance:r.value});
+    try{const out=await api('saveUser',upd);ACC.users=out.users;toast('Права изменены');render()}catch(err){toast(err.message);render()}return}
+  if(e.target.id==='acc-import'){const f=e.target.files[0];if(!f)return;
+    const ok=prompt('Восстановление заменит текущие данные (кроме пользователей). Чтобы продолжить, напишите слово ЗАМЕНИТЬ');
+    if(ok!=='ЗАМЕНИТЬ'){e.target.value='';return toast('Отменено')}
+    try{const data=JSON.parse(await f.text());const c=await api('importData',data,'ЗАМЕНИТЬ');
+      toast(`Загружено: операций ${c.ops}, сделок ${c.deals}, клиентов ${c.clients}`+(c.leads!=null?`, заявок ${c.leads}`:''));apply(await api('crmLoad'));ACC.users=null}
+    catch(err){toast('Не выполнено: '+err.message)}e.target.value=''}});
+app.addEventListener('click',async e=>{const b=e.target.closest('[data-acc]');if(!b)return;const a=b.dataset.acc;
+  try{
+    if(a==='hidepw'){ACC.newPw=null;render();return}
+    if(a==='add'){const name=$('#acc-name').value.trim(),login=$('#acc-login').value.trim().toLowerCase(),role=$('#acc-role').value,finance=$('#acc-fin').value,pw=genPw();
+      const out=await api('saveUser',{name,login,role,finance,password:pw});ACC.users=out.users;ACC.newPw={login,pw};ACC.t=0;D&&apply(await api('crmLoad'));return}
+    if(a==='reset'){if(!confirm('Выдать новый временный пароль? Текущие входы этого пользователя завершатся.'))return;const pw=genPw();
+      const out=await api('resetUserPassword',Number(b.dataset.id),pw);ACC.users=out.users;ACC.newPw={login:b.dataset.login,pw};render();return}
+    if(a==='toggle'){const u=ACC.users.find(x=>x.id==b.dataset.id);const out=await api('saveUser',{id:u.id,name:u.name,role:u.role,finance:u.finance,active:!u.active});ACC.users=out.users;render();return}
+    if(a==='export'){const d=await api('exportData');const blob=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);const l=document.createElement('a');l.href=url;l.download='dg-export-'+today()+'.json';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);return}
+  }catch(err){toast(err.message)}});
+
+/* ---------- запуск ---------- */
+async function init(){$('#sources').innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">`).join('');render();
+  try{apply(await api('crmLoad'))}catch(e){$('#app').innerHTML=`<div class="banner">Не удалось загрузить данные: ${esc(e.message)}. Обновите страницу.</div>`;return}
+  setInterval(async()=>{if(document.hidden||saving>0||dlgCtx||dragId)return;
+    try{const v=await api('getVersion');if(v!==version)apply(await api('crmLoad'))}catch(_){}},20000)}
+init();
+})();
+
+</script>
+</body></html>

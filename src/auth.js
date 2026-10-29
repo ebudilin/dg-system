@@ -4,10 +4,13 @@ const crypto = require('node:crypto');
 
 const SESSION_DAYS = 30;
 const ROLES = {
-  owner: 'Учредитель (полный доступ)',
-  accountant: 'Бухгалтер (ввод данных)',
-  viewer: 'Просмотр'
+  owner: 'Учредитель',
+  staff: 'Сотрудник',
+  viewer: 'Только просмотр'
 };
+// Доступ к разделу «Финансы» выдаёт учредитель каждому отдельно. У учредителя — всегда полный.
+const FINANCE = { none: 'Нет доступа', view: 'Просмотр', edit: 'Ввод и правка' };
+const finLevel = u => u.role === 'owner' ? 'edit' : (FINANCE[u.finance] ? u.finance : 'none');
 
 function hashPassword(pw) {
   const salt = crypto.randomBytes(16);
@@ -39,9 +42,11 @@ function createSession(db, userId, ip) {
 
 function userBySession(db, token) {
   if (!token || !/^[0-9a-f]{64}$/.test(token)) return null;
-  const r = db.prepare(`SELECT u.id,u.login,u.name,u.role,u.active,u.must_change,s.expires FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=?`).get(token);
+  const r = db.prepare(`SELECT u.id,u.login,u.name,u.role,u.finance,u.active,u.must_change,s.expires FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token=?`).get(token);
   if (!r || !r.active || r.expires < Date.now()) return null;
-  return { id: r.id, login: r.login, name: r.name, role: r.role, mustChange: !!r.must_change };
+  const u = { id: r.id, login: r.login, name: r.name, role: r.role, mustChange: !!r.must_change };
+  u.finance = finLevel({ role: r.role, finance: r.finance });
+  return u;
 }
 
 function dropSession(db, token) { db.prepare('DELETE FROM sessions WHERE token=?').run(String(token || '')); }
@@ -72,6 +77,6 @@ function parseCookies(header) {
 }
 
 module.exports = {
-  ROLES, hashPassword, checkPassword, validatePassword, createSession, userBySession,
+  ROLES, FINANCE, finLevel, hashPassword, checkPassword, validatePassword, createSession, userBySession,
   dropSession, dropUserSessions, purgeSessions, tooMany, noteFail, clearFails, parseCookies, SESSION_DAYS
 };
