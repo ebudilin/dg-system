@@ -82,7 +82,7 @@ function finDict(db) {
 function addActivity(db, u, a) {
   const id = a.id || uid('act');
   const x = {
-    id, type: ACT_TYPES[a.type] ? a.type : 'note', text: str(a.text, 5000), at: Number(a.at) || now(),
+    id, type: ACT_TYPES[a.type] ? a.type : 'note', text: str(a.text, 5000), at: Math.min(Number(a.at) || now(), now() + 86400e3),
     userId: a.userId != null ? a.userId : (u ? u.id : null), userName: a.userName || (u ? u.name : ''),
     clientId: str(a.clientId, 64), leadId: str(a.leadId, 64), dealId: str(a.dealId, 64), objectId: str(a.objectId, 64)
   };

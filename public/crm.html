@@ -222,12 +222,29 @@ select.ostsel{width:auto;font-weight:600;color:var(--oc);background:var(--ob);bo
 .ost[aria-pressed="true"]{outline:2px solid var(--oc);outline-offset:1px}
 
 
+
+/* v5: липкие заголовки таблиц, цвет раздела */
+header.top{background:var(--hdr,var(--bg));border-top:4px solid var(--accent)}
+.tbl-wrap{max-height:calc(100dvh - 210px);overflow:auto}
+.tbl-wrap thead th{position:sticky;top:0;z-index:2}
+.report thead th:first-child{z-index:3}
+dialog .tbl-wrap{max-height:none}
+.brand .sect-badge{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:3px}
+@media (max-width:700px){.tbl-wrap{max-height:calc(100dvh - 140px)}.report th:first-child,.report td:first-child{min-width:130px;max-width:150px}}
+
+:root{--hdr:#E3EFE8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hdr:#122019}}
+:root[data-theme="dark"]{--hdr:#122019}
+.grpseg{margin:0 0 12px;flex-wrap:wrap}
+.grpseg button{flex:0 1 auto}
+.grpseg b{font-family:var(--font-num);font-weight:600;margin-left:3px;opacity:.7}
+.addnote input[type=datetime-local]{width:auto;flex:1}
 </style></head>
 <body>
 <header class="top">
   <div class="wrap" style="padding-bottom:0">
     <div class="bar">
-      <div class="brand"><b>Дорогой Город</b><span>Клиенты, заявки, задачи, объекты</span></div>
+      <div class="brand"><b>Дорогой Город<span class="sect-badge">CRM</span></b><span>Клиенты, заявки, задачи, объекты</span></div>
       <div class="right">
         <nav class="sect" id="sect" aria-label="Разделы"></nav>
         <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
@@ -251,6 +268,7 @@ const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const today=()=>ymd(new Date());
 const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const nowLocal=()=>{const d=new Date();return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
 const dFmt=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4):'';
 const dtFmt=ms=>{const d=new Date(ms);return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2)+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
 const dueLbl=t=>{if(!t.due)return '';const td=today();if(t.due===td)return 'сегодня'+(t.time?' '+t.time:'');if(t.due===addDays(td,1))return 'завтра'+(t.time?' '+t.time:'');return dFmt(t.due)+(t.time?' '+t.time:'')};
@@ -258,12 +276,14 @@ function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTim
 
 const DEAL_KINDS=['Вторичка','Новостройка','Коммерция','Аренда','Загородная','Юр. сопровождение'];
 const DEAL_ST={work:'В работе',deal:'Договор подписан',closed:'Закрыта',lost:'Сорвалась'};
-const CP_TYPES=[['owner','Собственник'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор']];
+const CP_TYPES=[['owner','Собственник'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор'],['contractor','Подрядчик'],['service','Сервис / поставщик'],['bank','Банк']];
+const CP_GROUPS=[['clients','Клиенты'],['partners','Партнёры и сервисы'],['team','Команда'],['other','Прочие']];
+function cpGroup(c){const t=c.types||[];if(t.some(x=>['agent','founder','employee'].includes(x)))return 'team';if(t.some(x=>['owner','buyer','tenant','investor'].includes(x)))return 'clients';if(t.some(x=>['partner','contractor','service','bank'].includes(x)))return 'partners';if(D.leads.some(l=>l.clientId===c.id)||D.deals.some(d=>d.clientId===c.id)||D.objects.some(o=>(o.owners||[]).includes(c.id)))return 'clients';return 'other'}
 const SOURCES=['Рекомендация','Повторный клиент','Авито','ЦИАН','Яндекс Недвижимость','Сайт dorogoigorod.ru','Сайт fedset.ru','Instagram / Reels','Telegram','Звонок','Партнёр / агент','Застройщик'];
 const OPEN_STAGES=['new','work','show','talks'];
 
 let D=null, ME=null, version=null, saving=0, dlgCtx=null;
-const V={tab:(location.hash||'').slice(1)||'today', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
+const V={tab:(location.hash||'').slice(1)||'today', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
 const can=()=>!!ME&&(ME.role==='owner'||ME.role==='staff');
 const fin=()=>!!ME&&(ME.finance==='view'||ME.finance==='edit');
 const finW=()=>!!ME&&ME.finance==='edit';
@@ -296,7 +316,8 @@ const nextTask=f=>openTasks(f)[0];
 const agentsList=()=>D.clients.filter(c=>(c.types||[]).includes('agent')).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
 const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(sel??'')?'selected':''}>${esc(l)}</option>`).join('');
 const usersOpt=sel=>opt(D.users.filter(u=>u.active||u.id===sel).map(u=>[u.id,u.name]),sel);
-const clientsOpt=(sel,empty)=>opt([['',empty||'— не выбран —'],...D.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(c=>[c.id,c.name])],sel);
+const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).forEach(c=>{(by[cpGroup(c)]=by[cpGroup(c)]||[]).push(c)});
+  return opt([['',empty||'— не выбран —']],sel)+CP_GROUPS.filter(([g])=>by[g]).map(([g,l])=>`<optgroup label="${l}">${opt(by[g].map(c=>[c.id,c.name]),sel)}</optgroup>`).join('')};
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
@@ -396,7 +417,7 @@ function vTasks(){
 
 /* ---------- Клиенты ---------- */
 const TEAM=['agent','founder','employee'];
-const isClient=c=>!(c.types||[]).length||(c.types||[]).some(t=>!TEAM.includes(t));
+const isClient=c=>cpGroup(c)==='clients';
 const lastC=id=>(D.lastContact||{})[id]||0;
 const daysAgo=ms=>ms?Math.floor((Date.now()-ms)/864e5):null;
 function bdayIn(c){if(!c.birth)return null;const t=new Date();t.setHours(0,0,0,0);const b=new Date(c.birth+'T00:00:00');let n=new Date(t.getFullYear(),b.getMonth(),b.getDate());if(n<t)n=new Date(t.getFullYear()+1,b.getMonth(),b.getDate());return Math.round((n-t)/864e5)}
@@ -414,16 +435,19 @@ function remindHtml(r,compact){
 function clientWhy(c){const l=D.leads.find(l=>l.clientId===c.id&&OPEN_STAGES.includes(l.stage));if(l)return 'заявка: '+D.dict.stages[l.stage];const d=D.deals.find(d=>d.clientId===c.id&&(d.status==='work'||d.status==='deal'));if(d)return 'сделка в работе';const o=D.objects.find(o=>(o.owners||[]).includes(c.id));return o?'собственник: '+objName(o):''}
 function vClients(){
   const f=V.cf,q=f.q.trim().toLowerCase();
-  const list=D.clients.filter(c=>(!f.type||(c.types||[]).includes(f.type))&&(!q||(c.name+' '+c.phone+' '+c.email+' '+c.other+' '+c.note).toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  const cnt={};D.clients.forEach(c=>{const g=cpGroup(c);cnt[g]=(cnt[g]||0)+1});
+  const list=D.clients.filter(c=>(f.grp==='all'||cpGroup(c)===f.grp)&&(!f.type||(c.types||[]).includes(f.type))&&(!q||(c.name+' '+c.phone+' '+c.email+' '+c.other+' '+c.note).toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
   let h=`<div class="toolbar"><label class="f grow"><span>Поиск</span><input id="cf-q" value="${esc(f.q)}" placeholder="Имя, телефон, почта"></label>
     <label class="f"><span>Тип</span><select id="cf-type">${opt([['','Все'],...CP_TYPES],f.type)}</select></label>
-    <label class="f"><span>«Давно не связывались» — после</span><select id="cf-quiet">${opt([[14,'14 дней'],[21,'21 дня'],[30,'30 дней'],[45,'45 дней'],[60,'60 дней']],f.quiet)}</select></label></div>`;
-  if(!q&&!f.type){const r=clientReminders(0);if(r.bd.length||r.quiet.length)h+=`<details class="card remind" ${f.open?'open':''} id="cf-rem"><summary><b>Напоминания</b> <span class="muted">дни рождения: ${r.bd.length} · давно без контакта: ${r.quiet.length}</span></summary>${remindHtml(r)}<p class="note">Контакт — это звонок, встреча, показ, сообщение или отчёт в истории клиента. Отмечайте их в карточке, чтобы напоминания были точными.</p></details>`}
+    <label class="f"><span>«Давно не связывались» — после</span><select id="cf-quiet">${opt([[14,'14 дней'],[21,'21 дня'],[30,'30 дней'],[45,'45 дней'],[60,'60 дней']],f.quiet)}</select></label></div>
+    <div class="seg grpseg" role="group">${[...CP_GROUPS,['all','Все']].map(([k,l])=>`<button data-cgrp="${k}" aria-pressed="${f.grp===k}">${l} <b>${k==='all'?D.clients.length:(cnt[k]||0)}</b></button>`).join('')}</div>
+    ${f.grp==='other'?'<p class="note" style="margin:0 0 10px">Здесь контрагенты без типа — в основном из финансов (сервисы, банки, разовые платежи). Укажите тип справа, и они уйдут в нужную группу. Агенты по умолчанию видят группу «Клиенты».</p>':''}`;
+  if(!q&&!f.type&&f.grp==='clients'){const r=clientReminders(0);if(r.bd.length||r.quiet.length)h+=`<details class="card remind" ${f.open?'open':''} id="cf-rem"><summary><b>Напоминания</b> <span class="muted">дни рождения: ${r.bd.length} · давно без контакта: ${r.quiet.length}</span></summary>${remindHtml(r)}<p class="note">Контакт — это звонок, встреча, показ, сообщение или отчёт в истории клиента. Отмечайте их в карточке, чтобы напоминания были точными.</p></details>`}
   if(!list.length)return h+'<div class="card empty">Никого не нашлось.</div>';
-  h+=`<div class="tbl-wrap"><table><thead><tr><th>Имя</th><th>Тип</th><th>Телефон</th><th>Заявки</th><th>Сделки</th><th>Последний контакт</th><th>Следующий шаг</th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Имя</th><th>Тип</th><th>Телефон</th><th>Заявки</th><th>Сделки</th><th>Последний контакт</th><th>${f.grp==='other'&&can()?'Отнести к':'Следующий шаг'}</th></tr></thead><tbody>
     ${list.map(c=>{const ls=D.leads.filter(l=>l.clientId===c.id),ds=D.deals.filter(d=>d.clientId===c.id),t=nextTask(x=>x.clientId===c.id||ls.some(l=>l.id===x.leadId));
       return `<tr class="click" data-open-client="${esc(c.id)}"><td><b>${esc(c.name)}</b></td><td class="muted">${esc((c.types||[]).map(k=>(CP_TYPES.find(x=>x[0]===k)||[,k])[1]).join(', '))}</td><td class="num">${esc(c.phone)}</td>
-      <td>${ls.filter(l=>OPEN_STAGES.includes(l.stage)).length||''}${ls.length?` <span class="muted">/ ${ls.length}</span>`:''}</td><td>${ds.length||''}</td><td class="num ${daysAgo(lastC(c.id))>=f.quiet?'warn':''}">${lastC(c.id)?dFmt(new Date(lastC(c.id)).toISOString().slice(0,10)):''}</td><td>${t?esc(t.title)+' <span class="muted">'+esc(dueLbl(t))+'</span>':''}</td></tr>`}).join('')}
+      <td>${ls.filter(l=>OPEN_STAGES.includes(l.stage)).length||''}${ls.length?` <span class="muted">/ ${ls.length}</span>`:''}</td><td>${ds.length||''}</td><td class="num ${daysAgo(lastC(c.id))>=f.quiet?'warn':''}">${lastC(c.id)?dFmt(new Date(lastC(c.id)).toISOString().slice(0,10)):''}</td><td>${f.grp==='other'&&can()?`<select data-retype="${esc(c.id)}" aria-label="Тип контрагента"><option value="">— выбрать тип —</option>${opt(CP_TYPES,'')}</select>`:t?esc(t.title)+' <span class="muted">'+esc(dueLbl(t))+'</span>':''}</td></tr>`}).join('')}
   </tbody></table></div><p class="note">Всего: ${list.length}</p>`;
   return h}
 
@@ -488,7 +512,7 @@ function sidePanel(link){
   const ts=openTasks(t=>Object.entries(link).some(([k,v])=>v&&t[k]===v));
   return `<div class="side"><div class="card"><h3>Задачи</h3>${ts.length?`<div class="box tlist" style="margin-bottom:8px">${ts.map(taskRow).join('')}</div>`:'<p class="muted" style="margin:0 0 8px;font-size:13px">Открытых задач нет.</p>'}
       ${can()?`<div class="addnote"><input id="st-title" placeholder="Следующий шаг: позвонить, показ…"><div class="r"><input id="st-due" type="date" value="${today()}"><select id="st-who">${usersOpt(ME.id)}</select><button type="button" data-side-task>+</button></div></div>`:''}</div>
-    <div class="card"><h3>История</h3>${can()?`<div class="addnote"><div class="r"><select id="nt-type">${opt(Object.entries(D.dict.actTypes).filter(([k])=>k!=='event'),'call')}</select></div><textarea id="nt-text" rows="2" placeholder="Что обсудили, договорённости…"></textarea><div class="r" style="justify-content:flex-end"><button type="button" data-add-note>Добавить запись</button></div></div>`:''}
+    <div class="card"><h3>История</h3>${can()?`<div class="addnote"><div class="r"><select id="nt-type">${opt(Object.entries(D.dict.actTypes).filter(([k])=>k!=='event'),'call')}</select><input type="datetime-local" id="nt-at" value="${nowLocal()}" max="${nowLocal()}" title="Когда это было" aria-label="Когда это было"></div><textarea id="nt-text" rows="2" placeholder="Что обсудили, договорённости…"></textarea><div class="r" style="justify-content:flex-end"><button type="button" data-add-note>Добавить запись</button></div></div>`:''}
       <div class="feed" id="feed"><p class="muted" style="font-size:13px">Загружаю…</p></div></div></div>`}
 async function loadFeed(){if(!dlgCtx||!dlgCtx.feed)return;const ctx=dlgCtx;
   try{const items=await api('listActivities',ctx.feed);if(dlgCtx!==ctx)return;
@@ -802,7 +826,8 @@ form.addEventListener('click',async e=>{const b=e.target.closest('button,a');if(
   if(b.hasAttribute('data-to-deal')){openToDeal(dlgCtx.orig);return}
   if(b.dataset.delAct){e.preventDefault();if(!confirm('Удалить запись из истории?'))return;try{await api('deleteActivity',b.dataset.delAct);loadFeed()}catch(err){toast(err.message)}return}
   if(b.hasAttribute('data-add-note')){const text=$('#nt-text').value.trim();if(!text)return toast('Напишите текст записи.');const f=dlgCtx.feed;
-    try{await api('saveActivity',Object.assign({type:$('#nt-type').value,text},f));$('#nt-text').value='';loadFeed()}catch(err){toast(err.message)}return}
+    const atv=$('#nt-at').value,at=atv?new Date(atv).getTime():Date.now();if(at>Date.now()+60e3)return toast('Дата записи не может быть в будущем — для будущего поставьте задачу.');
+    try{await api('saveActivity',Object.assign({type:$('#nt-type').value,text,at},f));$('#nt-text').value='';$('#nt-at').value=nowLocal();toast('Записано');loadFeed();if(D)apply(await api('crmLoad'))}catch(err){toast(err.message)}return}
   if(b.hasAttribute('data-side-task')){const title=$('#st-title').value.trim();if(!title)return toast('Напишите задачу.');const f=dlgCtx.feed,o=dlgCtx.orig;
     const link={leadId:f.leadId||'',clientId:f.clientId||(o&&o.clientId)||'',dealId:f.dealId||'',objectId:f.objectId||''};
     try{readForm();await run('saveTask',Object.assign({title,due:$('#st-due').value,assigneeId:Number($('#st-who').value)},link));dlgCtx&&dlgCtx.draw();loadFeed();toast('Задача добавлена')}catch(_){}return}
@@ -826,6 +851,7 @@ app.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){V.tab=g.dataset.go;history.replaceState(null,'','#'+V.tab);render();return}
   const tw=e.target.closest('[data-tw]');if(tw){V.tf.who=tw.dataset.tw;render();return}
   const ds=e.target.closest('[data-dst]');if(ds){V.df.st=ds.dataset.dst;render();return}
+  const cg=e.target.closest('[data-cgrp]');if(cg){V.cf.grp=cg.dataset.cgrp;render();return}
   const os=e.target.closest('[data-ost]');if(os){V.of.status=V.of.status===os.dataset.ost?'work':os.dataset.ost;render();return}
   if(e.target.closest('[data-qadd]')){qadd();return}
   const rb=e.target.closest('[data-remind]');if(rb){const c=cl(rb.dataset.remind);if(!c)return;const n=bdayIn(c);
@@ -833,12 +859,13 @@ app.addEventListener('click',e=>{
     run('saveTask',Object.assign(t,{assigneeId:ME.id,clientId:c.id})).then(()=>toast('Задача поставлена')).catch(()=>{});return}
   const ob=e.target.closest('[data-obj-remind]');if(ob){const o=obj(ob.dataset.objRemind);if(!o)return;
     run('tipToTask',o.id,ob.dataset.what,today()).then(()=>toast('Задача поставлена ответственному')).catch(()=>{});return}
-  const o=e.target.closest('[data-open-lead],[data-open-client],[data-open-object],[data-open-deal],[data-open-task]');if(!o||e.target.closest('input[type=checkbox]'))return;
+  const o=e.target.closest('[data-open-lead],[data-open-client],[data-open-object],[data-open-deal],[data-open-task]');if(!o||e.target.closest('input[type=checkbox],select'))return;
   if(o.dataset.openLead)openLead(lead(o.dataset.openLead));else if(o.dataset.openClient)openClient(cl(o.dataset.openClient));
   else if(o.dataset.openObject)openObject(obj(o.dataset.openObject));else if(o.dataset.openDeal)openDeal(deal(o.dataset.openDeal));
   else if(o.dataset.openTask)openTask(D.tasks.find(x=>x.id===o.dataset.openTask));
 });
 app.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.retype&&t.value){const c=cl(t.dataset.retype);if(c)run('crmSaveClient',Object.assign({},c,{types:[t.value]})).then(()=>toast(c.name+' → '+(CP_TYPES.find(x=>x[0]===t.value)||[])[1])).catch(()=>{});return}
   if(t.dataset.done!=null){toggleDone(t.dataset.done,t.checked);return}
   const map={'lf-owner':['lf','owner'],'lf-kind':['lf','kind'],'cf-type':['cf','type'],'cf-quiet':['cf','quiet'],'of-kind':['of','kind'],'of-offer':['of','offer'],'of-status':['of','status'],'of-resp':['of','resp']};
   if(map[t.id]){V[map[t.id][0]][map[t.id][1]]=t.value;render();return}

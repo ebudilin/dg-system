@@ -12,7 +12,7 @@ const PERMS = {
   owner: u => u.role === 'owner'
 };
 const can = (u, perm) => !perm || (PERMS[perm] ? PERMS[perm](u) : false);
-const CP_TYPES = ['owner', 'buyer', 'tenant', 'agent', 'partner', 'founder', 'employee', 'investor'];
+const CP_TYPES = ['owner', 'buyer', 'tenant', 'agent', 'partner', 'founder', 'employee', 'investor', 'contractor', 'service', 'bank'];
 
 class ApiError extends Error { constructor(msg, status) { super(msg); this.status = status || 400; } }
 

@@ -130,6 +130,19 @@ dialog::backdrop{background:rgba(10,16,14,.45)}
 .note{font-size:12px;color:var(--muted);margin-top:8px;max-width:70ch}
 .pf input{width:130px;text-align:right}
 @media (prefers-reduced-motion:no-preference){.meter i{transition:width .3s}}
+
+/* v5: липкие заголовки таблиц, цвет раздела */
+header.top{background:var(--hdr,var(--bg));border-top:4px solid var(--accent)}
+.tbl-wrap{max-height:calc(100dvh - 210px);overflow:auto}
+.tbl-wrap thead th{position:sticky;top:0;z-index:2}
+.report thead th:first-child{z-index:3}
+dialog .tbl-wrap{max-height:none}
+.brand .sect-badge{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:3px}
+@media (max-width:700px){.tbl-wrap{max-height:calc(100dvh - 140px)}.report th:first-child,.report td:first-child{min-width:130px;max-width:150px}}
+
+:root{--accent:#2E4C93;--accent-ink:#FFFFFF;--accent-soft:#DFE5F4;--hdr:#E4E9F4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent:#93ABEB;--accent-ink:#0D1424;--accent-soft:#1E2740;--hdr:#121A2B}}
+:root[data-theme="dark"]{--accent:#93ABEB;--accent-ink:#0D1424;--accent-soft:#1E2740;--hdr:#121A2B}
 </style>
 </head><body>
 
@@ -137,7 +150,7 @@ dialog::backdrop{background:rgba(10,16,14,.45)}
 <header class="top">
   <div class="wrap" style="padding-bottom:0">
     <div class="bar">
-      <div class="brand"><b><a href="/" style="color:inherit;text-decoration:none" title="Перейти в CRM">Дорогой Город</a> · Финансы</b><span id="sync">Подключение к базе…</span></div>
+      <div class="brand"><b><a href="/" style="color:inherit;text-decoration:none" title="Перейти в CRM">Дорогой Город</a><span class="sect-badge">Финансы</span></b><span id="sync">Подключение к базе…</span></div>
       <div class="period">
         <button id="prev" aria-label="Предыдущий период">‹</button>
         <div class="lbl" id="plabel"></div>
@@ -214,7 +227,7 @@ const DEFAULT_CFG={
 const PNL_LABEL={revenue:'Выручка',var:'Переменный расход',fixed:'Постоянный расход',none:'Не влияет на прибыль'};
 const DEAL_KINDS=['Вторичка','Новостройка','Коммерция','Аренда','Загородная','Юр. сопровождение'];
 const DEAL_ST={work:'В работе',deal:'Договор подписан',closed:'Закрыта',lost:'Сорвалась'};
-const CP_TYPES=[['owner','Собственник (продавец/арендодатель)'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор']];
+const CP_TYPES=[['owner','Собственник (продавец/арендодатель)'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор'],['contractor','Подрядчик'],['service','Сервис / поставщик'],['bank','Банк']];
 const CP_SHORT={owner:'Собственник',buyer:'Покупатель',tenant:'Арендатор',agent:'Агент',partner:'Партнёр',founder:'Учредитель',employee:'Сотрудник',investor:'Инвестор'};
 
 /* ---------- state ---------- */
