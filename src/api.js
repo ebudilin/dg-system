@@ -12,7 +12,7 @@ const PERMS = {
   owner: u => u.role === 'owner'
 };
 const can = (u, perm) => !perm || (PERMS[perm] ? PERMS[perm](u) : false);
-const CP_TYPES = ['owner', 'buyer', 'tenant', 'agent', 'partner', 'founder', 'employee', 'investor', 'contractor', 'service', 'bank'];
+const CP_TYPES = ['owner', 'buyer', 'tenant', 'agent', 'partner', 'founder', 'employee', 'investor', 'contractor', 'service', 'bank', 'outagent'];
 
 class ApiError extends Error { constructor(msg, status) { super(msg); this.status = status || 400; } }
 
@@ -308,6 +308,7 @@ const CRM_TABLES = ['leads', 'tasks', 'objects', 'activities', 'inquiries'];
 function exportCrm(db) {
   const out = {};
   CRM_TABLES.forEach(t => { out[t] = db.prepare(`SELECT data FROM ${t}`).all().map(r => P(r.data)).filter(Boolean); });
+  out.kb = db.prepare('SELECT data FROM kb').all().map(r => P(r.data)).filter(Boolean);
   return out;
 }
 

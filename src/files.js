@@ -5,9 +5,9 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { def, can, ApiError, audit, bump, str, J, P } = require('./api');
 
-const KINDS = { photo: 'Фото', plan: 'Планировка', doc: 'Документ' };
+const KINDS = { photo: 'Фото', plan: 'Планировка', doc: 'Документ', tpl: 'Шаблон' };
 const DOC_TYPES = { contract: 'Договор с собственником', egrn: 'Выписка ЕГРН', title: 'Правоустанавливающие документы', id: 'Документы собственника', tech: 'Техпаспорт / план БТИ', other: 'Прочее' };
-const MAX = { photo: 15e6, plan: 15e6, doc: 30e6 };
+const MAX = { photo: 15e6, plan: 15e6, doc: 30e6, tpl: 30e6 };
 const IMG = /^image\/(jpeg|png|webp)$/;
 
 let DIR = null;
@@ -26,10 +26,13 @@ def('listFiles', null, (db, u, objectId) => list(db, str(objectId, 64)));
 
 // приём файла: тело запроса — сами байты, параметры — в адресе
 function upload(db, u, q, body) {
-  if (!can(u, 'crm_w')) throw new ApiError('Недостаточно прав.', 403);
   const objectId = str(q.get('objectId'), 64);
-  const o = db.prepare('SELECT data FROM objects WHERE id=?').get(objectId);
+  const isKb = objectId === 'kb';
+  if (isKb ? !require('./kb').canEdit(db, u) : !can(u, 'crm_w')) throw new ApiError('Недостаточно прав.', 403);
+  const o = isKb || db.prepare('SELECT data FROM objects WHERE id=?').get(objectId);
   if (!o) throw new ApiError('Объект не найден — сначала сохраните его.');
+  if (isKb && q.get('kind') !== 'tpl') throw new ApiError('В справочник загружаются только шаблоны.');
+  if (!isKb && q.get('kind') === 'tpl') throw new ApiError('Неверный тип файла.');
   const thumbFor = q.get('thumbFor');
   if (thumbFor) {
     const f = db.prepare('SELECT * FROM files WHERE id=? AND object_id=?').get(str(thumbFor, 64), objectId);
@@ -41,7 +44,7 @@ function upload(db, u, q, body) {
   }
   const kind = KINDS[q.get('kind')] ? q.get('kind') : 'doc';
   const mime = str(q.get('mime') || 'application/octet-stream', 100).toLowerCase();
-  if (kind !== 'doc' && !IMG.test(mime)) throw new ApiError('Для фото и планировок нужны файлы JPG, PNG или WebP.');
+  if ((kind === 'photo' || kind === 'plan') && !IMG.test(mime)) throw new ApiError('Для фото и планировок нужны файлы JPG, PNG или WebP.');
   if (!body.length) throw new ApiError('Пустой файл.');
   if (body.length > MAX[kind]) throw new ApiError(`Файл больше ${Math.round(MAX[kind] / 1e6)} МБ.`);
   const id = 'f_' + Date.now().toString(36) + crypto.randomBytes(4).toString('hex');
@@ -61,6 +64,7 @@ function upload(db, u, q, body) {
 def('deleteFile', 'crm_w', (db, u, id) => {
   const f = db.prepare('SELECT * FROM files WHERE id=?').get(str(id, 64));
   if (!f) return { ok: true };
+  if (f.object_id === 'kb') throw new ApiError('Шаблон удаляется в справочнике.');
   if (f.created_by !== u.id && u.role !== 'owner') throw new ApiError('Удалить файл может тот, кто его загрузил, или учредитель.');
   db.prepare('DELETE FROM files WHERE id=?').run(f.id);
   for (const t of [false, true]) { try { fs.unlinkSync(filePath(db, f, t)); } catch (_) {} }
@@ -119,7 +123,7 @@ function servePublic(db, res, key) {
 function objectFiles(db, objectId) { return list(db, objectId); }
 function counts(db) {
   const out = {};
-  for (const r of db.prepare('SELECT object_id id, kind, COUNT(*) n FROM files GROUP BY object_id, kind').all()) (out[r.id] = out[r.id] || {})[r.kind] = r.n;
+  for (const r of db.prepare("SELECT object_id id, kind, COUNT(*) n FROM files WHERE object_id<>'kb' GROUP BY object_id, kind").all()) (out[r.id] = out[r.id] || {})[r.kind] = r.n;
   return out;
 }
 

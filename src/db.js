@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 4;
+const SCHEMA = 5;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -138,6 +138,21 @@ function migrate(db) {
         CREATE INDEX IF NOT EXISTS calls_status ON calls(status);
       `);
       setMeta(db, 'schema', '4');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 5) {
+    // Справочник (цены, инструкции, шаблоны документов); у обращений появляются этапы
+    safetyCopy(db, 'schema-5');
+    tx(db, () => {
+      db.exec(`CREATE TABLE IF NOT EXISTS kb (id TEXT PRIMARY KEY, kind TEXT NOT NULL, sort INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, data TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS kb_kind ON kb(kind, sort);`);
+      for (const r of db.prepare('SELECT id, data FROM inquiries').all()) {
+        let q; try { q = JSON.parse(r.data); } catch (_) { continue; }
+        if (!q || q.stage) continue;
+        q.stage = q.leadId ? 'thinking' : 'new';
+        db.prepare('UPDATE inquiries SET data=? WHERE id=?').run(JSON.stringify(q), r.id);
+      }
+      setMeta(db, 'schema', '5');
     });
   }
 }

@@ -27,7 +27,11 @@ const D = {
   // регулярные советы: не «выполняются» навсегда, а напоминают раз в N дней
   recurring: { owner_call: 7, owner_report: 14 },
   inqChannels: ['ЦИАН', 'Авито', 'Яндекс Недвижимость', 'Домклик', 'Сайт', 'Звонок на номер агентства', 'Рекомендация', 'Соцсети', 'Другое'],
-  inqWho: { buyer: 'Прямой покупатель', agent: 'Агент' }
+  inqWho: { buyer: 'Прямой интересант', agent: 'Агент' },
+  inqStages: { new: 'Новое', show_set: 'Показ назначен', shown: 'Показ проведён', thinking: 'Думает', talks: 'Торг / переговоры', deposit: 'Задаток / бронь', deal: 'Купил / снял', declined: 'Не подошёл', noreply: 'Не выходит на связь' },
+  inqClosed: ['deal', 'declined', 'noreply'],
+  inqDecline: ['Цена', 'Планировка', 'Состояние / ремонт', 'Расположение', 'Этаж / вид', 'Документы', 'Выбрал другой объект', 'Передумал / отложил', 'Другое'],
+  inqSvc: { '': 'Не предлагали', offered: 'Предложили, думает', lead: 'Заявка на подбор', refused: 'Отказался' }
 };
 
 const now = () => Date.now();
@@ -213,77 +217,4 @@ def('expenseToFinance', 'fin_w', (db, u, objectId, expId, acc, cat) => {
   return require('./crm').crmLoad(db, u);
 });
 
-/* ---------- обращения по объекту ---------- */
-function cleanInq(db, q, prev) {
-  const objectId = optRef(db, 'objects', q.objectId || (prev && prev.objectId));
-  if (!objectId) throw new ApiError('Объект не найден.');
-  return {
-    id: str(q.id || (prev && prev.id) || uid('inq'), 64), objectId,
-    at: Number(q.at) || (prev && prev.at) || now(),
-    name: str(q.name, 200).trim(), phone: str(q.phone, 100).trim(), channel: str(q.channel, 100).trim(),
-    who: pick(q.who, D.inqWho, 'buyer'), note: str(q.note, 2000),
-    result: str(q.result, 300), leadId: (prev && prev.leadId) || '',
-    userId: (prev && prev.userId) || null, userName: (prev && prev.userName) || ''
-  };
-}
-
-def('listInquiries', null, (db, u, objectId) =>
-  db.prepare('SELECT data FROM inquiries WHERE object_id=? ORDER BY at DESC').all(str(objectId, 64)).map(r => P(r.data)).filter(Boolean));
-
-def('saveInquiry', 'crm_w', (db, u, q) => {
-  if (!q || !(String(q.name || '').trim() || String(q.phone || '').trim())) throw new ApiError('Укажите имя или телефон звонившего.');
-  let x;
-  tx(db, () => {
-    const prevRow = q.id ? db.prepare('SELECT data FROM inquiries WHERE id=?').get(str(q.id, 64)) : null;
-    const prev = prevRow ? P(prevRow.data) : null;
-    x = cleanInq(db, q, prev);
-    if (!prev) { x.userId = u.id; x.userName = u.name; }
-    db.prepare('INSERT INTO inquiries(id,object_id,at,data) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET at=excluded.at, data=excluded.data').run(x.id, x.objectId, x.at, J(x));
-    audit(db, u, prev ? 'изменение' : 'создание', 'обращение', x.id, prev, x);
-    bump(db);
-  });
-  return x;
-});
-
-def('deleteInquiry', 'crm_w', (db, u, id) => {
-  tx(db, () => {
-    const row = db.prepare('SELECT data FROM inquiries WHERE id=?').get(str(id, 64));
-    if (!row) return;
-    db.prepare('DELETE FROM inquiries WHERE id=?').run(str(id, 64));
-    audit(db, u, 'удаление', 'обращение', id, P(row.data), null);
-    bump(db);
-  });
-  return { ok: true };
-});
-
-// Обращение прямого покупателя → заявка на покупку с этим объектом
-def('inquiryToLead', 'crm_w', (db, u, id) => {
-  tx(db, () => {
-    const row = db.prepare('SELECT data FROM inquiries WHERE id=?').get(str(id, 64));
-    if (!row) throw new ApiError('Обращение не найдено.');
-    const q = P(row.data);
-    if (q.leadId && db.prepare('SELECT 1 FROM leads WHERE id=?').get(q.leadId)) throw new ApiError('Заявка по обращению уже создана.');
-    const o = P(db.prepare('SELECT data FROM objects WHERE id=?').get(q.objectId).data);
-    const cp = { id: uid('cl'), name: q.name || q.phone, types: ['buyer'], birth: '', phone: q.phone, email: '', other: '', note: '', agentShare: '', createdAt: now() };
-    db.prepare('INSERT INTO counterparties(id,data) VALUES(?,?)').run(cp.id, J(cp));
-    const l = { id: uid('lead'), title: `Покупка — ${cp.name} (${o.title || o.address})`, clientId: cp.id, kind: o.offer === 'rent' ? 'rent' : 'buy', source: q.channel,
-      budget: '', stage: 'new', ownerId: o.responsibleId || u.id, objectId: o.id, dealId: '', note: q.note, lostReason: '',
-      createdAt: now(), createdBy: u.id, stageAt: now(), updatedAt: now() };
-    db.prepare('INSERT INTO leads(id,stage,updated_at,data) VALUES(?,?,?,?)').run(l.id, l.stage, l.updatedAt, J(l));
-    q.leadId = l.id; q.result = q.result || 'Создана заявка';
-    db.prepare('UPDATE inquiries SET data=? WHERE id=?').run(J(q), q.id);
-    const a = { id: uid('act'), type: 'event', text: `Создана заявка из обращения по объекту «${o.title || o.address}»`, at: now(), userId: u.id, userName: u.name, clientId: cp.id, leadId: l.id, dealId: '', objectId: o.id };
-    db.prepare('INSERT INTO activities(id,at,user_id,client_id,lead_id,deal_id,object_id,data) VALUES(?,?,?,?,?,?,?,?)').run(a.id, a.at, u.id, cp.id, l.id, null, o.id, J(a));
-    audit(db, u, 'создание из обращения', 'заявка', l.id, null, l);
-    bump(db);
-  });
-  return require('./crm').crmLoad(db, u);
-});
-
-function inquiryCounts(db) {
-  const out = {};
-  for (const r of db.prepare('SELECT object_id, COUNT(*) n, MAX(at) last FROM inquiries GROUP BY object_id').all()) out[r.object_id] = { n: r.n, last: r.last };
-  return out;
-}
-
-module.exports = { D, STATUS_ORDER, inquiryCounts };
+module.exports = { D, STATUS_ORDER };

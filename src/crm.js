@@ -43,7 +43,8 @@ function crmLoad(db, u) {
     leads: rows('leads', 'updated_at DESC'),
     tasks: db.prepare('SELECT data FROM tasks WHERE done=0 OR updated_at>? ORDER BY due').all(monthAgo).map(r => P(r.data)).filter(Boolean),
     objects: rows('objects', 'updated_at DESC'),
-    inq: OBJ.inquiryCounts(db),
+    inq: require('./inquiries').inquiryCounts(db),
+    vnums: require('./inquiries').vnums(db),
     files: require('./files').counts(db),
     newCalls: require('./novofon').newCount(db),
     lastContact: lastContacts(db),
@@ -356,6 +357,10 @@ function restore(db, crm) {
   (crm.leads || []).forEach(l => db.prepare('INSERT INTO leads(id,stage,updated_at,data) VALUES(?,?,?,?)').run(str(l.id, 64), STAGES[l.stage] ? l.stage : 'new', Number(l.updatedAt) || now(), J(l)));
   (crm.tasks || []).forEach(t => db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?)').run(str(t.id, 64), t.due || null, t.done ? 1 : 0, t.assigneeId || null, Number(t.updatedAt) || now(), J(t)));
   (crm.objects || []).forEach(o => db.prepare('INSERT INTO objects(id,updated_at,data) VALUES(?,?,?)').run(str(o.id, 64), Number(o.updatedAt) || now(), J(o)));
+  if (Array.isArray(crm.kb)) {
+    db.exec('DELETE FROM kb;');
+    crm.kb.forEach(x => { if (x && x.id && x.kind) db.prepare('INSERT INTO kb(id,kind,sort,updated_at,data) VALUES(?,?,?,?,?)').run(str(x.id, 64), str(x.kind, 20), Number(x.sort) || 0, Number(x.updatedAt) || now(), J(x)); });
+  }
   (crm.activities || []).forEach(a => db.prepare('INSERT INTO activities(id,at,user_id,client_id,lead_id,deal_id,object_id,data) VALUES(?,?,?,?,?,?,?,?)')
     .run(str(a.id, 64), Number(a.at) || now(), a.userId || null, a.clientId || null, a.leadId || null, a.dealId || null, a.objectId || null, J(a)));
 }

@@ -145,6 +145,15 @@ def('resolveCall', 'crm_w', (db, u, id, action, x) => {
   const row = db.prepare('SELECT * FROM calls WHERE id=?').get(str(id, 64));
   if (!row) throw new ApiError('Звонок не найден.');
   let clientId = str(x.clientId, 64), leadId = '';
+  if (action === 'inquiry') {
+    tx(db, () => {
+      require('./inquiries').saveTx(db, u, Object.assign({}, x, { id: '', phone: fmtPhone(row.phone), callId: row.id, at: row.at }));
+      // звонки с этого номера уже в истории клиента; помечаем и те, что были «не клиент»
+      db.prepare("UPDATE calls SET status='linked' WHERE phone=? AND status='ignored'").run(row.phone);
+      audit(db, u, 'разбор звонка: обращение по объекту', 'звонок', id, null, { objectId: x.objectId });
+    });
+    return require('./crm').crmLoad(db, u);
+  }
   if (action === 'lead') {
     const l = crm.saveLeadTx(db, u, { newClientName: str(x.name, 200).trim() || fmtPhone(row.phone), newClientPhone: fmtPhone(row.phone), kind: x.kind || 'buy',
       source: x.source || 'Звонок', note: str(x.note, 2000), ownerId: x.ownerId ? Number(x.ownerId) : u.id, stage: 'new' });

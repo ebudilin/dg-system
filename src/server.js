@@ -10,6 +10,8 @@ require('./crm');
 const FILES = require('./files');
 const CIAN = require('./cian');
 const NOVOFON = require('./novofon');
+require('./inquiries');
+const KB = require('./kb');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -19,6 +21,7 @@ const COOKIE = 'dg_s';
 
 const db = open(DB_FILE);
 setInterval(() => { try { auth.purgeSessions(db); } catch (_) {} }, 3600e3).unref();
+KB.seed(db);
 NOVOFON.start(db);
 
 const pages = {};
