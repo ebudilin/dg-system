@@ -11,6 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "== Пакеты"
 command -v sqlite3 >/dev/null || apt-get install -y sqlite3 dnsutils >/dev/null
+command -v rsync >/dev/null || apt-get install -y rsync >/dev/null
 command -v dig >/dev/null || apt-get install -y dnsutils >/dev/null
 NODE_MAJOR=$(node -v 2>/dev/null | sed 's/^v\([0-9]*\).*/\1/' || echo 0)
 if [ "${NODE_MAJOR:-0}" -lt 22 ]; then echo "Нужен Node.js 22+"; exit 1; fi

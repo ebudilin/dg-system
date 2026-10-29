@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 3;
+const SCHEMA = 4;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -118,6 +118,26 @@ function migrate(db) {
         if (o.ownerId && !Array.isArray(o.owners)) { o.owners = [o.ownerId]; db.prepare('UPDATE objects SET data=? WHERE id=?').run(JSON.stringify(o), r.id); }
       }
       setMeta(db, 'schema', '3');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 4) {
+    // Файлы объектов, звонки из телефонии
+    safetyCopy(db, 'schema-4');
+    tx(db, () => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS files (
+          id TEXT PRIMARY KEY, object_id TEXT NOT NULL, kind TEXT NOT NULL, doc_type TEXT, name TEXT NOT NULL,
+          mime TEXT, size INTEGER, pub_key TEXT NOT NULL, has_thumb INTEGER NOT NULL DEFAULT 0, sort INTEGER NOT NULL DEFAULT 0,
+          created_by INTEGER, created_name TEXT, created_at INTEGER NOT NULL);
+        CREATE INDEX IF NOT EXISTS files_object ON files(object_id, kind, sort);
+        CREATE UNIQUE INDEX IF NOT EXISTS files_key ON files(pub_key);
+        CREATE TABLE IF NOT EXISTS calls (
+          id TEXT PRIMARY KEY, at INTEGER NOT NULL, direction TEXT, is_lost INTEGER NOT NULL DEFAULT 0,
+          phone TEXT, vnumber TEXT, client_id TEXT, status TEXT NOT NULL DEFAULT 'new', data TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS calls_at ON calls(at);
+        CREATE INDEX IF NOT EXISTS calls_status ON calls(status);
+      `);
+      setMeta(db, 'schema', '4');
     });
   }
 }

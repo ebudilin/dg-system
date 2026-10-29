@@ -209,6 +209,19 @@ dialog.xwide{width:min(1040px,calc(100vw - 24px))}
 .tip.rec{background:var(--sunk)}.tip .rec-i{flex:none;font-size:16px;color:var(--accent);width:18px;text-align:center}
 details.remind{margin:0 0 14px}details.remind summary{cursor:pointer;list-style:none}details.remind summary::-webkit-details-marker{display:none}
 .trow button{padding:4px 10px;font-size:12px}
+
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.ph{position:relative;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--sunk);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph a{display:block;width:100%;height:100%}
+.ph-main{position:absolute;left:6px;top:6px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px}
+.ph-bar{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:4px;padding:4px;background:linear-gradient(transparent,rgba(0,0,0,.55))}
+.ph-bar button{padding:2px 7px;font-size:12px;background:rgba(255,255,255,.92);color:#15201C;border:0}
+.ph-bar button:disabled{opacity:.4}
+.ph-add{cursor:pointer;border-style:dashed;color:var(--muted);font-weight:600}
+.ph-add:hover{border-color:var(--accent);color:var(--accent)}
+pre.xml{white-space:pre-wrap;word-break:break-all;font:11px/1.4 var(--font-num);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:300px;overflow:auto}
+.tbadge{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:var(--neg);color:#fff;font-size:11px;text-align:center;margin-left:3px}
 .lnk{color:var(--ink);text-decoration:none;border-bottom:1px dashed var(--muted);cursor:pointer;font-size:12px}
 .ochip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid transparent}
 .os-draft{--oc:#6B7671;--ob:#E9EDEB}.os-active{--oc:#1D7A45;--ob:#DDF1E4}.os-paused{--oc:#9A6400;--ob:#F6ECD6}
@@ -321,7 +334,7 @@ const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
-const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],...(owner()?[['admin','Доступ']]:[])];
+const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],...(owner()?[['admin','Доступ']]:[])];
 function renderHead(){
   $('#sect').innerHTML=`<a href="/" aria-current="page">CRM</a>${fin()?'<a href="/finance">Финансы</a>':''}`;
   $('#who').innerHTML=ME?`<span><b>${esc(ME.name)}</b><br>${esc(ME.roleName)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`:'';
@@ -331,10 +344,10 @@ function render(){
   if(!TABS().some(t=>t[0]===V.tab))V.tab='today';
   $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
   $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка'}[V.tab]||'+ Заявка';
-  $('#addbtn').hidden=!can()||V.tab==='admin';
+  $('#addbtn').hidden=!can()||V.tab==='admin'||V.tab==='calls';
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
   const keep=document.activeElement&&document.activeElement.id,pos=keep&&document.activeElement.selectionStart;
-  $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,admin:vAdmin}[V.tab])();
+  $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,calls:vCalls,admin:vAdmin}[V.tab])();
   if(keep){const el=document.getElementById(keep);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}
 }
 
@@ -467,7 +480,7 @@ function vObjects(){
   if(!list.length)return h+`<div class="card empty">${D.objects.length?'По фильтру ничего нет.':'Объектов пока нет. Добавьте первый кнопкой «+ Объект».'}</div>`;
   h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
     ${list.map(o=>{const r=readiness(o),days=o.activeSince&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-o.activeSince)/864e5):null,iq=(D.inq||{})[o.id],exp=(o.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0),ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
-      return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([OD.kinds[o.kind],o.offer==='rent'?'аренда':'продажа',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}</td>
+      return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([OD.kinds[o.kind],o.offer==='rent'?'аренда':'продажа',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}<div style="font-size:11px;margin-top:2px">${((D.files||{})[o.id]||{}).photo?`<span class="muted">📷 ${D.files[o.id].photo}</span> `:''}${o.cian&&o.cian.state==='on'?'<span class="chip closed">ЦИАН</span>':o.cian&&o.cian.state==='ready'?'<span class="chip work">ЦИАН: ждёт решения</span>':''}</div></td>
       <td><span class="ochip os-${o.status}">${esc(OD.status[o.status]||o.status)}</span></td><td>${esc(uName(o.responsibleId)||'—')}</td>
       <td class="r num">${(()=>{const h=o.priceHistory||[],st=h.length&&(h[0].price!=null?h[0].price:h[0].from);return st&&o.price&&+o.price<+st?`<span class="neg" title="Стартовая цена ${money(st)}">↓${Math.round((st-o.price)/st*100)}% </span>`:''})()}${money(o.price)}${ppm?`<div class="muted" style="font-size:11px">${NF.format(ppm)} ₽/м²</div>`:''}</td><td class="r num">${o.area?esc(o.area)+' м²':''}</td>
       <td class="r num">${days!=null?days+' дн.':''}</td><td class="r num">${iq?iq.n:''}</td><td class="r num">${exp?money(exp):''}</td>
@@ -516,7 +529,7 @@ function sidePanel(link){
       <div class="feed" id="feed"><p class="muted" style="font-size:13px">Загружаю…</p></div></div></div>`}
 async function loadFeed(){if(!dlgCtx||!dlgCtx.feed)return;const ctx=dlgCtx;
   try{const items=await api('listActivities',ctx.feed);if(dlgCtx!==ctx)return;
-    $('#feed').innerHTML=items.length?items.map(a=>`<div class="fi ${a.type==='event'?'ev':''}"><div class="h"><span>${esc(D.dict.actTypes[a.type]||'')}${a.userName?' · '+esc(a.userName):''}</span><span>${dtFmt(a.at)}${(a.userId===ME.id||owner())&&a.type!=='event'&&can()?` <a href="#" data-del-act="${esc(a.id)}" title="Удалить" style="color:var(--muted)">✕</a>`:''}</span></div><div class="tx">${esc(a.text)}</div></div>`).join(''):'<p class="muted" style="font-size:13px;margin:0">Записей пока нет.</p>'}
+    $('#feed').innerHTML=items.length?items.map(a=>`<div class="fi ${a.type==='event'?'ev':''}"><div class="h"><span>${esc(D.dict.actTypes[a.type]||'')}${a.userName?' · '+esc(a.userName):''}</span><span>${dtFmt(a.at)}${(a.userId===ME.id||owner())&&a.type!=='event'&&can()?` <a href="#" data-del-act="${esc(a.id)}" title="Удалить" style="color:var(--muted)">✕</a>`:''}</span></div><div class="tx">${esc(a.text)}${a.url?` <a class="lnk" href="${esc(a.url)}" target="_blank" rel="noopener">▶ запись</a>`:''}</div></div>`).join(''):'<p class="muted" style="font-size:13px;margin:0">Записей пока нет.</p>'}
   catch(e){$('#feed').innerHTML='<p class="neg">'+esc(e.message)+'</p>'}}
 
 /* заявка */
@@ -563,7 +576,7 @@ function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
   form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
 
 /* объект */
-const OBJ_PANES=[['main','Основное'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение и расходы'],['inq','Обращения'],['hist','Задачи и история']];
+const OBJ_PANES=[['main','Основное'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение и расходы'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
 function openObject(o,pane){
   const OD=D.dict.obj;
   const x=o?JSON.parse(JSON.stringify(o)):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'draft',responsibleId:ME.id,source:'',price:'',area:'',owners:[],tips:[],expenses:[],windows:[],yard:[],parking:[]};
@@ -571,9 +584,9 @@ function openObject(o,pane){
   Object.keys(OD.recurring||{}).forEach(k=>{if(!x.tips.some(t=>t.key===k)){const d=OD.tips.find(t=>t[0]===k);if(d)x.tips.push({key:k,title:d[1],done:false,taskId:''})}});
   if(!Array.isArray(x.priceHistory))x.priceHistory=[];
   ['owners','expenses','windows','yard','parking'].forEach(k=>{if(!Array.isArray(x[k]))x[k]=[]});
-  openDlg({kind:'object',orig:o||null,o:x,wide:true,xwide:true,pane:pane||'main',newOwners:[],inq:null,feed:o?{objectId:o.id}:null,draw:drawObject,
+  openDlg({kind:'object',orig:o||null,o:x,wide:true,xwide:true,pane:pane||'main',newOwners:[],inq:null,files:null,cian:null,feed:o?{objectId:o.id}:null,draw:drawObject,
     refresh:()=>{if(dlgCtx.orig){const n=obj(dlgCtx.orig.id);if(n)dlgCtx.orig=n}}});
-  if(o)loadInq();
+  if(o){loadInq();loadFiles()}
 }
 async function loadInq(){const c=dlgCtx;if(!c||c.kind!=='object'||!c.orig)return;
   try{c.inq=await api('listInquiries',c.orig.id);if(dlgCtx===c){const el=$('#inq-list');if(el)el.innerHTML=inqList()}}catch(e){toast(e.message)}}
@@ -616,7 +629,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
     <div class="ohead-r"><select name="status" class="ostsel os-${x.status}" aria-label="Статус">${opt(Object.entries(OD.status),x.status)}</select>
       <div class="ready" title="Не хватает: ${esc(r.miss.join(', ')||'ничего')}"><div class="meter"><i style="width:${r.p}%"></i></div><span>Готовность ${r.p}%</span></div></div></div>
     ${cw?`<div class="banner" style="margin:0">${esc(cw)}</div>`:''}
-    <div class="otabs" role="tablist">${OBJ_PANES.map(([k,l])=>`<button type="button" role="tab" data-pane-btn="${k}" aria-selected="${pane===k}" ${!o&&(k==='inq'||k==='hist')?'disabled title="Сначала сохраните объект"':''}>${l}</button>`).join('')}</div>
+    <div class="otabs" role="tablist">${OBJ_PANES.map(([k,l])=>`<button type="button" role="tab" data-pane-btn="${k}" aria-selected="${pane===k}" ${!o&&['inq','hist','files','ads'].includes(k)?'disabled title="Сначала сохраните объект"':''}>${l}</button>`).join('')}</div>
     ${P('main',`<div class="fg3">
       <label class="f span2"><span>Название</span><input name="title" value="${esc(x.title)}" placeholder="2-к квартира, 64 м², ЖК …"></label>
       <label class="f"><span>Ответственный</span><select name="responsibleId">${opt([['','— не назначен —'],...D.users.filter(u=>u.active||u.id===x.responsibleId).map(u=>[u.id,u.name])],x.responsibleId)}</select></label>
@@ -676,6 +689,10 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <label class="f span2"><span>Дополнительно</span><input id="iq-note" placeholder="Что интересует, бюджет, когда может посмотреть"></label></div>
       <div style="margin-top:8px"><button type="button" class="primary" data-inq-add>Добавить обращение</button></div><datalist id="iq-ch">${OD.inqChannels.map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>`:''}
       <div id="inq-list" style="margin-top:12px">${inqList()}</div>`)}
+    ${P('files',`<div id="files-box">${filesHtml()}</div>
+      <label class="f" style="margin-top:14px"><span>Папка с исходниками на Яндекс Диске (RAW-фото, видео)</span><input name="diskLink" type="url" value="${esc(x.diskLink||'')}" placeholder="https://disk.yandex.ru/…"></label>
+      ${x.diskLink?`<div class="links"><a href="${esc(x.diskLink)}" target="_blank" rel="noopener">Открыть папку ↗</a></div>`:''}`)}
+    ${P('ads',`<label class="f" style="max-width:320px;margin-bottom:10px"><span>Тип продажи (для объявления)</span><select name="saleType">${opt([['free','Свободная продажа'],['alternative','Альтернатива']],x.saleType||'free')}</select></label><div id="cian-box">${cianHtml()}</div>`)}
     ${P('hist',o?sidePanel({objectId:o.id}):'<p class="muted">Сохраните объект, чтобы вести задачи и историю.</p>')}
     <div class="acts" style="margin-top:4px"><div>${o&&can()?`<button type="button" class="danger" data-del>${c.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
       <div><button type="button" data-close>${can()?'Закрыть':'Закрыть'}</button>${can()?'<button type="submit" class="primary">Сохранить</button>':''}</div></div>`;
@@ -694,7 +711,7 @@ async function saveObjectDlg(close){const c=dlgCtx;readObjForm();const x=c.o;
   if(x.status!=='draft'&&(x.description||'').length&&(x.description||'').length<300)toast('Описание короче 300 символов — для объявления лучше дописать.');
   const body=Object.assign({},x,{id:c.orig?c.orig.id:undefined,responsibleId:x.responsibleId?Number(x.responsibleId):null,lifts:x.lifts});
   saving++;try{const r=await api('saveObject',body,c.newOwners.filter(n=>String(n.name||'').trim()));c.newOwners=[];apply(r.data);
-    if(dlgCtx===c){c.orig=r.object;c.o=JSON.parse(JSON.stringify(r.object));if(!c.feed){c.feed={objectId:r.object.id};}if(close)dlg.close();else{c.draw();loadFeed();if(c.inq==null)loadInq()}}
+    if(dlgCtx===c){c.orig=r.object;c.o=JSON.parse(JSON.stringify(r.object));if(!c.feed){c.feed={objectId:r.object.id};}if(close)dlg.close();else{c.draw();loadFeed();if(c.inq==null)loadInq();if(c.files==null)loadFiles();if(c.pane==='ads')loadCian()}}
     toast('Объект сохранён')}catch(e){toast(e.message)}finally{saving--}}
 function openExpFin(c,i){let d=$('#expdlg');if(!d){d=document.createElement('dialog');d.id='expdlg';document.body.appendChild(d)}
   const F=D.fin||{accounts:[],categories:[]},e=c.o.expenses[i],k=(e.kind||'').toLowerCase();
@@ -712,7 +729,7 @@ function readObjForm(){readForm();const c=dlgCtx;if(c.o.liftsNone===true)c.o.lif
   form.querySelectorAll('[data-nown]').forEach(el=>{const n=c.newOwners[+el.dataset.nown];if(n)n[el.dataset.k]=el.value});
   form.querySelectorAll('[data-exp]').forEach(el=>{const e=c.o.expenses[+el.dataset.exp];if(e)e[el.dataset.k]=el.dataset.k==='amount'?(el.value===''?'':+el.value):el.value})}
 form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='object')return;const b=e.target.closest('button,a');if(!b)return;const x=c.o;
-  if(b.dataset.paneBtn){readObjForm();c.pane=b.dataset.paneBtn;c.draw();if(c.pane==='hist')loadFeed();if(c.pane==='inq'&&c.orig)loadInq();return}
+  if(b.dataset.paneBtn){readObjForm();c.pane=b.dataset.paneBtn;c.draw();if(c.pane==='hist')loadFeed();if(c.pane==='inq'&&c.orig)loadInq();if(c.pane==='files'&&c.orig&&!c.files)loadFiles();if(c.pane==='ads'&&c.orig)loadCian();return}
   if(b.hasAttribute('data-nown-add')){readObjForm();c.newOwners.push({name:'',birth:'',phone:'',email:''});c.draw();return}
   if(b.dataset.nownDel!=null){readObjForm();c.newOwners.splice(+b.dataset.nownDel,1);c.draw();return}
   if(b.dataset.ownDel){readObjForm();x.owners=x.owners.filter(i=>i!==b.dataset.ownDel);c.draw();return}
@@ -809,6 +826,7 @@ async function submit(){
       if(!x.clientId)return toast('Выберите клиента.');
       if(!o){dlg.close();await run('crmCreateDeal',{clientId:x.clientId,objectId:x.objectId,object:x.object,kind:x.kind,status:x.status,date:x.date,expected:x.expected,note:x.note,agentId:x.agentId,extra,commission:finW()?x.commission:''});toast('Сделка создана');return}
       dlg.close();await run('crmSaveDeal',Object.assign({},o,{clientId:x.clientId,objectId:x.objectId,object:x.object,kind:x.kind,status:x.status,date:x.date,expected:x.expected,note:x.note,agentId:x.agentId,extra},finW()?{commission:x.commission}:{}));toast('Сделка сохранена')}
+    else if(c.kind==='call'){if(c.mode==='link'&&!x.clientId)return toast('Выберите клиента.');dlg.close();await run('resolveCall',c.call.id,c.mode,Object.assign({},x,{ownerId:x.ownerId?Number(x.ownerId):null}));CALLS.list=null;render();toast(c.mode==='lead'?'Заявка создана':'Номер привязан к клиенту')}
     else if(c.kind==='todeal'){dlg.close();await run('leadToDeal',c.lead.id,x);toast('Сделка создана');V.tab='deals';location.hash='deals';render()}
   }catch(_){}
 }
@@ -934,6 +952,7 @@ function vAdmin(){
     <label class="f"><span>Доступ к финансам</span><select id="acc-fin">${fo('none')}</select></label>
     <div class="f full" style="align-items:flex-start"><button type="button" class="primary" data-acc="add">Создать и получить пароль</button></div></div>
     <p class="note" style="margin:8px 0 0"><b>Учредитель</b> — всё, включая финансы, пользователей и настройки. <b>Сотрудник</b> — работает в CRM: заявки, клиенты, задачи, объекты, сделки. <b>Только просмотр</b> — видит CRM, ничего не меняет. Доступ к разделу «Финансы» выдаётся отдельно: нет / просмотр / ввод и правка.</p></div>`;
+  h+=integHtml();
   h+=`<h2>Данные</h2><div class="card"><div class="rows">
     <div class="row"><span>Выгрузить все данные в файл: финансы и CRM (резервная копия)</span><button type="button" data-acc="export">Скачать .json</button></div>
     <div class="row"><span>Восстановить из файла выгрузки. <b>Заменит</b> финансовые данные и клиентов${'; CRM — если он есть в файле'}. Пользователи сохраняются, перед заменой сервер делает копию базы.</span><label><input type="file" id="acc-import" accept=".json,application/json" hidden><span class="like-btn">Загрузить .json…</span></label></div></div>
@@ -963,6 +982,129 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-acc]');if
     if(a==='toggle'){const u=ACC.users.find(x=>x.id==b.dataset.id);const out=await api('saveUser',{id:u.id,name:u.name,role:u.role,finance:u.finance,active:!u.active});ACC.users=out.users;render();return}
     if(a==='export'){const d=await api('exportData');const blob=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
       const url=URL.createObjectURL(blob);const l=document.createElement('a');l.href=url;l.download='dg-export-'+today()+'.json';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);return}
+  }catch(err){toast(err.message)}});
+
+/* ---------- файлы объекта ---------- */
+const DOC_TYPES={contract:'Договор с собственником',egrn:'Выписка ЕГРН',title:'Правоустанавливающие документы',id:'Документы собственника',tech:'Техпаспорт / план БТИ',other:'Прочее'};
+const fsize=n=>n>=1e6?(n/1e6).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(n/1e3))+' КБ';
+async function loadFiles(){const c=dlgCtx;if(!c||c.kind!=='object'||!c.orig)return;
+  try{c.files=await api('listFiles',c.orig.id);if(dlgCtx===c){const el=$('#files-box');if(el)el.innerHTML=filesHtml()}}catch(e){toast(e.message)}}
+function filesHtml(){const c=dlgCtx,o=c.orig;if(!o)return '<p class="muted">Сначала сохраните объект — потом можно загружать файлы.</p>';
+  if(!c.files)return '<p class="muted">Загружаю…</p>';
+  const grid=kind=>{const fs=c.files.filter(f=>f.kind===kind);
+    return `<div class="pgrid">${fs.map((f,i)=>`<div class="ph"><a href="/files/${esc(f.id)}" target="_blank" rel="noopener" title="${esc(f.name)}"><img loading="lazy" src="/files/${esc(f.id)}${f.thumb?'/thumb':''}" alt="${esc(f.name)}"></a>
+      ${i===0&&kind==='photo'?'<span class="ph-main">Главное</span>':''}
+      ${can()?`<div class="ph-bar"><button type="button" data-fmove="${esc(f.id)}" data-d="-1" ${i===0?'disabled':''} title="Левее">◀</button>${kind==='photo'&&i>0?`<button type="button" data-fmain="${esc(f.id)}" title="Сделать главным">★</button>`:''}<button type="button" data-fmove="${esc(f.id)}" data-d="1" ${i===fs.length-1?'disabled':''} title="Правее">▶</button><button type="button" data-fdel="${esc(f.id)}" title="Удалить">✕</button></div>`:''}</div>`).join('')}
+      ${can()?`<label class="ph ph-add"><input type="file" accept="image/jpeg,image/png,image/webp,image/heic" multiple hidden data-fup="${kind}"><span>+ ${kind==='photo'?'Фото':'Планировка'}</span></label>`:''}</div>`};
+  const docs=c.files.filter(f=>f.kind==='doc');
+  return `<h3>Фото <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">— первое фото главное, оно же первым уходит в объявление</span></h3>${grid('photo')}
+    <h3 style="margin-top:16px">Планировки</h3>${grid('plan')}
+    <h3 style="margin-top:16px">Документы</h3><p class="note" style="margin:0 0 6px">Документы видны только внутри CRM и никогда не уходят на площадки.</p>
+    ${docs.length?`<div class="tbl-wrap"><table><thead><tr><th>Документ</th><th>Тип</th><th class="r">Размер</th><th>Загрузил</th><th></th></tr></thead><tbody>
+      ${docs.map(f=>`<tr><td><a class="lnk" href="/files/${esc(f.id)}" target="_blank" rel="noopener">${esc(f.name)}</a></td><td>${can()?`<select data-fdoctype="${esc(f.id)}">${opt([['','—'],...Object.entries(DOC_TYPES)],f.docType)}</select>`:esc(DOC_TYPES[f.docType]||'')}</td>
+        <td class="r num">${fsize(f.size)}</td><td class="muted">${esc(f.by||'')}, ${dtFmt(f.at)}</td><td>${can()?`<button type="button" class="ghost" data-fdel="${esc(f.id)}" title="Удалить">✕</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted" style="margin:0">Документов пока нет.</p>'}
+    ${can()?`<div class="r2" style="margin-top:8px"><select id="doc-type">${opt(Object.entries(DOC_TYPES),'contract')}</select><label class="like-btn"><input type="file" multiple hidden data-fup="doc">+ Загрузить документ</label></div>`:''}
+    <div id="up-status" class="note"></div>`}
+// фото уменьшаем в браузере: до 2560 px по длинной стороне (JPEG) + превью 480 px
+async function shrink(file,max,q){
+  let bmp;try{bmp=await createImageBitmap(file)}catch(_){
+    const url=URL.createObjectURL(file);try{bmp=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url})}catch(e){throw new Error('Не удалось открыть «'+file.name+'». Сохраните фото как JPG и загрузите снова.')}finally{setTimeout(()=>URL.revokeObjectURL(url),1000)}}
+  const w=bmp.width,h=bmp.height,k=Math.min(1,max/Math.max(w,h));const cv=document.createElement('canvas');cv.width=Math.round(w*k);cv.height=Math.round(h*k);
+  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);return await new Promise(r=>cv.toBlob(r,'image/jpeg',q))}
+async function uploadFiles(kind,list){const c=dlgCtx;if(!c||!c.orig)return;const st=()=>$('#up-status');let n=0;
+  for(const file of list){n++;if(st())st().textContent=`Загружаю ${n} из ${list.length}: ${file.name}…`;
+    try{let body=file,mime=file.type||'application/octet-stream',name=file.name,thumb=null;
+      if(kind!=='doc'){body=await shrink(file,2560,.86);thumb=await shrink(file,480,.8);mime='image/jpeg';name=name.replace(/\.(heic|heif|png|webp|jpe?g)$/i,'')+'.jpg'}
+      const q=new URLSearchParams({objectId:c.orig.id,kind,mime,name});if(kind==='doc')q.set('docType',$('#doc-type').value);
+      const r=await fetch('/upload?'+q,{method:'POST',credentials:'same-origin',body});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Ошибка загрузки');
+      if(thumb){await fetch('/upload?'+new URLSearchParams({objectId:c.orig.id,thumbFor:d.result.id}),{method:'POST',credentials:'same-origin',body:thumb})}
+    }catch(e){toast(e.message)}}
+  if(st())st().textContent='';await loadFiles();toast('Загружено')}
+form.addEventListener('change',e=>{const t=e.target;if(!dlgCtx||dlgCtx.kind!=='object')return;
+  if(t.dataset.fup&&t.files&&t.files.length){uploadFiles(t.dataset.fup,[...t.files]);t.value='';return}
+  if(t.dataset.fdoctype){api('setFileDocType',t.dataset.fdoctype,t.value).then(fs=>{dlgCtx.files=fs}).catch(err=>toast(err.message));return}});
+form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='object')return;const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.fdel){if(!confirm('Удалить файл?'))return;try{c.files=await api('deleteFile',b.dataset.fdel);$('#files-box').innerHTML=filesHtml()}catch(err){toast(err.message)}return}
+  if(b.dataset.fmove||b.dataset.fmain){const id=b.dataset.fmove||b.dataset.fmain,f=c.files.find(x=>x.id===id),same=c.files.filter(x=>x.kind===f.kind),i=same.indexOf(f);
+    if(b.dataset.fmain){same.splice(i,1);same.unshift(f)}else{const j=i+(+b.dataset.d);if(j<0||j>=same.length)return;[same[i],same[j]]=[same[j],same[i]]}
+    try{c.files=await api('reorderFiles',c.orig.id,same.map(x=>x.id));$('#files-box').innerHTML=filesHtml()}catch(err){toast(err.message)}return}
+  if(b.dataset.cian){const st=b.dataset.cian;
+    if(st==='on'&&!confirm('Включить выгрузку объекта на ЦИАН?\n\nОбъект попадёт в фид, и при следующей проверке фида ЦИАН создаст объявление. Как оно будет опубликовано и сколько это стоит — зависит от настроек вашего кабинета на ЦИАН.'))return;
+    try{await run('setCianState',c.orig.id,st);c.orig=obj(c.orig.id);c.cian=null;loadCian();toast({on:'Объект выгружается на ЦИАН',ready:'Отмечен как готовый — ждёт решения учредителя',off:'Выгрузка выключена'}[st])}catch(_){}return}
+});
+/* ---------- ЦИАН в карточке объекта ---------- */
+async function loadCian(){const c=dlgCtx;if(!c||c.kind!=='object'||!c.orig)return;
+  try{c.cian=await api('cianStatus',c.orig.id);if(dlgCtx===c){const el=$('#cian-box');if(el)el.innerHTML=cianHtml()}}catch(e){toast(e.message)}}
+function cianHtml(){const c=dlgCtx;if(!c.orig)return '<p class="muted">Сначала сохраните объект.</p>';const s=c.cian;if(!s)return '<p class="muted">Проверяю…</p>';
+  const chip={off:'',ready:'work',on:'closed'}[s.state];
+  return `<div class="card" style="padding:14px"><div class="r2" style="justify-content:space-between;flex-wrap:wrap"><div><b>ЦИАН</b> <span class="chip ${chip}">${esc(s.states[s.state])}</span>${s.cian&&s.cian.by?` <span class="muted" style="font-size:12px">${esc(s.cian.by)}, ${dtFmt(s.cian.at)}</span>`:''}</div>
+    <div class="r2">${can()&&s.state==='off'?'<button type="button" data-cian="ready">Готов к выгрузке</button>':''}${owner()&&s.state!=='on'?`<button type="button" class="primary" data-cian="on" ${s.problems.length?'disabled title="Сначала заполните недостающее"':''}>Выгружать на ЦИАН</button>`:''}${can()&&s.state!=='off'?`<button type="button" class="danger" data-cian="off">${s.state==='on'?'Снять с выгрузки':'Отменить'}</button>`:''}</div></div>
+    ${s.problems.length?`<div class="banner" style="margin:10px 0 0">Для выгрузки не хватает: <b>${esc(s.problems.join(', '))}</b>.</div>`:`<p class="note" style="margin:10px 0 0;${s.state==='on'?'color:var(--pos)':''}">${s.inFeed?'Объект в фиде ЦИАН. Изменения в карточке ЦИАН подхватит при следующей проверке фида.':s.state==='on'?'Выгрузка включена, но объект не в фиде: в фид идут только объекты со статусом «Активный» или «Задаток / бронь».':'Все обязательные поля заполнены.'}</p>`}
+    ${s.state==='on'&&!owner()?'':''}
+    <p class="note" style="margin:8px 0 0">Порядок: агент заполняет карточку и нажимает «Готов к выгрузке» → учредитель проверяет и включает выгрузку. Статусы «Остановлен», «Срыв», «Реализован» снимают объект из фида автоматически.</p>
+    <details style="margin-top:8px"><summary class="muted" style="font-size:12px;cursor:pointer">Что уйдёт на ЦИАН (XML)</summary><pre class="xml">${esc(s.preview)}</pre></details></div>
+    <p class="note">Другие площадки (Авито, Яндекс Недвижимость, Домклик) подключим так же, когда понадобится.</p>`}
+
+/* ---------- Звонки (Novofon) ---------- */
+const CALLS={list:null,t:0,loading:false};
+async function callsLoad(){if(CALLS.loading)return;CALLS.loading=true;try{CALLS.list=await api('listCalls',7);CALLS.t=Date.now()}catch(e){toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
+const ph=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);d=d.slice(-10);return d.length===10?`+7 ${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6,8)}-${d.slice(8)}`:String(s||'')};
+function vCalls(){
+  if(!CALLS.list){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки…</div>'}
+  if(Date.now()-CALLS.t>30000)setTimeout(callsLoad,0);
+  const fresh={};CALLS.list.filter(c=>c.status==='new').forEach(c=>{const g=fresh[c.phone]||(fresh[c.phone]={phone:c.phone,n:0,lost:0,last:c,first:c});g.n++;if(c.lost)g.lost++;if(c.at>g.last.at)g.last=c;if(c.at<g.first.at)g.first=c});
+  const groups=Object.values(fresh).sort((a,b)=>b.last.at-a.last.at);
+  let h=`<h2>Новые номера</h2><p class="note" style="margin:-4px 0 10px">Входящие звонки с номеров, которых нет в CRM. Разберите каждый: заявка, существующий клиент или «не клиент» (спам, курьер, сервис).</p>`;
+  h+=groups.length?`<div class="box tlist">${groups.map(g=>`<div class="trow"><div class="tt"><b class="num">${esc(ph(g.phone))}</b><div class="m">${g.n>1?g.n+' звонка · ':''}последний ${dtFmt(g.last.at)}${g.lost?` · <span class="neg">пропущено: ${g.lost}</span>`:''}${g.last.vnumber?' · на номер '+esc(ph(g.last.vnumber)):''}${g.last.emp?' · '+esc(g.last.emp):''}</div></div>
+    ${can()?`<div class="r2" style="flex-wrap:wrap;justify-content:flex-end"><button type="button" class="primary" data-call-lead="${esc(g.last.id)}">Заявка</button><button type="button" data-call-link="${esc(g.last.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(g.last.id)}">Не клиент</button></div>`:''}</div>`).join('')}</div>`:'<div class="card empty">Неразобранных звонков нет.</div>';
+  const all=CALLS.list.slice().sort((a,b)=>b.at-a.at);
+  h+=`<h2>Все звонки за 7 дней</h2>${all.length?`<div class="tbl-wrap"><table><thead><tr><th>Когда</th><th></th><th>Номер</th><th>Клиент</th><th class="r">Разговор</th><th>Сотрудник</th><th>Запись</th></tr></thead><tbody>
+    ${all.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>'}</td><td class="num">${esc(ph(c.phone))}</td>
+      <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a>`:c.status==='new'?'<span class="warn">не разобран</span>':'<span class="muted">—</span>'}</td>
+      <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card empty">Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.</div>'}`;
+  return h}
+const mmss=s=>{s=Math.round(+s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function callDlg(id,mode){const c=CALLS.list.find(x=>x.id===id);if(!c)return;
+  openDlg({kind:'call',o:{name:'',kind:'buy',note:'',clientId:'',ownerId:ME.id},call:c,mode,draw:()=>{const x=dlgCtx.o;
+    form.innerHTML=mode==='lead'?`<h2>Заявка со звонка ${esc(ph(c.phone))}</h2><div class="fg">
+      <label class="f full"><span>Имя звонившего</span><input name="name" value="${esc(x.name)}" placeholder="Если не представился — оставьте пустым"></label>
+      <label class="f"><span>Что нужно</span><select name="kind">${opt(Object.entries(D.dict.leadKinds),x.kind)}</select></label>
+      <label class="f"><span>Ответственный</span><select name="ownerId">${usersOpt(x.ownerId)}</select></label>
+      <label class="f full"><span>Что обсудили</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label></div>
+      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Создать заявку</button></div></div>`
+    :`<h2>Чей это номер — ${esc(ph(c.phone))}?</h2><label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId,'— выберите —')}</select></label>
+      <p class="note" style="margin:0">Номер добавится в карточку клиента, звонки попадут в его историю.</p>
+      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Привязать</button></div></div>`}});
+}
+app.addEventListener('click',async e=>{const b=e.target.closest('[data-call-lead],[data-call-link],[data-call-ignore]');if(!b)return;
+  if(b.dataset.callLead)return callDlg(b.dataset.callLead,'lead');
+  if(b.dataset.callLink)return callDlg(b.dataset.callLink,'link');
+  try{await run('resolveCall',b.dataset.callIgnore,'ignore');CALLS.list=null;render();toast('Номер убран из разбора')}catch(_){}});
+/* ---------- Интеграции (учредитель) ---------- */
+const INTEG={nf:null,cian:null,loading:false};
+async function integLoad(){if(INTEG.loading)return;INTEG.loading=true;try{INTEG.nf=await api('novofonSettings');INTEG.cian=await api('cianSettings')}catch(e){toast(e.message)}INTEG.loading=false;if(V.tab==='admin')render()}
+function integHtml(){if(!INTEG.nf){integLoad();return '<div class="card"><p class="muted">Загружаю…</p></div>'}
+  const n=INTEG.nf,c=INTEG.cian,feed=location.origin+c.feedPath,inFeed=D.objects.filter(o=>o.cian&&o.cian.state==='on').length,ready=D.objects.filter(o=>o.cian&&o.cian.state==='ready');
+  return `<h2>Интеграции</h2><div class="cols"><div class="card"><h3>Телефония Novofon</h3>
+    <div class="fg"><label class="f full"><span>Ключ API ${n.hasKey?'<b class="pos">— сохранён</b>':''}</span><input type="password" id="nf-key" placeholder="${n.hasKey?'Оставьте пустым, чтобы не менять':'Вставьте ключ из кабинета Novofon'}" autocomplete="off"></label>
+      <label class="f"><span>Кому ставить «перезвонить» по новым номерам</span><select id="nf-user">${opt([['','Учредителю'],...D.users.filter(u=>u.active).map(u=>[u.id,u.name])],n.defaultUserId)}</select></label>
+      <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" id="nf-on" ${n.enabled?'checked':''}> Забирать звонки каждые 3 минуты</label></label></div>
+    <div class="r2" style="margin-top:8px"><button type="button" class="primary" data-nf-save>Сохранить</button><button type="button" data-nf-sync ${n.hasKey?'':'disabled'}>Проверить и загрузить сейчас</button></div>
+    <p class="note">${n.lastSync?`Последняя загрузка: ${dtFmt(n.lastSync)} — ${n.lastError?`<span class="neg">${esc(n.lastError)}</span>`:`успешно, новых звонков: ${n.lastCount}`}`:'Ещё не подключено.'}</p>
+    <p class="note">Где взять ключ: кабинет Novofon → настройки пользователя-администратора → вкладка API → «Использовать ключ API». Там же в «Настройки → Правила и настройки безопасности → API» добавьте IP сервера <b class="num">79.174.86.166</b> в белый список.</p></div>
+    <div class="card"><h3>ЦИАН — XML-фид</h3>
+    <label class="f"><span>Ссылка на фид (её указывают в ЦИАН)</span><div class="r2"><input id="cian-feed" value="${esc(feed)}" readonly><button type="button" data-copy-feed>Копировать</button></div></label>
+    <div class="fg" style="margin-top:8px"><label class="f"><span>Телефон в объявлениях</span><input id="cian-phone" value="${esc(c.phone)}"></label>
+      <div class="f" style="justify-content:flex-end"><button type="button" data-cian-save>Сохранить телефон</button></div></div>
+    <p class="note">В фиде сейчас объектов: <b>${inFeed}</b>. ${ready.length?`Ждут вашего решения: ${ready.map(o=>`<a class="lnk" data-open-object="${esc(o.id)}">${esc(objName(o))}</a>`).join(', ')}.`:''}</p>
+    <p class="note"><button type="button" class="ghost" data-cian-token style="padding:2px 6px;font-size:12px">Сменить ссылку на фид</button> — если ссылка попала не туда. Старая перестанет работать, новую нужно указать в ЦИАН.</p></div></div>`}
+app.addEventListener('click',async e=>{const b=e.target.closest('[data-nf-save],[data-nf-sync],[data-copy-feed],[data-cian-save],[data-cian-token]');if(!b)return;
+  try{
+    if(b.hasAttribute('data-nf-save')){INTEG.nf=await api('saveNovofonSettings',{apiKey:$('#nf-key').value,enabled:$('#nf-on').checked,defaultUserId:$('#nf-user').value});toast(INTEG.nf.enabled?'Сохранено, звонки будут загружаться':'Сохранено');render();return}
+    if(b.hasAttribute('data-nf-sync')){b.disabled=true;b.textContent='Проверяю…';const r=await api('novofonSyncNow');INTEG.nf=r.settings;toast(r.ok?`Связь есть. Звонков за период: ${r.received}, новых: ${r.added}`:'Ошибка: '+r.error);CALLS.list=null;render();return}
+    if(b.hasAttribute('data-copy-feed')){$('#cian-feed').select();try{await navigator.clipboard.writeText($('#cian-feed').value)}catch(_){document.execCommand('copy')}toast('Ссылка скопирована');return}
+    if(b.hasAttribute('data-cian-save')){INTEG.cian=await api('saveCianSettings',{phone:$('#cian-phone').value});toast('Телефон сохранён');render();return}
+    if(b.hasAttribute('data-cian-token')){if(!confirm('Сменить ссылку на фид? Старую ЦИАН больше не сможет прочитать.'))return;INTEG.cian=await api('saveCianSettings',{newToken:true});toast('Новая ссылка готова — укажите её в ЦИАН');render();return}
   }catch(err){toast(err.message)}});
 
 /* ---------- запуск ---------- */

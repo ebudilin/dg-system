@@ -7,6 +7,9 @@ const { open } = require('./db');
 const auth = require('./auth');
 const { F, ApiError, can } = require('./api');
 require('./crm');
+const FILES = require('./files');
+const CIAN = require('./cian');
+const NOVOFON = require('./novofon');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -16,6 +19,7 @@ const COOKIE = 'dg_s';
 
 const db = open(DB_FILE);
 setInterval(() => { try { auth.purgeSessions(db); } catch (_) {} }, 3600e3).unref();
+NOVOFON.start(db);
 
 const pages = {};
 function page(name) {
@@ -27,7 +31,7 @@ const SEC_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'same-origin',
   'X-Frame-Options': 'DENY',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 };
 
 function send(res, status, body, type, extra) {
@@ -113,6 +117,32 @@ async function handle(req, res) {
 
   if (p === '/favicon.ico') return send(res, 204, '');
 
+  // фид ЦИАН и открытые фото объявлений — без входа, по секретной ссылке
+  let mm = p.match(/^\/feeds\/cian\/([0-9a-f]{32})\.xml$/);
+  if (mm && req.method === 'GET') {
+    if (mm[1] !== CIAN.settings(db).token) return send(res, 404, 'Не найдено');
+    return send(res, 200, CIAN.feed(db), 'application/xml; charset=utf-8');
+  }
+  mm = p.match(/^\/pub\/([0-9a-f]{32})\.jpg$/);
+  if (mm && req.method === 'GET') { if (!FILES.servePublic(db, res, mm[1])) send(res, 404, 'Не найдено'); return; }
+
+  // файлы объектов — только для вошедших
+  mm = p.match(/^\/files\/([\w-]+)(\/thumb)?$/);
+  if (mm && req.method === 'GET') {
+    if (!currentUser(req)) return send(res, 401, 'Войдите в систему');
+    if (!FILES.serve(db, res, mm[1], !!mm[2], SEC_HEADERS)) send(res, 404, 'Файл не найден');
+    return;
+  }
+  if (p === '/upload' && req.method === 'POST') {
+    const u = currentUser(req);
+    if (!u) return json(res, 401, { error: 'Сессия закончилась. Войдите заново.' });
+    if (!sameOrigin(req)) return json(res, 403, { error: 'Запрос отклонён.' });
+    const body = await new Promise((resolve, reject) => { const ch = []; let n = 0;
+      req.on('data', c => { n += c.length; if (n > 32e6) { reject(new ApiError('Файл больше 30 МБ.', 413)); req.destroy(); } else ch.push(c); });
+      req.on('end', () => resolve(Buffer.concat(ch))); req.on('error', reject); });
+    return json(res, 200, { result: FILES.upload(db, u, url.searchParams, body) });
+  }
+
   const m = p.match(/^\/api\/([A-Za-z]+)$/);
   if (m && req.method === 'POST') {
     const u = currentUser(req);
@@ -125,7 +155,7 @@ async function handle(req, res) {
     let args = [];
     if (raw) { try { args = JSON.parse(raw); } catch (_) { throw new ApiError('Неверный формат запроса.'); } }
     if (!Array.isArray(args)) args = [args];
-    const result = f.fn(db, u, ...args);
+    const result = await f.fn(db, u, ...args);
     return json(res, 200, { result });
   }
 

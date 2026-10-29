@@ -44,6 +44,8 @@ function crmLoad(db, u) {
     tasks: db.prepare('SELECT data FROM tasks WHERE done=0 OR updated_at>? ORDER BY due').all(monthAgo).map(r => P(r.data)).filter(Boolean),
     objects: rows('objects', 'updated_at DESC'),
     inq: OBJ.inquiryCounts(db),
+    files: require('./files').counts(db),
+    newCalls: require('./novofon').newCount(db),
     lastContact: lastContacts(db),
     objContact: objContacts(db),
     fin: can(u, 'fin_w') ? finDict(db) : null,
@@ -86,6 +88,8 @@ function addActivity(db, u, a) {
     userId: a.userId != null ? a.userId : (u ? u.id : null), userName: a.userName || (u ? u.name : ''),
     clientId: str(a.clientId, 64), leadId: str(a.leadId, 64), dealId: str(a.dealId, 64), objectId: str(a.objectId, 64)
   };
+  if (a.url && /^https:\/\//.test(a.url)) x.url = str(a.url, 1000);
+  if (a.callId) x.callId = str(a.callId, 64);
   db.prepare(`INSERT INTO activities(id,at,user_id,client_id,lead_id,deal_id,object_id,data) VALUES(?,?,?,?,?,?,?,?)
     ON CONFLICT(id) DO UPDATE SET at=excluded.at, client_id=excluded.client_id, lead_id=excluded.lead_id, deal_id=excluded.deal_id, object_id=excluded.object_id, data=excluded.data`)
     .run(id, x.at, x.userId, x.clientId || null, x.leadId || null, x.dealId || null, x.objectId || null, J(x));
@@ -356,4 +360,4 @@ function restore(db, crm) {
     .run(str(a.id, 64), Number(a.at) || now(), a.userId || null, a.clientId || null, a.leadId || null, a.dealId || null, a.objectId || null, J(a)));
 }
 
-module.exports = { restore, crmLoad, STAGES };
+module.exports = { restore, crmLoad, STAGES, addActivity, saveLeadTx };

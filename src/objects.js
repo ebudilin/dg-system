@@ -76,13 +76,14 @@ function cleanObject(db, o, prev) {
     ceiling: numOrBlank(o.ceiling), floor: str(o.floor, 20), floors: numOrBlank(o.floors), walls: str(o.walls, 60), slabs: str(o.slabs, 60),
     lifts: o.lifts === 'none' ? 'none' : numOrBlank(o.lifts), parking: multi(o.parking, D.parking),
     price: numOrBlank(o.price), saleReason: str(o.saleReason, 1000),
-    description: str(o.description, 5000), developer: str(o.developer, 200), link: str(o.link, 1000), note: str(o.note, 5000),
+    description: str(o.description, 5000), developer: str(o.developer, 200), link: str(o.link, 1000), diskLink: /^https?:\/\//.test(o.diskLink || '') ? str(o.diskLink, 1000) : '', note: str(o.note, 5000),
     // договор с собственником
     contractDate: isDate(o.contractDate) ? o.contractDate : '', contractUntil: isDate(o.contractUntil) ? o.contractUntil : '', exclusive: !!o.exclusive,
     // продвижение и расходы
     tips: (Array.isArray(o.tips) ? o.tips : []).slice(0, 40).map(t => ({ key: str(t.key || uid('tip'), 40), title: str(t.title, 200).trim(), done: !!t.done, taskId: str(t.taskId, 64) })).filter(t => t.title),
     expenses: (Array.isArray(o.expenses) ? o.expenses : []).slice(0, 200).map(e => ({ id: str(e.id || uid('exp'), 40), date: isDate(e.date) ? e.date : '', kind: str(e.kind, 60), amount: Number(e.amount) || 0, note: str(e.note, 300), opId: str(e.opId, 64) })).filter(e => e.amount > 0),
     createdAt: p.createdAt || now(), updatedAt: now(),
+    cian: p.cian || null, saleType: o.saleType === 'alternative' ? 'alternative' : 'free',
     activeSince: p.activeSince || null, priceHistory: cleanHistory(o.priceHistory !== undefined ? o.priceHistory : p.priceHistory, p.createdAt)
   };
   x.ownerId = x.owners[0] || '';
@@ -148,6 +149,9 @@ def('deleteObject', 'crm_w', (db, u, id) => {
     if (u.role !== 'owner' && P(row.data).status !== 'draft') throw new ApiError('Удалить можно только черновик. Остальные объекты переведите в «Остановлен» или удалит учредитель.');
     db.prepare('DELETE FROM objects WHERE id=?').run(str(id, 64));
     db.prepare('DELETE FROM inquiries WHERE object_id=?').run(str(id, 64));
+    const FL = require('./files');
+    db.prepare('DELETE FROM files WHERE object_id=?').run(str(id, 64));
+    try { require('node:fs').rmSync(require('node:path').join(FL.dir(db), str(id, 64).replace(/[^\w-]/g, '')), { recursive: true, force: true }); } catch (_) {}
     audit(db, u, 'удаление', 'объект', id, P(row.data), null);
     bump(db);
   });
