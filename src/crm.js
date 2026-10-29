@@ -317,12 +317,16 @@ def('saveTask', 'crm_w', (db, u, t) => {
       id: str(t.id || uid('task'), 64), title: str(t.title, 500).trim(), note: str(t.note, 3000),
       due: isDate(t.due) ? t.due : '', time: /^\d{2}:\d{2}$/.test(t.time || '') ? t.time : '',
       assigneeId: optUser(db, t.assigneeId) || u.id,
+      coIds: [],
       clientId: optRef(db, 'counterparties', t.clientId), leadId: optRef(db, 'leads', t.leadId),
       dealId: optRef(db, 'deals', t.dealId), objectId: optRef(db, 'objects', t.objectId),
       done: !!t.done, doneAt: t.done ? ((prev && prev.doneAt) || now()) : null,
       createdBy: (prev && prev.createdBy) || u.id, createdAt: (prev && prev.createdAt) || now(), updatedAt: now()
     };
     if (prev && prev.tipKey) x.tipKey = prev.tipKey;
+    // соисполнители: если не переданы — оставляем прежних
+    const co = Array.isArray(t.coIds) ? t.coIds : ((prev && prev.coIds) || []);
+    x.coIds = [...new Set(co.map(Number))].filter(id => id && id !== x.assigneeId && userExists(db, id)).slice(0, 10);
     db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET due=excluded.due, done=excluded.done, assignee=excluded.assignee, updated_at=excluded.updated_at, data=excluded.data')
       .run(x.id, x.due || null, x.done ? 1 : 0, x.assigneeId, x.updatedAt, J(x));
     const justDone = x.done && !(prev && prev.done);

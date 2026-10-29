@@ -375,7 +375,7 @@ function taskRow(t){
   const late=t.due&&t.due<today();
   const link=t.leadId&&lead(t.leadId)?'Заявка: '+lead(t.leadId).title:t.clientId&&cl(t.clientId)?'Клиент: '+clName(t.clientId):t.dealId&&deal(t.dealId)?'Сделка: '+dealName(deal(t.dealId)):t.objectId&&obj(t.objectId)?'Объект: '+objName(obj(t.objectId)):'';
   return `<div class="trow ${t.done?'done':''}"><input type="checkbox" data-done="${esc(t.id)}" ${t.done?'checked':''} ${can()?'':'disabled'} aria-label="Выполнено">
-    <div class="tt" data-open-task="${esc(t.id)}"><b>${esc(t.title)}</b><div class="m">${esc([link,V.tf.who==='all'||V.tab!=='tasks'?uName(t.assigneeId):''].filter(Boolean).join(' · '))}</div></div>
+    <div class="tt" data-open-task="${esc(t.id)}"><b>${esc(t.title)}</b><div class="m">${esc([link,V.tf.who==='all'||V.tab!=='tasks'||t.assigneeId!==ME.id?taskWho(t):''].filter(Boolean).join(' · '))}</div></div>
     <div class="due ${late&&!t.done?'late':''}">${esc(dueLbl(t))}</div></div>`}
 function objLast(o,k){const oc=(D.objContact||{})[o.id]||{};if(k==='owner_report')return oc.report||0;return Math.max(oc.call||0,oc.report||0,...(o.owners||[]).map(id=>lastC(id)))}
 function objReminders(){
@@ -389,7 +389,7 @@ function objRemindHtml(list){if(!list.length)return '';
   return `<div class="grp">Собственники ждут новостей</div><div class="box tlist">${list.map(x=>`<div class="trow"><div class="tt" data-open-object="${esc(x.o.id)}"><b>${x.k==='owner_report'?'Отчёт собственнику':'Связаться с собственником'}</b><div class="m">${esc(objName(x.o))} · ${esc(uName(x.o.responsibleId)||'без ответственного')}</div></div>
     <div class="due late">${x.last?x.d+' дн. назад':'ещё не было'}</div>${x.tk?'<span class="muted" style="font-size:12px">задача есть</span>':can()?`<button type="button" data-obj-remind="${esc(x.o.id)}" data-what="${x.k}">Задача</button>`:''}</div>`).join('')}</div>`}
 function vToday(){
-  const td=today(),mine=t=>t.assigneeId===ME.id;
+  const td=today(),mine=isMine;
   const late=openTasks(t=>mine(t)&&t.due&&t.due<td),now=openTasks(t=>mine(t)&&t.due===td),soon=openTasks(t=>mine(t)&&t.due>td&&t.due<=addDays(td,7));
   const open=D.leads.filter(l=>OPEN_STAGES.includes(l.stage)),fresh=open.filter(l=>l.stage==='new');
   const noStep=open.filter(l=>!nextTask(t=>t.leadId===l.id));
@@ -435,7 +435,7 @@ function leadCard(l){
 
 /* ---------- Задачи ---------- */
 function vTasks(){
-  const f=V.tf,td=today(),who=t=>f.who==='all'||t.assigneeId===ME.id;
+  const f=V.tf,td=today(),who=t=>f.who==='all'||isMine(t);
   let h=can()?`<div class="qadd"><input id="qt-title" placeholder="Новая задача: позвонить, отправить подборку…" aria-label="Новая задача"><input id="qt-due" type="date" value="${td}" aria-label="Срок"><select id="qt-who" aria-label="Исполнитель">${usersOpt(ME.id)}</select><button class="primary" data-qadd data-need-w>Добавить</button></div>`:'';
   h+=`<div class="toolbar" style="margin-top:6px"><div class="seg" role="group"><button data-tw="me" aria-pressed="${f.who==='me'}">Мои</button><button data-tw="all" aria-pressed="${f.who==='all'}">Все</button></div>
     <label class="checks" style="align-self:center"><label><input type="checkbox" id="tf-done" ${f.done?'checked':''}> Показать выполненные</label></label></div>`;
@@ -792,6 +792,7 @@ function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
     <label class="f"><span>Срок</span><input name="due" type="date" value="${esc(x.due)}"></label>
     <label class="f"><span>Время</span><input name="time" type="time" value="${esc(x.time)}"></label>
     <label class="f full"><span>Исполнитель</span><select name="assigneeId">${usersOpt(x.assigneeId)}</select></label>
+    <div class="f full"><span style="font-size:12px;color:var(--muted)">Соисполнители <span style="opacity:.8">— видят задачу у себя в «Сегодня» и «Задачах»</span></span><div class="checks">${D.users.filter(u=>(u.active||(x.coIds||[]).map(Number).includes(u.id))&&u.id!==Number(x.assigneeId)).map(u=>`<label><input type="checkbox" name="coIds" data-multi value="${u.id}" ${(x.coIds||[]).map(Number).includes(u.id)?'checked':''}> ${esc(u.name)}</label>`).join('')||'<span class="muted">Других пользователей нет</span>'}</div></div>
     <label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId)}</select></label>
     <label class="f"><span>Заявка</span><select name="leadId">${opt([['','— нет —'],...D.leads.filter(l=>OPEN_STAGES.includes(l.stage)||l.id===x.leadId).map(l=>[l.id,l.title])],x.leadId)}</select></label>
     <label class="f"><span>Сделка</span><select name="dealId">${opt([['','— нет —'],...D.deals.filter(d=>d.status==='work'||d.status==='deal'||d.id===x.dealId).map(d=>[d.id,dealName(d)])],x.dealId)}</select></label>
@@ -823,7 +824,7 @@ async function submit(){
       dlg.close();await run('saveLead',Object.assign({},x,{id:c.orig?c.orig.id:undefined,ownerId:x.ownerId?Number(x.ownerId):null}));toast('Заявка сохранена')}
     else if(c.kind==='client'){if(!x.name.trim())return toast('Укажите имя.');dlg.close();await run('crmSaveClient',Object.assign({},c.orig||{},x,{id:c.orig?c.orig.id:'cl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),createdAt:c.orig?c.orig.createdAt:Date.now()}));toast('Клиент сохранён')}
     else if(c.kind==='object'){await saveObjectDlg(false)}
-    else if(c.kind==='task'){if(!x.title.trim())return toast('Напишите, что сделать.');dlg.close();await run('saveTask',Object.assign({},x,{id:c.orig?c.orig.id:undefined,assigneeId:Number(x.assigneeId),done:!!x.done}));toast('Задача сохранена')}
+    else if(c.kind==='task'){if(!x.title.trim())return toast('Напишите, что сделать.');dlg.close();await run('saveTask',Object.assign({},x,{id:c.orig?c.orig.id:undefined,assigneeId:Number(x.assigneeId),coIds:(x.coIds||[]).map(Number).filter(id=>id!==Number(x.assigneeId)),done:!!x.done}));toast('Задача сохранена')}
     else if(c.kind==='deal'){const o=c.orig;const extra=[x.agent2Id,x.agent3Id].filter(Boolean).map(a=>Object.assign({agentId:a},((o&&o.extra)||[]).find(e=>e.agentId===a)||{}));
       const ids=[x.agentId,...extra.map(e=>e.agentId)].filter(Boolean);if(new Set(ids).size!==ids.length)return toast('Один и тот же агент выбран дважды.');
       if(!x.clientId)return toast('Выберите клиента.');
@@ -863,6 +864,9 @@ form.addEventListener('click',async e=>{const b=e.target.closest('button,a');if(
 form.addEventListener('change',async e=>{const cb=e.target.closest('[data-done]');if(cb){e.stopPropagation();await toggleDone(cb.dataset.done,cb.checked);dlgCtx&&dlgCtx.draw();if(dlgCtx&&dlgCtx.feed)loadFeed()}},true);
 form.addEventListener('click',e=>{const t=e.target.closest('[data-open-task]');if(t)openTask(D.tasks.find(x=>x.id===t.dataset.openTask))});
 
+const isMine=t=>t.assigneeId===ME.id||(t.coIds||[]).map(Number).includes(ME.id);
+const taskWho=t=>uName(t.assigneeId)+((t.coIds||[]).length?' + '+t.coIds.map(id=>uName(Number(id))).filter(Boolean).join(', '):'');
+form.addEventListener('change',e=>{if(dlgCtx&&dlgCtx.kind==='task'&&e.target.name==='assigneeId'){readForm();dlgCtx.draw()}});
 async function toggleDone(id,val){const t=D.tasks.find(x=>x.id===id);if(!t)return;try{await run('saveTask',Object.assign({},t,{done:val}));toast(val?'Готово':'Задача снова открыта')}catch(_){render()}}
 
 /* ---------- события страницы ---------- */
