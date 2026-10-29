@@ -10,7 +10,8 @@ const LEAD_KINDS = { buy: 'Покупка', sell: 'Продажа', rent: 'Сн�
 const OBJ = require('./objects');
 const OBJ_KINDS = OBJ.D.kinds, OBJ_STATUS = OBJ.D.status;
 const DEAL_ST = { work: 'В работе', deal: 'Договор подписан', closed: 'Закрыта', lost: 'Сорвалась' };
-const ACT_TYPES = { call: 'Звонок', meeting: 'Встреча', show: 'Показ', message: 'Сообщение', note: 'Заметка', event: 'Событие' };
+const ACT_TYPES = { call: 'Звонок', meeting: 'Встреча', show: 'Показ', message: 'Сообщение', report: 'Отчёт собственнику', note: 'Заметка', event: 'Событие' };
+const CONTACT_TYPES = ['call', 'meeting', 'show', 'message', 'report'];
 const DEAL_KIND_BY_LEAD = { buy: 'Вторичка', sell: 'Вторичка', rent: 'Аренда', lease: 'Аренда', commercial: 'Коммерция', legal: 'Юр. сопровождение', other: 'Вторичка' };
 const CP_TYPE_BY_LEAD = { buy: 'buyer', sell: 'owner', rent: 'tenant', lease: 'owner', commercial: 'buyer', legal: 'buyer', other: '' };
 
@@ -43,11 +44,39 @@ function crmLoad(db, u) {
     tasks: db.prepare('SELECT data FROM tasks WHERE done=0 OR updated_at>? ORDER BY due').all(monthAgo).map(r => P(r.data)).filter(Boolean),
     objects: rows('objects', 'updated_at DESC'),
     inq: OBJ.inquiryCounts(db),
+    lastContact: lastContacts(db),
+    objContact: objContacts(db),
+    fin: can(u, 'fin_w') ? finDict(db) : null,
     dict: { stages: STAGES, leadKinds: LEAD_KINDS, objKinds: OBJ_KINDS, objStatus: OBJ_STATUS, actTypes: ACT_TYPES, obj: OBJ.D }
   };
 }
 
 def('crmLoad', null, (db, u) => crmLoad(db, u));
+
+// последний живой контакт с клиентом (звонок, встреча, показ, сообщение, отчёт)
+function lastContacts(db) {
+  const out = {};
+  const q = `SELECT client_id id, MAX(at) at FROM activities WHERE client_id IS NOT NULL AND json_extract(data,'$.type') IN (${CONTACT_TYPES.map(t => `'${t}'`).join(',')}) GROUP BY client_id`;
+  for (const r of db.prepare(q).all()) out[r.id] = r.at;
+  return out;
+}
+// по объекту: последний контакт с собственником и последний отчёт
+function objContacts(db) {
+  const out = {};
+  for (const r of db.prepare(`SELECT object_id id, json_extract(data,'$.type') t, MAX(at) at FROM activities WHERE object_id IS NOT NULL AND json_extract(data,'$.type') IN ('call','meeting','message','report') GROUP BY object_id, t`).all()) {
+    const o = out[r.id] || (out[r.id] = { call: 0, report: 0 });
+    if (r.t === 'report') o.report = Math.max(o.report, r.at); else o.call = Math.max(o.call, r.at);
+  }
+  return out;
+}
+// счета и статьи расходов — для кнопки «внести в финансы»
+function finDict(db) {
+  const cfg = P(getMeta(db, 'cfg') || 'null') || {};
+  return {
+    accounts: (cfg.accounts || []).map(a => ({ id: a.id, name: a.name })),
+    categories: (cfg.categories || []).filter(c => c.kind === 'out' && c.role !== 'agentpay' && c.role !== 'tax').map(c => ({ id: c.id, name: c.name }))
+  };
+}
 
 /* ---------- история ---------- */
 function addActivity(db, u, a) {
@@ -202,7 +231,8 @@ def('leadToDeal', 'crm_w', (db, u, id, f) => {
     const d = cleanDeal({
       id: uid('deal'), client: c.name, clientId: c.id, object: str(f.object || (obj && (obj.title || obj.address)) || '', 500),
       kind: str(f.kind || DEAL_KIND_BY_LEAD[l.kind] || 'Вторичка', 100), status: 'work', date: isDate(f.date) ? f.date : new Date().toISOString().slice(0, 10),
-      commission: can(u, 'fin_w') ? Number(f.commission) || 0 : 0, agentId: str(f.agentId, 64), note: str(f.note || l.note, 2000)
+      commission: can(u, 'fin_w') ? Number(f.commission) || 0 : 0, agentId: str(f.agentId, 64), note: str(f.note || l.note, 2000),
+      objectId: optRef(db, 'objects', f.objectId || l.objectId)
     });
     db.prepare('INSERT INTO deals(id,data) VALUES(?,?)').run(d.id, J(d));
     l.dealId = d.id; const was = l.stage; l.stage = 'won'; l.stageAt = now(); l.updatedAt = now();
@@ -224,7 +254,7 @@ def('crmSaveDeal', 'crm_w', (db, u, d) => {
     const fin = can(u, 'fin_w');
     const merged = Object.assign({}, prev, {
       object: d.object, kind: d.kind, status: d.status, date: d.date, expected: d.expected, note: d.note,
-      clientId: d.clientId || prev.clientId, agentId: d.agentId
+      clientId: d.clientId || prev.clientId, agentId: d.agentId, objectId: optRef(db, 'objects', d.objectId)
     });
     if (d.clientId) { const c = db.prepare('SELECT data FROM counterparties WHERE id=?').get(str(d.clientId, 64)); if (c) merged.client = P(c.data).name; }
     const prevExtra = prev.extra || [];
@@ -239,6 +269,30 @@ def('crmSaveDeal', 'crm_w', (db, u, d) => {
     db.prepare('UPDATE deals SET data=? WHERE id=?').run(J(x), x.id);
     if (prev.status !== x.status) addActivity(db, u, { type: 'event', text: `Статус сделки: ${DEAL_ST[prev.status] || prev.status} → ${DEAL_ST[x.status] || x.status}`, clientId: x.clientId, dealId: x.id });
     audit(db, u, 'изменение (CRM)', 'сделка', x.id, prev, x);
+    bump(db);
+  });
+  return crmLoad(db, u);
+});
+
+// Новая сделка из CRM (без заявки). Сумму комиссии задаёт только тот, у кого есть право вносить финансы.
+def('crmCreateDeal', 'crm_w', (db, u, d) => {
+  d = d || {};
+  tx(db, () => {
+    const cid = optRef(db, 'counterparties', d.clientId);
+    if (!cid) throw new ApiError('Выберите клиента.');
+    const c = P(db.prepare('SELECT data FROM counterparties WHERE id=?').get(cid).data);
+    const objectId = optRef(db, 'objects', d.objectId);
+    const obj = objectId ? P(db.prepare('SELECT data FROM objects WHERE id=?').get(objectId).data) : null;
+    const extra = (Array.isArray(d.extra) ? d.extra : []).filter(x => x && x.agentId).slice(0, 2).map(x => ({ agentId: str(x.agentId, 64), share: '', fixedPay: '' }));
+    const x = cleanDeal({
+      id: uid('deal'), client: c.name, clientId: cid, object: str(d.object || (obj && (obj.title || obj.address)) || '', 500), objectId,
+      kind: str(d.kind || 'Вторичка', 100), status: ['work', 'deal', 'closed', 'lost'].includes(d.status) ? d.status : 'work',
+      date: isDate(d.date) ? d.date : new Date().toISOString().slice(0, 10), expected: isDate(d.expected) ? d.expected : '',
+      commission: can(u, 'fin_w') ? Number(d.commission) || 0 : 0, agentId: str(d.agentId, 64), extra, note: str(d.note, 2000)
+    });
+    db.prepare('INSERT INTO deals(id,data) VALUES(?,?)').run(x.id, J(x));
+    addActivity(db, u, { type: 'event', text: 'Создана сделка' + (x.object ? `: ${x.object}` : ''), clientId: cid, dealId: x.id, objectId });
+    audit(db, u, 'создание (CRM)', 'сделка', x.id, null, x);
     bump(db);
   });
   return crmLoad(db, u);
@@ -263,9 +317,16 @@ def('saveTask', 'crm_w', (db, u, t) => {
       done: !!t.done, doneAt: t.done ? ((prev && prev.doneAt) || now()) : null,
       createdBy: (prev && prev.createdBy) || u.id, createdAt: (prev && prev.createdAt) || now(), updatedAt: now()
     };
+    if (prev && prev.tipKey) x.tipKey = prev.tipKey;
     db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET due=excluded.due, done=excluded.done, assignee=excluded.assignee, updated_at=excluded.updated_at, data=excluded.data')
       .run(x.id, x.due || null, x.done ? 1 : 0, x.assigneeId, x.updatedAt, J(x));
-    if (x.done && !(prev && prev.done) && (x.clientId || x.leadId || x.dealId || x.objectId))
+    const justDone = x.done && !(prev && prev.done);
+    if (justDone && x.objectId && (x.tipKey === 'owner_call' || x.tipKey === 'owner_report')) {
+      // регулярное напоминание по объекту выполнено — засчитываем контакт с собственником
+      const o = P((db.prepare('SELECT data FROM objects WHERE id=?').get(x.objectId) || {}).data || 'null');
+      const owners = (o && o.owners) || [];
+      addActivity(db, u, { type: x.tipKey === 'owner_report' ? 'report' : 'call', text: (x.tipKey === 'owner_report' ? 'Отчёт собственнику отправлен' : 'Связались с собственником') + ' (задача выполнена)' + (x.note ? ': ' + x.note : ''), objectId: x.objectId, clientId: owners[0] || '' });
+    } else if (justDone && (x.clientId || x.leadId || x.dealId || x.objectId))
       addActivity(db, u, { type: 'event', text: `Выполнена задача: ${x.title}`, clientId: x.clientId, leadId: x.leadId, dealId: x.dealId, objectId: x.objectId });
     audit(db, u, prev ? 'изменение' : 'создание', 'задача', x.id, prev, x);
     bump(db);

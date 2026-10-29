@@ -52,6 +52,7 @@ function cleanDeal(d) {
     id: str(d.id, 64), date: isDate(d.date) ? d.date : '', client: str(d.client, 300).trim(), object: str(d.object, 500), kind: str(d.kind, 100),
     status: str(d.status || 'work', 32), commission: Number(d.commission) || 0, share: numOrBlank(d.share), fixedPay: numOrBlank(d.fixedPay),
     expected: isDate(d.expected) ? d.expected : '', note: str(d.note), agentId: str(d.agentId, 64), clientId: str(d.clientId, 64),
+    objectId: str(d.objectId, 64),
     extra: (Array.isArray(d.extra) ? d.extra : []).filter(x => x && x.agentId).slice(0, 2)
       .map(x => ({ agentId: str(x.agentId, 64), share: numOrBlank(x.share), fixedPay: numOrBlank(x.fixedPay) }))
   };
@@ -157,6 +158,8 @@ def('saveDeal', 'fin_w', (db, u, d) => {
   const deal = cleanDeal(d);
   tx(db, () => {
     const prev = db.prepare('SELECT data FROM deals WHERE id=?').get(deal.id);
+    // поля, которые ведутся в CRM (объект), раздел «Финансы» не передаёт — сохраняем прежние
+    if (prev && (d.objectId === undefined)) deal.objectId = (P(prev.data) || {}).objectId || '';
     db.prepare('INSERT INTO deals(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data').run(deal.id, J(deal));
     audit(db, u, prev ? 'изменение' : 'создание', 'сделка', deal.id, prev ? P(prev.data) : null, deal);
     bump(db);

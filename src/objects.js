@@ -20,8 +20,12 @@ const D = {
     ['presentation', 'Подготовить презентацию'], ['photo', 'Профессиональные фотографии'], ['plan', 'Отрисовать планировку'],
     ['video_h', 'Снять горизонтальное видео-обзор'], ['video_v', 'Снять вертикальное видео'], ['promo', 'Снять рекламный ролик'],
     ['egrn', 'Заказать выписку из ЕГРН'], ['docs', 'Проверить документы юристом'], ['price', 'Анализ цены: сравнить с конкурентами'],
-    ['ads', 'Разместить объявления: ЦИАН, Авито, Яндекс']
+    ['ads', 'Разместить объявления: ЦИАН, Авито, Яндекс'],
+    ['owner_call', 'Связаться с собственником: рассказать, что происходит по объекту'],
+    ['owner_report', 'Подготовить отчёт собственнику: показы, звонки, обратная связь, рекомендации по цене']
   ],
+  // регулярные советы: не «выполняются» навсегда, а напоминают раз в N дней
+  recurring: { owner_call: 7, owner_report: 14 },
   inqChannels: ['ЦИАН', 'Авито', 'Яндекс Недвижимость', 'Домклик', 'Сайт', 'Звонок на номер агентства', 'Рекомендация', 'Соцсети', 'Другое'],
   inqWho: { buyer: 'Прямой покупатель', agent: 'Агент' }
 };
@@ -33,6 +37,23 @@ const multi = (v, dict) => (Array.isArray(v) ? v : []).filter(k => Object.protot
 const optRef = (db, table, id) => { id = str(id, 64); return id && db.prepare(`SELECT 1 FROM ${table} WHERE id=?`).get(id) ? id : ''; };
 const optUser = (db, id) => (id && db.prepare('SELECT 1 FROM users WHERE id=?').get(Number(id))) ? Number(id) : null;
 const STATUS_ORDER = ['draft', 'active', 'paused', 'deposit', 'failed', 'sold'];
+
+function cleanHistory(h, createdAt) {
+  h = Array.isArray(h) ? h : [];
+  // старый формат {at, from, to}: первая «from» — стартовая цена
+  if (h.length && h[0] && h[0].price == null && h[0].from != null) {
+    const conv = [];
+    if (+h[0].from > 0) conv.push({ at: createdAt || h[0].at, price: +h[0].from, note: 'стартовая цена' });
+    h.forEach(e => e && e.to != null && conv.push({ at: e.at, price: +e.to, note: '' }));
+    h = conv;
+  }
+  return h.map(e => {
+    if (!e) return null;
+    const price = e.price != null ? Number(e.price) : Number(e.to);  // старый формат {from,to}
+    const at = Number(e.at) || (isDate(e.date) ? new Date(e.date + 'T12:00:00').getTime() : 0);
+    return price > 0 && at ? { at, price, note: str(e.note, 200) } : null;
+  }).filter(Boolean).sort((a, b) => a.at - b.at).slice(-100);
+}
 
 function cleanObject(db, o, prev) {
   const p = prev || {};
@@ -60,14 +81,18 @@ function cleanObject(db, o, prev) {
     contractDate: isDate(o.contractDate) ? o.contractDate : '', contractUntil: isDate(o.contractUntil) ? o.contractUntil : '', exclusive: !!o.exclusive,
     // продвижение и расходы
     tips: (Array.isArray(o.tips) ? o.tips : []).slice(0, 40).map(t => ({ key: str(t.key || uid('tip'), 40), title: str(t.title, 200).trim(), done: !!t.done, taskId: str(t.taskId, 64) })).filter(t => t.title),
-    expenses: (Array.isArray(o.expenses) ? o.expenses : []).slice(0, 200).map(e => ({ id: str(e.id || uid('exp'), 40), date: isDate(e.date) ? e.date : '', kind: str(e.kind, 60), amount: Number(e.amount) || 0, note: str(e.note, 300) })).filter(e => e.amount > 0),
+    expenses: (Array.isArray(o.expenses) ? o.expenses : []).slice(0, 200).map(e => ({ id: str(e.id || uid('exp'), 40), date: isDate(e.date) ? e.date : '', kind: str(e.kind, 60), amount: Number(e.amount) || 0, note: str(e.note, 300), opId: str(e.opId, 64) })).filter(e => e.amount > 0),
     createdAt: p.createdAt || now(), updatedAt: now(),
-    activeSince: p.activeSince || null, priceHistory: Array.isArray(p.priceHistory) ? p.priceHistory.slice(-50) : []
+    activeSince: p.activeSince || null, priceHistory: cleanHistory(o.priceHistory !== undefined ? o.priceHistory : p.priceHistory, p.createdAt)
   };
   x.ownerId = x.owners[0] || '';
   if (['active', 'deposit', 'paused'].includes(x.status) && !x.activeSince) x.activeSince = now();
   if (x.status === 'draft') x.activeSince = null;
-  if (prev && (prev.price === '' || prev.price == null ? null : +prev.price) !== (x.price === '' ? null : +x.price) && x.price !== '') x.priceHistory.push({ at: now(), from: prev.price, to: x.price });
+  // история цены: первая запись — стартовая цена (с датой появления объекта), дальше каждое изменение
+  const h = x.priceHistory;
+  if (!h.length && prev && prev.price !== '' && prev.price != null && +prev.price > 0) h.push({ at: prev.createdAt || now(), price: +prev.price, note: 'стартовая цена' });
+  const lastP = h.length ? h[h.length - 1].price : null;
+  if (x.price !== '' && x.price != null && +x.price > 0 && +x.price !== lastP) h.push({ at: now(), price: +x.price, note: h.length ? '' : 'стартовая цена' });
   if (x.description.length > 5000) throw new ApiError('Описание — не больше 5000 символов.');
   return x;
 }
@@ -135,15 +160,50 @@ def('tipToTask', 'crm_w', (db, u, objectId, key, due) => {
     const row = db.prepare('SELECT data FROM objects WHERE id=?').get(str(objectId, 64));
     if (!row) throw new ApiError('Объект не найден.');
     const o = P(row.data);
-    const tip = (o.tips || []).find(t => t.key === key);
-    if (!tip) throw new ApiError('Совет не найден.');
-    if (tip.taskId && db.prepare('SELECT 1 FROM tasks WHERE id=?').get(tip.taskId)) throw new ApiError('Задача по этому совету уже есть.');
-    const t = { id: uid('task'), title: `${tip.title} — ${o.title || o.address}`, note: '', due: isDate(due) ? due : '', time: '', assigneeId: o.responsibleId || u.id,
+    let tip = (o.tips || []).find(t => t.key === key);
+    if (!tip) {
+      const def = D.tips.find(t => t[0] === key);
+      if (!def) throw new ApiError('Совет не найден.');
+      tip = { key, title: def[1], done: false, taskId: '' };
+      o.tips = (o.tips || []).concat([tip]);
+    }
+    if (tip.taskId) {
+      const tr = db.prepare('SELECT done FROM tasks WHERE id=?').get(tip.taskId);
+      if (tr && (!tr.done || !D.recurring[tip.key])) throw new ApiError('Задача по этому совету уже есть.');
+    }
+    const t = { id: uid('task'), title: `${D.recurring[tip.key] ? (tip.key === 'owner_report' ? 'Отчёт собственнику' : 'Позвонить собственнику') : tip.title} — ${o.title || o.address}`, note: '', due: isDate(due) ? due : '', time: '', assigneeId: o.responsibleId || u.id,
       clientId: '', leadId: '', dealId: '', objectId: o.id, done: false, doneAt: null, createdBy: u.id, createdAt: now(), updatedAt: now(), tipKey: tip.key };
     db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?)').run(t.id, t.due || null, 0, t.assigneeId, t.updatedAt, J(t));
     tip.taskId = t.id;
     db.prepare('UPDATE objects SET data=?, updated_at=? WHERE id=?').run(J(o), now(), o.id);
     audit(db, u, 'создание', 'задача', t.id, null, t);
+    bump(db);
+  });
+  return require('./crm').crmLoad(db, u);
+});
+
+// Расход по объекту → операция «Расход» в финансах (нужно право вносить финансы)
+def('expenseToFinance', 'fin_w', (db, u, objectId, expId, acc, cat) => {
+  tx(db, () => {
+    const row = db.prepare('SELECT data FROM objects WHERE id=?').get(str(objectId, 64));
+    if (!row) throw new ApiError('Объект не найден.');
+    const o = P(row.data);
+    const e = (o.expenses || []).find(x => x.id === expId);
+    if (!e) throw new ApiError('Сохраните объект, затем вносите расход в финансы.');
+    if (e.opId && db.prepare('SELECT 1 FROM ops WHERE id=?').get(e.opId)) throw new ApiError('Этот расход уже внесён в финансы.');
+    const cfg = P(require('./db').getMeta(db, 'cfg') || 'null') || {};
+    if (!(cfg.accounts || []).some(a => a.id === acc)) throw new ApiError('Выберите счёт.');
+    if (!(cfg.categories || []).some(c => c.id === cat && c.kind === 'out')) throw new ApiError('Выберите статью расхода.');
+    const date = e.date || new Date().toISOString().slice(0, 10);
+    const AB = cfg.archive && cfg.archive.before;
+    if (AB && date < AB) throw new ApiError('Дата расхода в закрытом периоде финансов — измените дату.');
+    const deal = db.prepare('SELECT id FROM deals WHERE instr(data, ?) > 0 LIMIT 1').get('"objectId":"' + o.id + '"');
+    const op = { id: uid('op'), date, type: 'out', amount: Number(e.amount), acc, cat, party: '', comment: `Объект «${o.title || o.address}»: ${e.kind || 'расход'}${e.note ? ' — ' + e.note : ''}`, createdAt: now() };
+    if (deal) op.dealId = deal.id;
+    db.prepare('INSERT INTO ops(id,date,archive,include,created_at,data) VALUES(?,?,NULL,1,?,?)').run(op.id, op.date, op.createdAt, J(op));
+    e.opId = op.id;
+    db.prepare('UPDATE objects SET data=?, updated_at=? WHERE id=?').run(J(o), now(), o.id);
+    audit(db, u, 'создание из расхода по объекту', 'операция', op.id, null, op);
     bump(db);
   });
   return require('./crm').crmLoad(db, u);
