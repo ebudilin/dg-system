@@ -1,0 +1,6 @@
+[Unit]
+Description=Дорогой Город — автообновление из GitHub
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/dg/deploy/update.sh

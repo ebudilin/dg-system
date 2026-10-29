@@ -1,0 +1,12 @@
+{
+  "name": "dg-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Дорогой Город: управленческий учёт (сделки, операции, ДДС, ОПиУ) с логинами и ролями",
+  "main": "src/server.js",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "adduser": "node --disable-warning=ExperimentalWarning scripts/create-user.js"
+  }
+}

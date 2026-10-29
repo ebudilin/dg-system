@@ -1,0 +1,23 @@
+[Unit]
+Description=Дорогой Город — система учёта
+After=network.target
+
+[Service]
+User=dg
+Group=dg
+WorkingDirectory=/opt/dg
+EnvironmentFile=/etc/dg/env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning src/server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/dg
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

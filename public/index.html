@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Дорогой Город · Учёт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
+:root{
+  --bg:#EEF1F0; --surface:#FFFFFF; --sunk:#F6F8F7; --ink:#15201C; --muted:#5B6863; --line:#D8DFDC;
+  --accent:#1F5A48; --accent-ink:#FFFFFF; --accent-soft:#DDEBE5;
+  --pos:#1D7A45; --neg:#B0302A; --warn:#9A6400; --pos-soft:#E0F1E6; --neg-soft:#F7E3E1; --warn-soft:#F5ECD8;
+  --font-ui:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-num:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
+  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
+  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
+  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
+  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font-ui);margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:14px 10px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand b{font-size:18px;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:12px}
+.who{display:flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);font-weight:600}
+.period .who button:not(.primary){width:auto;height:30px;padding:0 10px;font-size:12px;flex:none}
+.who span{line-height:1.25;text-align:right}
+body.ro #addop,body.ro [data-new-deal],body.ro [data-new-client],body.ro [data-pay-deal],body.ro [data-pay-in-deal],body.ro [data-inc-all],body.ro #dlgform button[type=submit],body.ro [data-del-deal],body.ro [data-del-client],body.ro [data-del-op]{display:none!important}
+.acc-tbl td,.acc-tbl th{white-space:nowrap}
+@media (max-width:700px){.who span{display:none}}
+.like-btn{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px;white-space:nowrap}
+.period{display:flex;align-items:center;gap:6px}
+.period button:not(.primary){width:32px;height:32px;padding:0}
+.period{flex-wrap:wrap}
+.period .lbl{min-width:132px;text-align:center;font-weight:600}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{padding:7px 12px;border-radius:999px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:500}
+nav.tabs a:hover{color:var(--ink);background:var(--surface)}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.danger{color:var(--neg);border-color:var(--neg)}
+button.ghost{border-color:transparent;background:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0;width:100%}
+input[type=number]{font-family:var(--font-num)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label.f>span{letter-spacing:.02em}
+h2{font-size:17px;margin:24px 0 10px;text-wrap:balance}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+.banner{margin-top:16px;padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);border:1px solid var(--line)}
+.grid{display:grid;gap:12px}
+.tiles{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:18px}
+@media (max-width:860px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.tiles{grid-template-columns:minmax(0,1fr)}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--font-num);font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.hero{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tile.hero .k,.tile.hero .s{color:var(--accent-ink);opacity:.8}
+.cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;margin-top:12px}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row.total{font-weight:600}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--sunk);white-space:nowrap}
+td.r,th.r{text-align:right}
+tr.sec td{background:var(--sunk);font-weight:600}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
+.report th:first-child,.report td:first-child{position:sticky;left:0;background:var(--surface);z-index:1;min-width:210px}
+.report tr.sec td:first-child,.report th:first-child{background:var(--sunk)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.chip.in{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.chip.out{background:var(--neg-soft);color:var(--neg);border-color:transparent}
+.chip.tr{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.chip.work{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.deal{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.chip.closed{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:18px 0 12px}
+.toolbar>*{flex:0 1 auto}
+.toolbar .grow{flex:1 1 200px}
+.toolbar select,.toolbar input{width:auto;min-width:150px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.meter{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:80px;margin-top:5px}
+.meter i{display:block;height:100%;background:var(--accent)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto}
+dialog::backdrop{background:rgba(10,16,14,.45)}
+.dlg{padding:18px;display:flex;flex-direction:column;gap:12px}
+.dlg h2{margin:0}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fg .full{grid-column:1/-1}
+@media (max-width:480px){.fg{grid-template-columns:minmax(0,1fr)}}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.acts{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.acts>div{display:flex;gap:8px}
+.chart svg{display:block;width:100%;height:auto}
+.chart .ax{fill:var(--muted);font:11px var(--font-ui)}
+.chart .grid-l{stroke:var(--line)}
+.chart .b-in{fill:var(--pos)} .chart .b-out{fill:var(--neg);opacity:.75}
+.chart .ln{stroke:var(--ink);fill:none;stroke-width:1.5}
+.chart .dot{fill:var(--ink)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.set-list{display:flex;flex-direction:column;gap:8px}
+.set-row{display:grid;gap:8px;align-items:end}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;max-width:calc(100vw - 32px)}
+.note{font-size:12px;color:var(--muted);margin-top:8px;max-width:70ch}
+.pf input{width:130px;text-align:right}
+@media (prefers-reduced-motion:no-preference){.meter i{transition:width .3s}}
+</style>
+</head><body>
+
+
+<header class="top">
+  <div class="wrap" style="padding-bottom:0">
+    <div class="bar">
+      <div class="brand"><b>Дорогой Город · Деньги</b><span id="sync">Подключение к базе…</span></div>
+      <div class="period">
+        <button id="prev" aria-label="Предыдущий период">‹</button>
+        <div class="lbl" id="plabel"></div>
+        <button id="next" aria-label="Следующий период">›</button>
+        <button class="primary" id="addop" style="margin-left:8px">+ Операция</button>
+        <div class="who" id="who"></div>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+
+<dialog id="dlg"><form class="dlg" id="dlgform" method="dialog"></form></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NF=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
+const money=n=>{n=Math.round(+n||0);return (n<0?'−':'')+NF.format(Math.abs(n))+' ₽'};
+const moneyS=n=>{n=+n||0;const a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?0:1).replace('.',',')+' млн';if(a>=1e3)return s+Math.round(a/1e3)+' тыс';return s+Math.round(a)};
+const cls=n=>n<0?'neg':(n>0?'pos':'');
+const MON=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const MONF=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const curMonth=()=>todayStr().slice(0,7);
+const addM=(m,k)=>{let y=+m.slice(0,4),mo=+m.slice(5,7)-1+k;y+=Math.floor(mo/12);mo=((mo%12)+12)%12;return y+'-'+pad(mo+1)};
+const range=(a,b)=>{const r=[];let m=a;while(m<=b&&r.length<240){r.push(m);m=addM(m,1)}return r};
+const mLabel=m=>MONF[+m.slice(5,7)-1]+' '+m.slice(0,4);
+const mShort=m=>MON[+m.slice(5,7)-1];
+const dFmt=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4):'';
+const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const num=v=>{if(v==null||v==='')return 0;const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isFinite(n)?n:0};
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200)}
+
+/* ---------- defaults (used until settings are saved) ---------- */
+const DEFAULT_CFG={
+  startMonth:'2026-09', taxRate:6, splitBase:'gross',
+  accounts:[
+    {id:'rs',name:'Расчётный счёт ООО',opening:0},
+    {id:'cash',name:'Касса (наличные)',opening:0},
+    {id:'card_e',name:'Карта Евгения',opening:0},
+    {id:'card_v',name:'Карта Владимира',opening:0}],
+  categories:[
+    {id:'com',name:'Комиссия по сделкам',kind:'in',pnl:'revenue',role:'commission'},
+    {id:'legal',name:'Юридическое сопровождение',kind:'in',pnl:'revenue'},
+    {id:'other_in',name:'Прочие доходы',kind:'in',pnl:'revenue'},
+    {id:'owner_in',name:'Взнос / заём учредителя',kind:'in',pnl:'none'},
+    {id:'agentpay',name:'Выплаты агентам',kind:'out',pnl:'var',role:'agentpay'},
+    {id:'salary',name:'Зарплата (оклады)',kind:'out',pnl:'fixed'},
+    {id:'payroll_tax',name:'Налоги и взносы с ФОТ',kind:'out',pnl:'fixed'},
+    {id:'rent',name:'Аренда офиса',kind:'out',pnl:'fixed'},
+    {id:'ads',name:'Реклама и покупка лидов',kind:'out',pnl:'fixed'},
+    {id:'listings',name:'Циан, Авито, площадки',kind:'out',pnl:'fixed'},
+    {id:'it',name:'Связь, CRM, сервисы',kind:'out',pnl:'fixed'},
+    {id:'acc',name:'Бухгалтерия и банк',kind:'out',pnl:'fixed'},
+    {id:'office',name:'Офис и хозрасходы',kind:'out',pnl:'fixed'},
+    {id:'other_out',name:'Прочие расходы',kind:'out',pnl:'fixed'},
+    {id:'usn',name:'Налог УСН',kind:'out',pnl:'none',role:'tax'},
+    {id:'divs',name:'Выплаты учредителям (дивиденды)',kind:'out',pnl:'none'},
+    {id:'loan_out',name:'Возврат займов',kind:'out',pnl:'none'}],
+  agents:[
+    {id:'evg',name:'Евгений',share:50},{id:'vdr',name:'Владимир Дрягин',share:50},
+    {id:'dbr',name:'Дмитрий Брылин',share:40},{id:'agn',name:'Александр Гансецкий',share:20},
+    {id:'edr',name:'Элеонора Дрягина',share:40},{id:'vst',name:'Владимир Стасенко',share:40},
+    {id:'lya',name:'Лилия Якубова',share:0}],
+  owners:[{name:'Евгений',share:45},{name:'Владимир Дрягин',share:45},{name:'Элеонора Дрягина',share:10}]
+};
+const PNL_LABEL={revenue:'Выручка',var:'Переменный расход',fixed:'Постоянный расход',none:'Не влияет на прибыль'};
+const DEAL_KINDS=['Вторичка','Новостройка','Коммерция','Аренда','Загородная','Юр. сопровождение'];
+const DEAL_ST={work:'В работе',deal:'Договор подписан',closed:'Закрыта',lost:'Сорвалась'};
+const CP_TYPES=[['owner','Собственник (продавец/арендодатель)'],['buyer','Покупатель'],['tenant','Арендатор'],['agent','Агент'],['partner','Партнёр'],['founder','Учредитель'],['employee','Сотрудник'],['investor','Инвестор']];
+const CP_SHORT={owner:'Собственник',buyer:'Покупатель',tenant:'Арендатор',agent:'Агент',partner:'Партнёр',founder:'Учредитель',employee:'Сотрудник',investor:'Инвестор'};
+
+/* ---------- state ---------- */
+let dbState='connecting', cfg=structuredClone(DEFAULT_CFG), cfgExists=false;
+const opsByMonth={}; let deals={}, plans={}, clients={}, archOps=[];
+const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['settings','Настройки'],['access','Доступ']];
+let ME=null;
+const isOwner=()=>!!ME&&ME.role==='owner', canEdit=()=>!!ME&&(ME.role==='owner'||ME.role==='accountant');
+const TABS=ALL_TABS.filter(t=>true);
+function syncTabs(){TABS.length=0;ALL_TABS.forEach(t=>{if((t[0]==='settings'||t[0]==='access')&&!isOwner())return;TABS.push(t)});if(!TABS.some(t=>t[0]===V.tab))V.tab='summary'}
+const hashTab=(location.hash||'').slice(1);
+const V={tab:TABS.some(t=>t[0]===hashTab)?hashTab:'summary', month:curMonth(), year:curMonth().slice(0,4), f:{acc:'',cat:'',type:'',q:''}, dealF:'active', cq:'', cpType:''};
+let draft=null, draftDirty=false;
+
+/* ---------- lookups & math ---------- */
+const catById=id=>cfg.categories.find(c=>c.id===id);
+const accById=id=>cfg.accounts.find(a=>a.id===id);
+const agById=id=>{const c=clients[id];if(c)return {id:c.id,name:c.name,share:num(c.agentShare)};return cfg.agents.find(a=>a.id===id)};
+const agentList=()=>{const l=Object.values(clients).filter(c=>(c.types||[]).includes('agent')).map(c=>({id:c.id,name:c.name,share:num(c.agentShare)}));return l.length?l.sort((a,b)=>a.name.localeCompare(b.name,'ru')):cfg.agents};
+const cpName=id=>(id&&clients[id]&&clients[id].name)||'';
+const TEAM_TYPES=['founder','employee','agent'];
+const isTeam=c=>(c.types||[]).some(t=>TEAM_TYPES.includes(t));
+const cpSort=(a,b)=>(isTeam(b)-isTeam(a))||a.name.localeCompare(b.name,'ru');
+const cpList=()=>Object.values(clients).sort(cpSort);
+const cpOptions=(sel,agentsOnly)=>{const list=agentsOnly?agentList().map(a=>clients[a.id]||{id:a.id,name:a.name,types:['agent']}):cpList();
+  const o=c=>`<option value="${esc(c.id)}" ${c.id===sel?'selected':''}>${esc(c.name)}</option>`;
+  const team=list.filter(isTeam),rest=list.filter(c=>!isTeam(c));
+  return `<option value="">— не выбран —</option>`+(team.length?`<optgroup label="Команда: учредители, сотрудники, агенты">${team.map(o).join('')}</optgroup>`:'')+(rest.length?`<optgroup label="Клиенты, партнёры и другие">${rest.map(o).join('')}</optgroup>`:'')};
+const accRate=id=>{const a=accById(id);if(!a)return 0;return (a.tax===undefined||a.tax===null||a.tax==='')?(+cfg.taxRate||0)/100:num(a.tax)/100};
+const ROLE_FALLBACK={divs:'divs',salary:'salary',loanin:'owner_in',loanout:'loan_out'};
+const isRole=(o,r)=>{const c=catById(o.cat);if(!c)return false;return c.role===r||(!c.role&&ROLE_FALLBACK[r]===c.id)};
+const holders=()=>[...new Set(cfg.accounts.map(a=>a.holderId).filter(Boolean).concat((cfg.openingDebts||[]).filter(x=>x.kind==='founder'&&x.cpId).map(x=>x.cpId)))];
+let opsCut=null;
+const allOps=()=>{const r=[];for(const k in opsByMonth)r.push(...opsByMonth[k]);return opsCut?r.filter(o=>o.date<opsCut):r};
+const ARCH=()=>cfg.archive||{months:{},deals:{},cps:{}};
+const archLabel=()=>{const b=cfg.archive&&cfg.archive.before;return b?'до '+b.slice(8,10)+'.'+b.slice(5,7)+'.'+b.slice(0,4):''};
+const archM=m=>!!(cfg.archive&&cfg.archive.before&&m<cfg.archive.before.slice(0,7));
+const isArchM=m=>!!(archM(m)&&!archOps.length&&cfg.archive.months&&cfg.archive.months[m]);
+const histOps=()=>opsCut?[]:archOps.filter(o=>o.include);
+const reportOps=()=>allOps().concat(histOps());
+const findOp=(id,m)=>(opsByMonth[m]||[]).find(x=>x.id===id)||archOps.find(x=>x.id===id);
+const lastArchSheet=()=>{const ss=[...new Set(archOps.map(o=>o.sheet))].sort();return ss[ss.length-1]||('Архив '+archLabel())};
+const openDebt=(cid,kind)=>(cfg.openingDebts||[]).filter(x=>x.cpId===cid&&x.kind===kind).reduce((s,x)=>s+num(x.amount),0);
+const pm=o=>o.pnlMonth||o.date.slice(0,7);
+const rate=()=>(+cfg.taxRate||0)/100;
+const dealAgents=d=>{if(!d)return [];const l=[];if(d.agentId)l.push({agentId:d.agentId,share:d.share,fixedPay:d.fixedPay});(d.extra||[]).forEach(x=>{if(x&&x.agentId)l.push({agentId:x.agentId,share:x.share,fixedPay:x.fixedPay})});return l};
+const agShareTxt=x=>{const a=agById(x.agentId);return num(x.fixedPay)>0?'фикс '+money(x.fixedPay):((x.share!==''&&x.share!=null)?num(x.share):(a?num(a.share):0))+'%'};
+function agentAccruals(o){ // начисления агентам по поступлению: [{agentId,amount}]
+  if(o.type!=='in')return [];const c=catById(o.cat);if(!c)return [];
+  const d=o.dealId?deals[o.dealId]:null,list=dealAgents(d);
+  if(!list.length){if(c.role==='commission'&&o.agentId)list.push({agentId:o.agentId,share:'',fixedPay:''});else return []}
+  else if(c.role!=='commission'&&c.pnl!=='revenue')return []; // любая выручка по сделке с агентами
+  return list.map(x=>{let amt;
+    if(d&&num(x.fixedPay)>0&&num(d.commission)>0) amt=num(x.fixedPay)*Math.min(1,o.amount/num(d.commission));
+    else{const a=agById(x.agentId);const share=(x.share!==''&&x.share!=null)?num(x.share):(a?num(a.share):0);
+      let base=o.amount;if(cfg.splitBase==='net')base*=1-accRate(o.acc);amt=base*share/100}
+    return {agentId:x.agentId,amount:amt}});
+}
+function taxAccrual(o){if(o.type!=='in')return 0;const c=catById(o.cat);return c&&c.pnl==='revenue'?o.amount*accRate(o.acc):0}
+function balances(beforeDate){ // balances per account, ops with date < beforeDate (or all)
+  const b={};cfg.accounts.forEach(a=>b[a.id]=num(a.opening));
+  for(const o of allOps()){if(beforeDate&&o.date>=beforeDate)continue;
+    if(o.type==='in')b[o.acc]=(b[o.acc]||0)+o.amount;
+    else if(o.type==='out')b[o.acc]=(b[o.acc]||0)-o.amount;
+    else if(o.type==='tr'){b[o.acc]=(b[o.acc]||0)-o.amount;b[o.toAcc]=(b[o.toAcc]||0)+o.amount}}
+  return b;
+}
+const sumObj=o=>Object.values(o).reduce((s,v)=>s+v,0);
+function liabilities(){
+  const taxBy={},ag={};cfg.accounts.forEach(a=>taxBy[a.id]=num(a.openingTax));
+  (cfg.openingDebts||[]).forEach(x=>{if(x.kind==='agent'&&x.cpId)ag[x.cpId]=(ag[x.cpId]||0)+num(x.amount)});
+  for(const o of allOps()){const t=taxAccrual(o);if(t)taxBy[o.acc]=(taxBy[o.acc]||0)+t;agentAccruals(o).forEach(a=>ag[a.agentId]=(ag[a.agentId]||0)+a.amount);
+    if(o.type==='out'){const c=catById(o.cat);if(c&&c.role==='tax')taxBy[o.acc]=(taxBy[o.acc]||0)-o.amount;const pid=o.cpId||o.agentId;if(c&&c.role==='agentpay'&&pid)ag[pid]=(ag[pid]||0)-o.amount}}
+  const inv={};holders().forEach(h=>inv[h]=investorStats(h).debt);
+  return {tax:sumObj(taxBy),taxBy,agents:ag,agentsTotal:sumObj(ag),inv,invTotal:Object.values(inv).reduce((s,v)=>s+Math.max(0,v),0)};
+}
+function investorStats(cid){
+  const own=cfg.accounts.filter(a=>a.holderId===cid),ids=own.map(a=>a.id);
+  const opening=own.reduce((s,a)=>s+num(a.opening),0);let put=0,got=0,loanIn=0,loanBack=0;
+  for(const o of allOps()){
+    if(ids.includes(o.acc)&&(o.type==='out'||(o.type==='tr'&&!ids.includes(o.toAcc))))put+=o.amount;
+    if(o.type==='in'&&ids.includes(o.acc))got+=o.amount;
+    if(o.type==='tr'&&ids.includes(o.toAcc)&&!ids.includes(o.acc))got+=o.amount;
+    if(o.cpId===cid&&!ids.includes(o.acc)){if(o.type==='in'&&isRole(o,'loanin'))loanIn+=o.amount;if(o.type==='out'&&isRole(o,'loanout'))loanBack+=o.amount}}
+  const openD=openDebt(cid,'founder');
+  return {accounts:own,opening,put,got,loanIn,loanBack,openD,debt:openD+put-got-opening+loanIn-loanBack};
+}
+function cashMonth(m){
+  if(isArchM(m)){const a=cfg.archive.months[m],inC=Object.assign({},a.in),outC=Object.assign({},a.out),tin=sumObj(inC),tout=sumObj(outC);return {inC,outC,tin,tout,net:tin-tout,arch:true}}
+  const inC={},outC={};let tin=0,tout=0;
+  for(const o of (opsByMonth[m]||[]).concat(archM(m)?histOps().filter(x=>x.date.slice(0,7)===m):[])){if(o.type==='in'){inC[o.cat]=(inC[o.cat]||0)+o.amount;tin+=o.amount}
+    else if(o.type==='out'){outC[o.cat]=(outC[o.cat]||0)+o.amount;tout+=o.amount}}
+  return {inC,outC,tin,tout,net:tin-tout};
+}
+function pnlMonth(m,ops){
+  if(isArchM(m)){const a=cfg.archive.months[m],rev={},fixed={},vr={};let revenue=0,agent=0;
+    for(const k in a.in){const c=catById(k);if(c&&c.pnl==='revenue'){rev[k]=a.in[k];revenue+=a.in[k]}}
+    for(const k in a.out){const c=catById(k);if(!c)continue;if(c.role==='agentpay'){agent+=a.out[k];continue}if(c.role==='tax'||c.pnl==='none')continue;
+      if(c.pnl==='var')vr[k]=a.out[k];else if(c.pnl==='fixed')fixed[k]=a.out[k]}
+    const tax=num(a.tax),varT=sumObj(vr),fixT=sumObj(fixed),margin=revenue-tax-agent-varT;return {rev,fixed,vr,revenue,tax,agent,varT,fixT,margin,profit:margin-fixT,arch:true}}
+  const rev={},fixed={},vr={};let revenue=0,tax=0,agent=0;
+  for(const o of ops){if(pm(o)!==m)continue;const c=catById(o.cat);
+    if(o.type==='in'){if(c&&c.pnl==='revenue'){rev[c.id]=(rev[c.id]||0)+o.amount;revenue+=o.amount;tax+=taxAccrual(o)}
+      agentAccruals(o).forEach(a=>agent+=a.amount)}
+    else if(o.type==='out'&&c){if(c.role==='agentpay'||c.role==='tax'||c.pnl==='none')continue;
+      if(c.pnl==='var')vr[c.id]=(vr[c.id]||0)+o.amount;else if(c.pnl==='fixed')fixed[c.id]=(fixed[c.id]||0)+o.amount}}
+  const varT=sumObj(vr),fixT=sumObj(fixed),margin=revenue-tax-agent-varT,profit=margin-fixT;
+  return {rev,fixed,vr,revenue,tax,agent,varT,fixT,margin,profit};
+}
+function dealStats(d){let rec=0,tax=0,acc=0,paid=0,exp=0,dist=0;const ops=[];
+  for(const o of reportOps()){if(o.dealId!==d.id)continue;ops.push(o);const c=catById(o.cat);
+    if(o.type==='in'){rec+=o.amount;tax+=taxAccrual(o);agentAccruals(o).forEach(a=>acc+=a.amount)}
+    else if(o.type==='out'){if(c&&c.role==='agentpay')paid+=o.amount;else if(c&&c.role==='tax'){}else if(c&&c.pnl==='none')dist+=o.amount;else exp+=o.amount}}
+  const ar=!archOps.length&&ARCH().deals&&ARCH().deals[d.id];if(ar&&!opsCut){rec+=num(ar.rec);tax+=num(ar.tax);acc+=num(ar.acc);paid+=num(ar.paid);exp+=num(ar.exp);dist+=num(ar.dist)}
+  const agent=Math.max(acc,paid);
+  return {ar:ar&&!opsCut?ar:null,ops,rec,tax,acc,paid,agent,exp,dist,left:Math.max(0,num(d.commission)-rec),due:acc-paid,net:rec-tax-agent-exp}}
+const clientName=d=>(d&&d.clientId&&clients[d.clientId]&&clients[d.clientId].name)||(d&&d.client)||'—';
+const dealLabel=d=>clientName(d)+(d.object?' · '+d.object:'');
+function clientStats(cid){const ds=Object.values(deals).filter(d=>d.clientId===cid);const r={deals:ds,rec:0,tax:0,agent:0,exp:0,dist:0,net:0,pipe:0,recOther:0};
+  for(const d of ds){const s=dealStats(d);for(const k of ['rec','tax','agent','exp','dist','net'])r[k]+=s[k];if(d.status==='work'||d.status==='deal')r.pipe+=s.left;
+    s.ops.forEach(o=>{if(o.type==='in'&&o.cpId!==cid)r.recOther+=o.amount})}
+  return r}
+function cpStats(cid){
+  const r={inSum:0,outSum:0,ops:[],divs:{sum:0,byDeal:{}},salary:{sum:0,byMonth:{}},other:0,agent:{byDeal:{},acc:0,paid:0}};
+  const ag=r.agent.byDeal,slot=k=>ag[k]||(ag[k]={acc:0,paid:0});
+  const live=new Set(allOps());let archAg={acc:0,paid:0};
+  for(const o of reportOps()){
+    const isA=!live.has(o);
+    agentAccruals(o).forEach(a=>{if(a.agentId===cid){if(isA)archAg.acc+=a.amount;else slot(o.dealId||'').acc+=a.amount}});
+    const mine=o.cpId===cid||(!o.cpId&&o.agentId===cid);if(!mine)continue;r.ops.push(o);
+    if(o.type==='in')r.inSum+=o.amount;else if(o.type==='out')r.outSum+=o.amount;
+    if(o.type!=='out')continue;const c=catById(o.cat);
+    if(c&&c.role==='agentpay'){if(isA)archAg.paid+=o.amount;else slot(o.dealId||'').paid+=o.amount}
+    else if(isRole(o,'divs')){r.divs.sum+=o.amount;const k=o.dealId||'';r.divs.byDeal[k]=(r.divs.byDeal[k]||0)+o.amount}
+    else if(isRole(o,'salary')){r.salary.sum+=o.amount;const k=o.date.slice(0,7);r.salary.byMonth[k]=(r.salary.byMonth[k]||0)+o.amount}
+    else r.other+=o.amount}
+  const oa=openDebt(cid,'agent');if(oa)slot('__open').acc+=oa;
+  for(const k in ag){r.agent.acc+=ag[k].acc;r.agent.paid+=ag[k].paid}
+  r.client=clientStats(cid);r.inv=investorStats(cid);
+  r.owes=Math.max(0,r.agent.acc-r.agent.paid)+Math.max(0,r.inv.debt);
+  r.archAg=archAg;
+  const ar=!opsCut&&!archOps.length&&ARCH().cps&&ARCH().cps[cid];r.arch=ar||null;
+  if(ar){r.inSum+=num(ar.in);r.outSum+=num(ar.out);r.divs.sum+=num(ar.divs);for(const k in (ar.divsByDeal||{}))r.divs.byDeal[k]=(r.divs.byDeal[k]||0)+ar.divsByDeal[k];
+    if(num(ar.salary)){r.salary.sum+=num(ar.salary);r.salary.byMonth['__arch']=num(ar.salary)}}
+  r.brought=r.inSum+r.client.recOther;
+  return r}
+function daysToBirthday(b){if(!/^\d{4}-\d{2}-\d{2}$/.test(b||''))return null;const t=new Date();t.setHours(0,0,0,0);
+  let n=new Date(t.getFullYear(),+b.slice(5,7)-1,+b.slice(8,10));if(n<t)n=new Date(t.getFullYear()+1,+b.slice(5,7)-1,+b.slice(8,10));return Math.round((n-t)/864e5)}
+function ageOf(b){if(!/^\d{4}-/.test(b||''))return null;const t=new Date(),y=t.getFullYear()-+b.slice(0,4);const passed=(t.getMonth()+1)*100+t.getDate()>=+b.slice(5,7)*100+ +b.slice(8,10);return passed?y:y-1}
+
+/* ---------- сервер ---------- */
+let writeChain=Promise.resolve(), version=null, saving=0, loadErr='';
+async function api(fn,...args){
+  let r;try{r=await fetch('/api/'+fn,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(args)})}
+  catch(e){throw new Error('Нет связи с сервером. Проверьте интернет.')}
+  if(r.status===401){location.href='/login';throw new Error('Сессия закончилась.')}
+  let d=null;try{d=await r.json()}catch(_){}
+  if(!r.ok)throw new Error((d&&d.error)||('Ошибка сервера ('+r.status+')'));
+  return d.result}
+function queue(fn){saving++;setSync();writeChain=writeChain.then(fn).catch(e=>toast(errText(e))).finally(()=>{saving--;setSync()});return writeChain}
+function errText(e){const m=(e&&e.message)||String(e||'');
+  if(/прав/i.test(m))return 'Недостаточно прав для этого действия.';
+  return 'Не удалось сохранить: '+m}
+function apply(d){if(!d)return;version=d.version;if(d.me){ME=d.me;syncTabs();renderWho()}
+  if(d.cfg){cfg=Object.assign(structuredClone(DEFAULT_CFG),d.cfg);cfgExists=true}
+  for(const k in opsByMonth)delete opsByMonth[k];
+  (d.ops||[]).forEach(o=>{const m=o.date.slice(0,7);(opsByMonth[m]=opsByMonth[m]||[]).push(o)});
+  const dd={};(d.deals||[]).forEach(x=>dd[x.id]=x);deals=dd;plans=d.plans||{};archOps=d.archOps||[];
+  const cc={};(d.clients||[]).forEach(x=>cc[x.id]=x);clients=cc;
+  dbState='ok';setSync();schedule()}
+function setSync(){const el=$('#sync');el.textContent=saving>0?'Сохраняю…':dbState==='ok'?('Учёт с '+mLabel(cfg.startMonth).toLowerCase()+' · УСН по счетам'):dbState==='none'?'Нет связи с сервером':'Загружаю данные…'}
+async function init(){
+  render();
+  try{apply(await api('loadAll'))}catch(e){dbState='none';loadErr=(e&&e.message)||String(e);setSync();render();return}
+  setInterval(async()=>{if(document.hidden||saving>0||dlgCtx)return;
+    try{const v=await api('getVersion');if(v!==version&&saving===0)apply(await api('loadAll'))}catch(_){}},20000);
+}
+let raf=0;function schedule(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;if(V.tab==='settings'&&draftDirty)return;render()})}
+
+/* ---------- render shell ---------- */
+function render(){
+  $('#tabs').innerHTML=TABS.map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
+  const yearTabs=V.tab==='cash'||V.tab==='pnl';
+  const noPeriod=V.tab==='settings'||V.tab==='deals'||V.tab==='clients';
+  $('#plabel').textContent=yearTabs?V.year+' год':noPeriod?mLabel(curMonth()):mLabel(V.month);
+  $('#prev').disabled=$('#next').disabled=noPeriod;
+  const app=$('#app');let h='';
+  if(dbState==='none')h+=`<div class="banner">Не удалось загрузить данные. ${esc(loadErr)} Обновите страницу; если не помогло — проверьте, что у вас есть доступ к таблице.</div>`;
+  if(dbState==='connecting')h+=`<div class="banner" style="background:var(--sunk)">Загружаю данные…</div>`;
+  h+=({summary:vSummary,ops:vOps,deals:vDeals,clients:vClients,cash:vCash,pnl:vPnl,plan:vPlan,settings:vSettings,access:vAccess}[V.tab])();
+  app.innerHTML=h;
+  const rw=app.querySelector('.report');if(rw&&V.year===curMonth().slice(0,4)){const i=+curMonth().slice(5,7);const th=rw.querySelectorAll('th')[i];if(th)rw.scrollLeft=Math.max(0,th.offsetLeft-rw.clientWidth+th.offsetWidth*2)}
+}
+
+/* ---------- Сводка ---------- */
+function vSummary(){
+  const now=balances(),L=liabilities(),hs=new Set(holders());
+  const companyMoney=cfg.accounts.reduce((s,a)=>s+(a.holderId?0:(now[a.id]||0)),0)+Object.values(L.inv).reduce((s,v)=>s+Math.max(0,-v),0);
+  const free=companyMoney-L.tax-Math.max(0,L.agentsTotal)-L.invTotal;
+  const m=V.month,cm=cashMonth(m),ops=allOps(),p=pnlMonth(m,ops);
+  let fx=0,n=0;for(let i=1;i<=3;i++){const mm=addM(curMonth(),-i);if(mm<cfg.startMonth)continue;const q=pnlMonth(mm,ops);fx+=q.fixT+q.varT;n++}
+  if(!n){const q=pnlMonth(curMonth(),ops);fx=q.fixT+q.varT;n=1}
+  const avgFix=n?fx/n:0,runway=avgFix>0?free/avgFix:null;
+  let pipe=0,pipeN=0;Object.values(deals).forEach(d=>{if(d.status==='lost'||d.status==='closed')return;const s=dealStats(d);pipe+=s.left;if(s.left>0)pipeN++});
+  const hasOps=ops.length>0;
+  let h=`<div class="grid tiles">
+    <div class="tile hero"><span class="k">Свободные деньги</span><span class="v">${money(free)}</span><span class="s">деньги компании минус резерв УСН, долг агентам и учредителям${runway!=null&&runway>0?' · хватит на '+runway.toFixed(1).replace('.',',')+' мес':''}</span></div>
+    <div class="tile"><span class="k">Деньги на счетах компании</span><span class="v">${money(companyMoney)}</span><span class="s">счета и касса; с личных карт — только деньги компании сверх долга</span></div>
+    <div class="tile"><span class="k">Резерв на УСН</span><span class="v warn">${money(L.tax)}</span><span class="s">только по счетам с налогом</span></div>
+    <div class="tile"><span class="k">Должны агентам</span><span class="v warn">${money(Math.max(0,L.agentsTotal))}</span><span class="s">начислено по комиссиям минус выплачено</span></div>
+    <div class="tile"><span class="k">Должны учредителям</span><span class="v warn">${money(L.invTotal)}</span><span class="s">расходы с личных карт и займы</span></div>
+    <div class="tile"><span class="k">Ждём комиссий по сделкам</span><span class="v">${money(pipe)}</span><span class="s">сделок в работе: ${pipeN}</span></div>
+  </div>`;
+  if(!hasOps)h+=`<div class="card" style="margin-top:12px"><h3>С чего начать</h3><div class="rows">
+    <div class="row"><span>1. В «Настройках» укажите остатки на счетах и ставку налога по каждому счёту.</span></div>
+    <div class="row"><span>2. Заведите контрагентов и текущие сделки.</span></div>
+    <div class="row"><span>3. Вносите каждое поступление и расход кнопкой «+ Операция». Остальное посчитается само.</span></div></div></div>`;
+  h+=`<div class="cols"><div class="card chart"><h3>Движение денег по месяцам</h3>${chart()}</div>
+    <div class="card"><h3>${mLabel(m)}</h3><div class="rows">
+      <div class="row"><span>Поступления</span><span class="num pos">${money(cm.tin)}</span></div>
+      <div class="row"><span>Выплаты</span><span class="num neg">${money(-cm.tout)}</span></div>
+      <div class="row total"><span>Чистый денежный поток</span><span class="num ${cls(cm.net)}">${money(cm.net)}</span></div>
+      <div class="row"><span>Выручка</span><span class="num">${money(p.revenue)}</span></div>
+      <div class="row"><span>Маржинальный доход</span><span class="num">${money(p.margin)}</span></div>
+      <div class="row total"><span>Прибыль месяца</span><span class="num ${cls(p.profit)}">${money(p.profit)}</span></div>
+    </div></div></div>`;
+  const compAcc=cfg.accounts.filter(a=>!a.holderId);
+  const cTot=compAcc.reduce((s,a)=>s+(now[a.id]||0),0),cTax=compAcc.reduce((s,a)=>s+(L.taxBy[a.id]||0),0);
+  h+=`<h2>Счета компании: остатки и резерв на налог</h2><div class="tbl-wrap"><table><thead><tr><th>Счёт</th><th class="r">УСН</th><th class="r">Остаток</th><th class="r">Резерв УСН</th><th class="r">Свободно</th></tr></thead><tbody>
+    ${compAcc.map(a=>{const b=now[a.id]||0,t=L.taxBy[a.id]||0;
+      return `<tr><td>${esc(a.name)}</td>
+      <td class="r num muted">${Math.round(accRate(a.id)*1000)/10}%</td><td class="r num ${cls(b)}">${money(b)}</td><td class="r num ${t?'warn':'muted'}">${t?money(t):'—'}</td><td class="r num ${cls(b-t)}">${money(b-t)}</td></tr>`}).join('')}
+    </tbody><tfoot><tr class="tot"><td colspan="2">Итого</td><td class="r num">${money(cTot)}</td><td class="r num">${money(cTax)}</td><td class="r num">${money(cTot-cTax)}</td></tr></tfoot></table></div>
+    <p class="note">Налог начисляется только на поступления выручки на счета со ставкой УСН (ставки задаются в Настройках). Оплата статьёй «Налог УСН» с этого же счёта уменьшает резерв. Личные счета учредителей здесь не показаны: всё, что учредитель тратит на компанию со своего счёта, сразу считается долгом компании перед ним — он ниже, в блоке «Долг учредителям».</p>`;
+  const agDebt=Object.entries(L.agents).filter(([,v])=>Math.abs(v)>=1),invDebt=Object.entries(L.inv).filter(([,v])=>Math.abs(v)>=1);
+  const sub=(l,v)=>Math.abs(v)>=1?`<div class="row" style="padding-left:14px;font-size:13px"><span class="muted">${l}</span><span class="num muted">${money(v)}</span></div>`:'';
+  const invRows=invDebt.map(([id,v])=>{const s=investorStats(id);
+    return `<div class="row click" data-edit-client="${esc(id)}" style="cursor:pointer"><span><b>${esc(cpName(id)||id)}</b></span><span class="num ${v>0?'warn':'pos'}"><b>${v<0?'у него деньги компании ':''}${money(Math.abs(v))}</b></span></div>`
+      +sub('долг на начало учёта',s.openD)+sub('потратил на компанию со своего счёта',s.put)+sub('получил на свой счёт',-(s.got+s.opening))+sub('внёс займом на счета компании',s.loanIn)+sub('компания вернула',-s.loanBack)}).join('');
+  h+=`<div class="cols"><div class="card"><h3>Долг агентам</h3><div class="rows">${agDebt.map(([id,v])=>`<div class="row click" data-edit-client="${esc(id)}" style="cursor:pointer"><span>${esc(cpName(id)||(agById(id)||{}).name||id)}</span><span class="num ${v>0?'warn':'pos'}">${v<0?'переплата ':''}${money(Math.abs(v))}</span></div>`).join('')||'<div class="row muted"><span>Долгов нет</span></div>'}</div>
+    <p class="note">Начисляется, когда по сделке приходит комиссия; гасится операцией «Выплаты агентам» с этим агентом.</p></div>
+    <div class="card"><h3>Долг учредителям</h3><div class="rows">${invRows||'<div class="row muted"><span>Долгов нет</span></div>'}${invDebt.length?`<div class="row total"><span>Итого компания должна</span><span class="num warn">${money(L.invTotal)}</span></div>`:''}</div>
+    <p class="note">Эта же сумма — в плитке «Должны учредителям». Растёт от расходов с личного счёта учредителя и займов, уменьшается возвратами («Возврат займов»).</p></div></div>`;
+  return h;
+}
+function chart(){
+  const end=V.month,ms=range(addM(end,-11),end).filter(m=>m>=cfg.startMonth||archM(m));
+  if(!ms.length)return '<div class="empty">Нет данных</div>';
+  const d=ms.map(m=>{const c=cashMonth(m);return{m,i:c.tin,o:c.tout}});
+  const bal=ms.map(m=>m<cfg.startMonth||archM(m)?null:sumObj(balances(addM(m,1)+'-01')));
+  const mx=Math.max(1,...d.map(x=>Math.max(x.i,x.o)),...bal.filter(v=>v!=null).map(Math.abs));
+  const W=640,H=220,L=62,B=24,T=10,ih=H-B-T,cw=(W-L-8)/Math.max(6,ms.length),bw=Math.min(18,cw/2-4);
+  const y=v=>T+ih-(v/mx)*ih;
+  let g='';for(let k=0;k<=4;k++){const v=mx*k/4,yy=y(v);g+=`<line class="grid-l" x1="${L}" x2="${W-4}" y1="${yy}" y2="${yy}"/><text class="ax" x="${L-6}" y="${yy+4}" text-anchor="end">${moneyS(v)}</text>`}
+  let bars='',pts=[];d.forEach((x,i)=>{const cx=L+cw*i+cw/2;
+    bars+=`<rect class="b-in" x="${cx-bw-1}" y="${y(x.i)}" width="${bw}" height="${Math.max(0,T+ih-y(x.i))}" rx="2"><title>${mLabel(x.m)}: поступления ${money(x.i)}</title></rect>`;
+    bars+=`<rect class="b-out" x="${cx+1}" y="${y(x.o)}" width="${bw}" height="${Math.max(0,T+ih-y(x.o))}" rx="2"><title>${mLabel(x.m)}: выплаты ${money(x.o)}</title></rect>`;
+    bars+=`<text class="ax" x="${cx}" y="${H-6}" text-anchor="middle">${mShort(x.m)}</text>`;if(bal[i]!=null)pts.push([cx,y(Math.max(0,bal[i]))])});
+  const ln=pts.length>1?`<polyline class="ln" points="${pts.map(p=>p.join(',')).join(' ')}"/>`:'';
+  const last=pts[pts.length-1]||[-10,-10];
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Поступления, выплаты и остаток по месяцам">${g}${bars}${ln}<circle class="dot" cx="${last[0]}" cy="${last[1]}" r="3.5"/></svg>
+  <div class="legend"><span><i style="background:var(--pos)"></i>Поступления</span><span><i style="background:var(--neg);opacity:.75"></i>Выплаты</span><span><i style="background:var(--ink);height:2px;vertical-align:3px"></i>Остаток на конец месяца</span></div>`;
+}
+
+/* ---------- Операции ---------- */
+function vOps(){
+  const f=V.f,arch=archM(V.month);let list=arch?archOps.filter(o=>o.date.slice(0,7)===V.month):(opsByMonth[V.month]||[]).slice();
+  if(arch&&f.inc)list=list.filter(o=>f.inc==='yes'?o.include:!o.include);
+  list=list.filter(o=>(!f.type||o.type===f.type)&&(!f.acc||o.acc===f.acc||o.toAcc===f.acc)&&(!f.cat||o.cat===f.cat)&&
+    (!f.q||((o.party||'')+' '+cpName(o.cpId)+' '+(o.comment||'')+' '+(o.dealId&&deals[o.dealId]?clientName(deals[o.dealId]):'')).toLowerCase().includes(f.q.toLowerCase())));
+  list.sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0));
+  const cnt=list.filter(o=>!arch||o.include),tin=cnt.filter(o=>o.type==='in').reduce((s,o)=>s+o.amount,0),tout=cnt.filter(o=>o.type==='out').reduce((s,o)=>s+o.amount,0);
+  const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(l)}</option>`).join('');
+  let h=`<div class="toolbar">
+    <label class="f"><span>Тип</span><select data-f="type">${opt([['','Все'],['in','Поступления'],['out','Расходы'],['tr','Переводы']],f.type)}</select></label>
+    <label class="f"><span>Счёт</span><select data-f="acc">${opt([['','Все счета'],...cfg.accounts.map(a=>[a.id,a.name])],f.acc)}</select></label>
+    <label class="f"><span>Статья</span><select data-f="cat">${opt([['','Все статьи'],...cfg.categories.map(c=>[c.id,c.name])],f.cat)}</select></label>
+    ${arch?`<label class="f"><span>Учёт</span><select data-f="inc">${opt([['','Все'],['yes','Учитываются'],['no','Исключены']],f.inc||'')}</select></label>`:''}
+    <label class="f grow"><span>Поиск</span><input data-f="q" id="fq" value="${esc(f.q)}" placeholder="Контрагент, комментарий, клиент"></label></div>`;
+  if(arch){const all=archOps.filter(o=>o.date.slice(0,7)===V.month),inc=all.filter(o=>o.include).length;
+    h+=`<div class="banner" style="margin:0 0 12px;background:var(--sunk)"><b>Архив ${archLabel()}.</b> Это операции закрытого периода, на остатки счетов они не влияют. Галочка «Учитывать» решает, попадает ли операция в ДДС, ОПиУ, сделки и карточки контрагентов. Операцию можно открыть и поправить. В этом месяце учитывается ${inc} из ${all.length}.
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" data-inc-all="1">Учитывать все в списке</button><button type="button" data-inc-all="0">Исключить все в списке</button></div></div>`}
+  if(!list.length)return h+`<div class="card empty">За ${mLabel(V.month).toLowerCase()} операций ${f.type||f.acc||f.cat||f.q?'по фильтру ':''}нет. Нажмите «+ Операция», чтобы внести первую.</div>`;
+  h+=`<div class="tbl-wrap"><table><thead><tr>${arch?'<th>Учитывать</th>':''}<th>Дата</th><th>Тип</th><th>Статья</th><th>Счёт</th><th>Контрагент / сделка</th><th class="r">Сумма</th></tr></thead><tbody>`;
+  for(const o of list){const c=catById(o.cat),d=o.dealId&&deals[o.dealId],ag=!o.cpId&&o.agentId&&agById(o.agentId);
+    const sign=o.type==='in'?1:o.type==='out'?-1:0;
+    h+=`<tr class="click" data-edit-op="${esc(o.id)}" data-m="${o.date.slice(0,7)}" ${arch&&!o.include?'style="opacity:.45"':''}>${arch?`<td><input type="checkbox" data-inc="${esc(o.id)}" id="inc-${esc(o.id)}" aria-label="Учитывать операцию" style="width:18px;height:18px" ${o.include?'checked':''}></td>`:''}<td class="num">${dFmt(o.date)}</td>
+      <td><span class="chip ${o.type}">${o.type==='in'?'Приход':o.type==='out'?'Расход':'Перевод'}</span></td>
+      <td>${o.type==='tr'?'—':esc(c?c.name:o.cat)}${o.pnlMonth&&o.pnlMonth!==o.date.slice(0,7)?`<div class="muted" style="font-size:11px">в ОПиУ: ${mLabel(o.pnlMonth)}</div>`:''}</td>
+      <td>${esc((accById(o.acc)||{}).name||o.acc)}${o.type==='tr'?' → '+esc((accById(o.toAcc)||{}).name||o.toAcc):''}</td>
+      <td>${o.cpId?`<b>${esc(cpName(o.cpId))}</b>${o.party?' · ':''}`:''}${esc(o.party||'')}${d?`<div class="muted" style="font-size:12px">Сделка: ${esc(dealLabel(d))}</div>`:''}${ag?`<div class="muted" style="font-size:12px">Агент: ${esc(ag.name)}</div>`:''}${o.comment?`<div class="muted" style="font-size:12px">${esc(o.comment)}</div>`:''}</td>
+      <td class="r num ${sign>0?'pos':sign<0?'neg':''}">${sign<0?'−':''}${money(o.amount)}</td></tr>`}
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="${arch?6:5}">Итого по списку: приход ${money(tin)}, расход ${money(tout)}</td><td class="r num ${cls(tin-tout)}">${money(tin-tout)}</td></tr></tfoot></table></div>`;
+  return h;
+}
+
+/* ---------- Сделки ---------- */
+function vDeals(){
+  let list=Object.values(deals);
+  if(V.dealF==='active')list=list.filter(d=>d.status==='work'||d.status==='deal');
+  else if(V.dealF!=='all')list=list.filter(d=>d.status===V.dealF);
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const segs=[['active','Активные'],['closed','Закрытые'],['lost','Сорвались'],['all','Все']];
+  let h=`<div class="toolbar"><div class="seg" role="group" aria-label="Фильтр сделок">${segs.map(([k,l])=>`<button type="button" data-dealf="${k}" aria-pressed="${V.dealF===k}">${l}</button>`).join('')}</div>
+    <span class="grow"></span><button class="primary" data-new-deal>+ Сделка</button></div>`;
+  if(!list.length)return h+`<div class="card empty">Здесь будут сделки с ожидаемой комиссией. Поступления по сделке привязываются к ней в форме операции, и сплит агента считается сам.</div>`;
+  let tc=0,tr=0,td=0;
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th>Клиент / объект</th><th>Тип</th><th>Агент</th><th>Статус</th><th class="r">Комиссия</th><th class="r">Получено</th><th class="r">Заработано</th><th class="r">Агенту к выплате</th><th></th></tr></thead><tbody>`;
+  let te=0;for(const d of list){const s=dealStats(d),ag=agById(d.agentId),pct=num(d.commission)?Math.min(100,s.rec/num(d.commission)*100):0;tc+=num(d.commission);tr+=s.rec;td+=s.due;te+=s.net;
+    const das=dealAgents(d);
+    h+=`<tr class="click" data-edit-deal="${esc(d.id)}"><td class="num">${dFmt(d.date)}</td><td><b>${esc(clientName(d))}</b>${d.object?`<div class="muted" style="font-size:12px">${esc(d.object)}</div>`:''}</td>
+      <td>${esc(d.kind||'')}</td><td>${das.length?das.map(x=>`<div>${esc(cpName(x.agentId)||(agById(x.agentId)||{}).name||'—')}<div class="muted" style="font-size:12px">${agShareTxt(x)}</div></div>`).join(''):'—'}</td>
+      <td><span class="chip ${d.status}">${DEAL_ST[d.status]||d.status}</span>${d.expected&&d.status!=='closed'?`<div class="muted" style="font-size:12px">ждём ${dFmt(d.expected)}</div>`:''}</td>
+      <td class="r num">${money(d.commission)}</td><td class="r num">${money(s.rec)}<div class="meter"><i style="width:${pct}%"></i></div></td><td class="r num ${s.ops.length?cls(s.net):''}">${s.ops.length?money(s.net):'—'}</td>
+      <td class="r num ${s.due>0?'warn':''}">${money(s.due)}</td>
+      <td class="r"><button data-pay-deal="${esc(d.id)}" title="Внести поступление по сделке">+ Оплата</button></td></tr>`}
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="5">Итого</td><td class="r num">${money(tc)}</td><td class="r num">${money(tr)}</td><td class="r num ${cls(te)}">${money(te)}</td><td class="r num">${money(td)}</td><td></td></tr></tfoot></table></div>`;
+  return h;
+}
+
+/* ---------- Клиенты ---------- */
+function vClients(){
+  const q=(V.cq||'').toLowerCase(),tf=V.cpType||'';
+  let list=Object.values(clients).filter(c=>(!q||[c.name,c.phone,c.email,c.other,c.note].join(' ').toLowerCase().includes(q))&&(!tf||(c.types||[]).includes(tf)));
+  list.sort(cpSort);
+  const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(l)}</option>`).join('');
+  let h=`<div class="toolbar"><label class="f"><span>Тип</span><select id="cpt" data-cptype>${opt([['','Все типы'],...CP_TYPES],tf)}</select></label>
+    <label class="f grow"><span>Поиск</span><input id="cq" value="${esc(V.cq||'')}" placeholder="ФИО, телефон, email"></label>
+    <button class="primary" data-new-client>+ Контрагент</button></div>`;
+  const bd=Object.values(clients).map(c=>({c,n:daysToBirthday(c.birth)})).filter(x=>x.n!=null&&x.n<=30).sort((a,b)=>a.n-b.n);
+  if(bd.length)h+=`<div class="card" style="margin-bottom:12px"><h3>Дни рождения в ближайшие 30 дней</h3><div class="rows">${bd.map(x=>`<div class="row click" data-edit-client="${esc(x.c.id)}" style="cursor:pointer"><span>${esc(x.c.name)}${x.c.phone?` <span class="muted">· ${esc(x.c.phone)}</span>`:''}</span><span class="num ${x.n<=3?'warn':''}">${x.n===0?'сегодня':dFmt(x.c.birth).slice(0,5)+' · через '+x.n+' дн.'}</span></div>`).join('')}</div></div>`;
+  if(!Object.keys(clients).length)return h+`<div class="card empty">Здесь будут все, с кем работает агентство: клиенты, агенты, партнёры, учредители, сотрудники и инвесторы. У одного человека может быть несколько ролей.</div>`;
+  if(!list.length)return h+`<div class="card empty">Никого не нашлось.</div>`;
+  let T={out:0,brought:0,owes:0,net:0};
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Контрагент</th><th>Контакты</th><th class="r">Получил от компании</th><th class="r">Поступило от него</th><th class="r">Компания должна</th><th class="r">Итог по его сделкам</th></tr></thead><tbody>`;
+  let grp=null;for(const c of list){const g=isTeam(c)?'Команда: учредители, сотрудники, агенты':'Клиенты, партнёры и другие';if(g!==grp){grp=g;h+=`<tr class="sec"><td colspan="6">${g}</td></tr>`}
+    const s=cpStats(c.id);T.out+=s.outSum;T.brought+=s.brought;T.owes+=s.owes;T.net+=s.client.net;
+    h+=`<tr class="click" data-edit-client="${esc(c.id)}"><td><b>${esc(c.name)}</b><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${(c.types||[]).map(k=>`<span class="chip">${CP_SHORT[k]||k}</span>`).join('')}</div></td>
+      <td>${esc(c.phone||'')}${c.email?`<div class="muted" style="font-size:12px">${esc(c.email)}</div>`:''}</td>
+      <td class="r num">${s.outSum?money(s.outSum):'—'}</td><td class="r num">${s.brought?money(s.brought):'—'}</td>
+      <td class="r num ${s.owes?'warn':''}">${s.owes?money(s.owes):'—'}</td><td class="r num ${cls(s.client.net)}">${s.client.deals.length?money(s.client.net):'—'}</td></tr>`}
+  h+=`</tbody><tfoot><tr class="tot"><td colspan="2">Итого</td><td class="r num">${money(T.out)}</td><td class="r num">${money(T.brought)}</td><td class="r num">${money(T.owes)}</td><td class="r num ${cls(T.net)}">${money(T.net)}</td></tr></tfoot></table></div>
+  <p class="note">«Получил от компании» — все расходы, где он указан контрагентом (агентские, зарплата, дивиденды и прочее). «Компания должна» — неоплаченная агентская доля и долг по личным счетам и займам. «Итог по его сделкам» — сколько агентство заработало на сделках, где он клиент.</p>`;
+  return h;
+}
+
+/* ---------- ДДС ---------- */
+function yearMonths(){return range(V.year+'-01',V.year+'-12')}
+function vCash(){
+  const ms=yearMonths(),data=ms.map(cashMonth);
+  const inCats=cfg.categories.filter(c=>c.kind==='in'&&data.some(d=>d.inC[c.id])),outCats=cfg.categories.filter(c=>c.kind==='out'&&data.some(d=>d.outC[c.id]));
+  const nb=m=>m<cfg.startMonth||archM(m);const open=ms.map(m=>nb(m)?null:sumObj(balances(m+'-01'))),close=ms.map(m=>nb(m)?null:sumObj(balances(addM(m,1)+'-01')));
+  const fo=open.find(v=>v!=null),lc=close.filter(v=>v!=null).pop();
+  const T=a=>a.reduce((s,v)=>s+v,0);
+  const cell=(v,c='')=>`<td class="r num ${c}">${v?money(v):'<span class="muted">—</span>'}</td>`;
+  let h=`<h2>Движение денежных средств, ${V.year}</h2><div class="tbl-wrap report"><table><thead><tr><th>Статья</th>${ms.map(m=>`<th class="r">${mShort(m)}${archM(m)?'*':''}</th>`).join('')}<th class="r">Год</th></tr></thead><tbody>`;
+  h+=`<tr class="sec"><td>Остаток на начало</td>${open.map(v=>`<td class="r num">${v==null?'<span class="muted">—</span>':money(v)}</td>`).join('')}<td class="r num">${fo==null?'—':money(fo)}</td></tr>`;
+  h+=`<tr class="sec"><td>Поступления</td>${data.map(d=>cell(d.tin,'pos')).join('')}${cell(T(data.map(d=>d.tin)),'pos')}</tr>`;
+  inCats.forEach(c=>{const v=data.map(d=>d.inC[c.id]||0);h+=`<tr><td>${esc(c.name)}</td>${v.map(x=>cell(x)).join('')}${cell(T(v))}</tr>`});
+  h+=`<tr class="sec"><td>Выплаты</td>${data.map(d=>cell(-d.tout,'neg')).join('')}${cell(-T(data.map(d=>d.tout)),'neg')}</tr>`;
+  outCats.forEach(c=>{const v=data.map(d=>d.outC[c.id]||0);h+=`<tr><td>${esc(c.name)}</td>${v.map(x=>cell(-x)).join('')}${cell(-T(v))}</tr>`});
+  h+=`<tr class="tot"><td>Чистый поток</td>${data.map(d=>`<td class="r num ${cls(d.net)}">${money(d.net)}</td>`).join('')}<td class="r num ${cls(T(data.map(d=>d.net)))}">${money(T(data.map(d=>d.net)))}</td></tr>`;
+  h+=`<tr class="sec"><td>Остаток на конец</td>${close.map(v=>`<td class="r num ${v==null?'':cls(v)}">${v==null?'<span class="muted">—</span>':money(v)}</td>`).join('')}<td class="r num">${lc==null?'—':money(lc)}</td></tr>`;
+  h+=`</tbody></table></div><p class="note">Кассовый метод: по дате фактического движения денег. Переводы между своими счетами не считаются ни поступлением, ни выплатой.${cfg.archive?` * Месяцы ${archLabel()} — по операциям архива, отмеченным «учитывать» (вкладка Операции); остатков по ним нет, учёт по счетам начинается с ${mLabel(cfg.startMonth).toLowerCase()}.`:''}</p>`;
+  return h;
+}
+
+/* ---------- ОПиУ ---------- */
+function vPnl(){
+  const ms=yearMonths(),ops=reportOps(),P=ms.map(m=>pnlMonth(m,ops)),T=a=>a.reduce((s,v)=>s+v,0);
+  const has=(k,id)=>P.some(p=>p[k][id]);
+  const line=(label,vals,c='',neg=false)=>`<tr class="${c}"><td>${label}</td>${vals.map(v=>`<td class="r num ${c==='tot'?cls(v):''}">${v?money(neg?-v:v):'<span class="muted">—</span>'}</td>`).join('')}<td class="r num">${money(neg?-T(vals):T(vals))}</td></tr>`;
+  let h=`<h2>Отчёт о прибылях и убытках, ${V.year}</h2><div class="tbl-wrap report"><table><thead><tr><th>Показатель</th>${ms.map(m=>`<th class="r">${mShort(m)}${archM(m)?'*':''}</th>`).join('')}<th class="r">Год</th></tr></thead><tbody>`;
+  h+=line('Выручка',P.map(p=>p.revenue),'sec');
+  cfg.categories.filter(c=>c.kind==='in'&&c.pnl==='revenue'&&has('rev',c.id)).forEach(c=>h+=line(esc(c.name),P.map(p=>p.rev[c.id]||0)));
+  h+=line('Налог УСН (начислено по счетам)',P.map(p=>p.tax),'',true);
+  h+=line('Выплаты агентам (начислено по сплитам)',P.map(p=>p.agent),'',true);
+  cfg.categories.filter(c=>c.pnl==='var'&&c.role!=='agentpay'&&has('vr',c.id)).forEach(c=>h+=line(esc(c.name),P.map(p=>p.vr[c.id]||0),'',true));
+  h+=line('Маржинальный доход',P.map(p=>p.margin),'tot');
+  h+=line('Постоянные расходы',P.map(p=>p.fixT),'sec',true);
+  cfg.categories.filter(c=>c.pnl==='fixed'&&has('fixed',c.id)).forEach(c=>h+=line(esc(c.name),P.map(p=>p.fixed[c.id]||0),'',true));
+  h+=line('Операционная прибыль',P.map(p=>p.profit),'tot');
+  h+=`<tr><td>Рентабельность</td>${P.map(p=>`<td class="r num muted">${p.revenue?Math.round(p.profit/p.revenue*100)+'%':'—'}</td>`).join('')}<td class="r num muted">${T(P.map(p=>p.revenue))?Math.round(T(P.map(p=>p.profit))/T(P.map(p=>p.revenue))*100)+'%':'—'}</td></tr>`;
+  h+=`</tbody></table></div>${ms.some(archM)?`<p class="note">* Месяцы ${archLabel()} — по операциям архива, отмеченным «учитывать».</p>`:''}`;
+  const yp=T(P.map(p=>p.profit));
+  h+=`<div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"><div class="card"><h3>Прибыль ${V.year} по долям учредителей</h3><div class="rows">${cfg.owners.map(o=>`<div class="row"><span>${esc(o.name)} · ${num(o.share)}%</span><span class="num ${cls(yp)}">${money(yp*num(o.share)/100)}</span></div>`).join('')}
+    <div class="row total"><span>Операционная прибыль</span><span class="num ${cls(yp)}">${money(yp)}</span></div></div>
+    <p class="note">Расчётная доля до вывода. Фактические выплаты учредителям вносятся статьёй «Выплаты учредителям» и в прибыль не входят.</p></div>
+    <div class="card"><h3>Как считается</h3><p class="note" style="margin:0">Выручка — поступления по статьям выручки, в месяце начисления (по умолчанию это месяц оплаты). УСН и доля агентов начисляются расчётно от каждого поступления, поэтому их фактическая уплата в прибыль повторно не попадает. Займы, взносы и дивиденды на прибыль не влияют.</p></div></div>`;
+  return h;
+}
+
+/* ---------- План-факт ---------- */
+function planLines(){
+  const L=[];cfg.categories.filter(c=>c.kind==='in'&&c.pnl==='revenue').forEach(c=>L.push({k:'c:'+c.id,label:c.name,grp:'rev'}));
+  L.push({k:'tax',label:'Налог УСН (расчётно от плана выручки)',grp:'tax',auto:true});
+  L.push({k:'agent',label:'Выплаты агентам (начислено)',grp:'var'});
+  cfg.categories.filter(c=>c.pnl==='var'&&c.role!=='agentpay').forEach(c=>L.push({k:'c:'+c.id,label:c.name,grp:'var'}));
+  cfg.categories.filter(c=>c.pnl==='fixed').forEach(c=>L.push({k:'c:'+c.id,label:c.name,grp:'fixed'}));
+  return L;
+}
+function vPlan(){
+  const m=V.month,p=pnlMonth(m,reportOps()),pl=(plans[m]&&plans[m].lines)||{},L=planLines();
+  const fact=l=>l.k==='tax'?p.tax:l.k==='agent'?p.agent:(l.grp==='rev'?p.rev:l.grp==='var'?p.vr:p.fixed)[l.k.slice(2)]||0;
+  const planRev=L.filter(l=>l.grp==='rev').reduce((s,l)=>s+num(pl[l.k]),0);
+  const plan=l=>l.k==='tax'?planRev*rate():num(pl[l.k]);
+  const sum=(g,fn)=>L.filter(l=>g.includes(l.grp)).reduce((s,l)=>s+fn(l),0);
+  const pR=sum(['rev'],plan),fR=sum(['rev'],fact),pC=sum(['tax','var','fixed'],plan),fC=sum(['tax','var','fixed'],fact);
+  const row=l=>{const pv=plan(l),fv=fact(l),dv=l.grp==='rev'?fv-pv:pv-fv,pct=pv?Math.round(fv/pv*100):null;
+    return `<tr><td>${esc(l.label)}</td><td class="r">${l.auto?`<span class="num">${money(pv)}</span>`:`<input type="number" inputmode="decimal" step="1000" data-plan="${esc(l.k)}" id="pl-${esc(l.k)}" value="${pl[l.k]!=null?esc(pl[l.k]):''}" placeholder="0">`}</td>
+    <td class="r num">${money(fv)}</td><td class="r num ${pv||fv?cls(dv):''}">${pv||fv?money(dv):'—'}</td><td class="r num muted">${pct==null?'—':pct+'%'}</td></tr>`};
+  const sec=(t,g)=>`<tr class="sec"><td colspan="5">${t}</td></tr>`+L.filter(l=>g.includes(l.grp)).map(row).join('');
+  let h=`<h2>План-факт: ${mLabel(m).toLowerCase()}</h2><div class="tbl-wrap pf"><table><thead><tr><th>Статья</th><th class="r">План</th><th class="r">Факт</th><th class="r">Отклонение</th><th class="r">Исполнение</th></tr></thead><tbody>`;
+  h+=sec('Выручка',['rev'])+sec('Переменные расходы и налог',['tax','var'])+sec('Постоянные расходы',['fixed']);
+  const pp=pR-pC,fp=fR-fC;
+  h+=`<tr class="tot"><td>Прибыль</td><td class="r num">${money(pp)}</td><td class="r num ${cls(fp)}">${money(fp)}</td><td class="r num ${cls(fp-pp)}">${money(fp-pp)}</td><td class="r num muted">${pp?Math.round(fp/pp*100)+'%':'—'}</td></tr>`;
+  h+=`</tbody></table></div><p class="note">Отклонение со знаком «+» — хорошо: выручки больше плана или расходов меньше. План сохраняется сразу после ввода. <button type="button" class="ghost" data-copy-plan>Скопировать план с прошлого месяца</button></p>`;
+  return h;
+}
+
+/* ---------- Настройки ---------- */
+function vSettings(){
+  if(!draft){draft=structuredClone(cfg);draftDirty=false}
+  const D=draft,inp=(list,i,f,v,type='text',extra='')=>`<input type="${type}" data-s="${list}" data-i="${i}" data-k="${f}" id="s-${list}-${i}-${f}" value="${esc(v)}" ${extra}>`;
+  let h=`<h2>Настройки учёта</h2>${!cfgExists&&dbState==='ok'?'<div class="banner">Настройки ещё не сохранены — показаны значения по умолчанию.</div>':''}
+  <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="card"><h3>Общее</h3><div class="fg">
+    <label class="f"><span>Начало учёта (месяц)</span><input type="month" id="s-start" data-g="startMonth" value="${esc(D.startMonth)}"></label>
+    <label class="f"><span>Ставка УСН для новых счетов, %</span><input type="number" id="s-tax" data-g="taxRate" value="${esc(D.taxRate)}" step="0.1"></label>
+    <label class="f full"><span>Сплит агента считается от</span><select id="s-split" data-g="splitBase"><option value="gross" ${D.splitBase==='gross'?'selected':''}>полной суммы комиссии</option><option value="net" ${D.splitBase==='net'?'selected':''}>комиссии за вычетом УСН</option></select></label></div>
+    <p class="note">Остатки на счетах ниже — на 1-е число месяца начала учёта.</p></div>
+  <div class="card" style="grid-column:1/-1"><h3>Счета и касса</h3><div class="set-list">${D.accounts.map((a,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.5fr) minmax(0,.9fr) 70px minmax(0,.9fr) minmax(0,1.2fr) auto">
+    <label class="f"><span>Название</span>${inp('accounts',i,'name',a.name)}</label><label class="f"><span>Остаток на старте, ₽</span>${inp('accounts',i,'opening',a.opening,'number')}</label>
+    <label class="f"><span>УСН, %</span>${inp('accounts',i,'tax',a.tax==null?'':a.tax,'number','step="0.1" placeholder="0"')}</label>
+    <label class="f"><span>Налог к уплате на старте, ₽</span>${inp('accounts',i,'openingTax',a.openingTax==null?'':a.openingTax,'number','placeholder="0"')}</label>
+    <label class="f"><span>Личный счёт (расходы = долг компании)</span><select data-s="accounts" data-i="${i}" data-k="holderId" id="s-accounts-${i}-holderId"><option value="">— счёт компании —</option>${cpList().map(x=>`<option value="${esc(x.id)}" ${a.holderId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
+    <button type="button" class="ghost" data-del="accounts" data-i="${i}" aria-label="Удалить счёт" ${allOps().some(o=>o.acc===a.id||o.toAcc===a.id)?'disabled title="По счёту есть операции"':''}>✕</button></div>`).join('')}
+    <button type="button" data-add="accounts">+ Счёт</button></div></div>
+  <div class="card" style="grid-column:1/-1"><h3>Долги на начало учёта</h3><div class="set-list">${(D.openingDebts||[]).map((x,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) auto">
+    <label class="f"><span>Кому должна компания</span><select data-s="openingDebts" data-i="${i}" data-k="cpId" id="s-od-${i}-cp"><option value="">— выберите —</option>${cpList().map(c=>`<option value="${esc(c.id)}" ${x.cpId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+    <label class="f"><span>Что за долг</span><select data-s="openingDebts" data-i="${i}" data-k="kind" id="s-od-${i}-kind"><option value="founder" ${x.kind==='founder'?'selected':''}>Учредителю / инвестору (заём)</option><option value="agent" ${x.kind==='agent'?'selected':''}>Агенту (невыплаченная доля)</option></select></label>
+    <label class="f"><span>Сумма, ₽ (минус — он должен компании)</span>${inp('openingDebts',i,'amount',x.amount,'number')}</label>
+    <button type="button" class="ghost" data-del="openingDebts" data-i="${i}" aria-label="Удалить долг">✕</button></div>`).join('')}
+    <button type="button" data-add="openingDebts">+ Долг на начало</button></div>
+    <p class="note">Суммы на 1-е число месяца начала учёта (${mLabel(D.startMonth).toLowerCase()}). Долг учредителю дальше растёт от расходов с его личного счёта и уменьшается поступлениями на этот счёт и возвратами займа.</p></div>
+  <div class="card" style="grid-column:1/-1"><h3>Закрыть прошлый период</h3>${cfg.archive?`<p class="note" style="margin:0 0 8px">Сейчас в архиве операции ${archLabel()} (лист «Архив ${archLabel()}» в таблице). Их итоги видны в ДДС, ОПиУ, сделках и карточках контрагентов.</p>`:''}
+    <div class="toolbar" style="margin:0"><label class="f"><span>Перенести в архив операции раньше</span><input type="date" id="s-close" value="${esc(V.closeDate||'2026-10-01')}"></label>
+    <button type="button" class="danger" data-close-period>${V.closeConfirm?'Точно перенести?':'Перенести в архив'}</button></div>
+    <p class="note">Операции до этой даты переедут на отдельный лист таблицы, а в настройках запишутся остатки по счетам, резерв налога и долги на эту дату, посчитанные по прежним данным. Их потом можно поправить на реальные. Итоги по месяцам, сделкам и контрагентам сохранятся.</p></div>
+  <div class="card"><h3>Агенты и сплиты</h3><div class="rows">${agentList().map(a=>`<div class="row click" data-edit-client="${esc(a.id)}" style="cursor:pointer"><span>${esc(a.name)}</span><span class="num">${num(a.share)}%</span></div>`).join('')}</div>
+    <p class="note">Агенты — это контрагенты с типом «Агент»; доля задаётся в их карточке. В сделке её можно поменять или задать фиксированную выплату.</p></div>
+  <div class="card"><h3>Доли учредителей</h3><div class="set-list">${D.owners.map((o,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.4fr) 90px auto">
+    <label class="f"><span>Учредитель</span><select data-s="owners" data-i="${i}" data-k="cpId" id="s-owners-${i}-cpId"><option value="">${o.name&&!o.cpId?esc(o.name)+' (без карточки)':'— выберите —'}</option>${cpList().map(x=>`<option value="${esc(x.id)}" ${o.cpId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label><label class="f"><span>Доля, %</span>${inp('owners',i,'share',o.share,'number')}</label>
+    <button type="button" class="ghost" data-del="owners" data-i="${i}" aria-label="Удалить">✕</button></div>`).join('')}
+    <button type="button" data-add="owners">+ Учредитель</button></div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><h3>Статьи доходов и расходов</h3><div class="set-list">${D.categories.map((c,i)=>{const used=allOps().some(o=>o.cat===c.id);return `<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,1.2fr) auto">
+    <label class="f"><span>Статья</span>${inp('categories',i,'name',c.name)}</label>
+    <label class="f"><span>Тип</span><select data-s="categories" data-i="${i}" data-k="kind" id="s-categories-${i}-kind" ${used||c.role?'disabled':''}><option value="in" ${c.kind==='in'?'selected':''}>Поступление</option><option value="out" ${c.kind==='out'?'selected':''}>Расход</option></select></label>
+    <label class="f"><span>В ОПиУ</span><select data-s="categories" data-i="${i}" data-k="pnl" id="s-categories-${i}-pnl" ${c.role?'disabled':''}>${Object.entries(PNL_LABEL).filter(([k])=>c.kind==='in'?(k==='revenue'||k==='none'):k!=='revenue').map(([k,l])=>`<option value="${k}" ${c.pnl===k?'selected':''}>${l}</option>`).join('')}</select></label>
+    <button type="button" class="ghost" data-del="categories" data-i="${i}" aria-label="Удалить статью" ${used||c.role?'disabled title="Статья используется"':''}>✕</button></div>`}).join('')}
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-add="cat-in">+ Статья поступлений</button><button type="button" data-add="cat-out">+ Статья расходов</button></div></div></div>
+  <div class="acts" style="margin-top:16px"><span class="muted">${draftDirty?'Есть несохранённые изменения':''}</span><div><button type="button" data-reset-draft ${draftDirty?'':'disabled'}>Отменить</button><button type="button" class="primary" data-save-cfg>Сохранить настройки</button></div></div>`;
+  return h;
+}
+
+/* ---------- dialogs ---------- */
+const dlg=$('#dlg'),form=$('#dlgform');
+let dlgCtx=null;
+function openOp(op,preset,archSheet){
+  const o=op?Object.assign({},op):Object.assign({type:'in',date:todayStr(),acc:cfg.accounts[0]&&cfg.accounts[0].id,cat:'',amount:''},preset||{});
+  if(op&&!o.cpId&&o.agentId)o.cpId=o.agentId;
+  const ar=archSheet||(op&&op.sheet)||null;
+  dlgCtx={kind:'op',orig:op||null,o,arch:ar};drawOp();if(!dlg.open)dlg.showModal();
+}
+function drawOp(){
+  const o=dlgCtx.o,cats=cfg.categories.filter(c=>c.kind===o.type);
+  if(o.type!=='tr'&&!cats.some(c=>c.id===o.cat))o.cat=cats[0]?cats[0].id:'';
+  const c=catById(o.cat),opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(l)}</option>`).join('');
+  const dealOpts=[['','— без сделки —'],...Object.values(deals).filter(d=>d.status!=='lost'||d.id===o.dealId).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>[d.id,dealLabel(d)])];
+  const showDeal=true;
+  form.innerHTML=`<h2>${dlgCtx.orig?'Операция':'Новая операция'}</h2>
+  <div class="seg" role="group" aria-label="Тип операции">${[['in','Поступление'],['out','Расход'],['tr','Перевод']].map(([k,l])=>`<button type="button" data-otype="${k}" aria-pressed="${o.type===k}">${l}</button>`).join('')}</div>
+  <div class="fg">
+    <label class="f"><span>Сумма, ₽</span><input id="o-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0" required value="${esc(o.amount)}"></label>
+    <label class="f"><span>Дата</span><input id="o-date" name="date" type="date" required value="${esc(o.date)}"></label>
+    <label class="f"><span>${o.type==='tr'?'Откуда':'Счёт'}</span><select id="o-acc" name="acc">${opt(cfg.accounts.map(a=>[a.id,a.name]),o.acc)}</select></label>
+    ${o.type==='tr'?`<label class="f"><span>Куда</span><select id="o-toAcc" name="toAcc">${opt(cfg.accounts.map(a=>[a.id,a.name]),o.toAcc||(cfg.accounts[1]||{}).id)}</select></label>`:
+    `<label class="f"><span>Статья</span><select id="o-cat" name="cat" data-ocat>${opt(cats.map(x=>[x.id,x.name]),o.cat)}</select></label>`}
+    ${o.type!=='tr'&&showDeal?`<label class="f full"><span>Сделка (если операция по сделке)</span><select id="o-deal" name="dealId">${opt(dealOpts,o.dealId||'')}</select></label>`:''}
+    ${o.type!=='tr'?`<div class="f full" style="display:flex;flex-direction:column;gap:4px"><label class="f" for="o-cp"><span>${c&&c.role==='agentpay'?'Агент (кому выплата)':o.type==='in'?'Контрагент (от кого)':'Контрагент (кому)'}</span></label>
+      <div style="display:flex;gap:8px"><select id="o-cp" name="cpId" style="flex:1">${cpOptions(o.cpId||'',!!(c&&c.role==='agentpay'))}</select><button type="button" data-new-cp>+ Новый</button></div></div>
+    <label class="f"><span>Контрагент текстом (если нет в справочнике)</span><input id="o-party" name="party" value="${esc(o.party||'')}" placeholder="${o.type==='in'?'Клиент, застройщик':'Кому платили'}"></label>
+    <label class="f"><span>Месяц в ОПиУ</span><input id="o-pnl" name="pnlMonth" type="month" value="${esc(o.pnlMonth||'')}" title="Если расход относится к другому месяцу"></label>`:''}
+    <label class="f full"><span>Комментарий</span><input id="o-comment" name="comment" value="${esc(o.comment||'')}"></label>
+  </div>
+  ${c&&(c.role==='commission'||c.pnl==='revenue')?'<p class="note" style="margin:0">Если выбрать сделку, долг агенту и резерв УСН начислятся автоматически.</p>':''}
+  ${dlgCtx.arch?`<p class="note" style="margin:0">Операция архива (${esc(dlgCtx.arch)}). Изменения попадут в архив и не повлияют на остатки счетов.</p>`:''}
+  <div class="acts"><div>${dlgCtx.orig&&!dlgCtx.arch?`<button type="button" class="danger" data-del-op>${dlgCtx.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
+  <div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`;
+}
+function readForm(){const o=dlgCtx.o,multi={};form.querySelectorAll('[name]').forEach(el=>{if(el.type==='checkbox'){(multi[el.name]=multi[el.name]||[]);if(el.checked)multi[el.name].push(el.value)}else o[el.name]=el.value});Object.assign(o,multi)}
+async function saveOp(){
+  readForm();const o=dlgCtx.o,amt=num(o.amount);
+  if(!(amt>0))return toast('Укажите сумму больше нуля.');
+  if(!o.date)return toast('Укажите дату.');
+  const m=o.date.slice(0,7),AB=cfg.archive&&cfg.archive.before;
+  if(dlgCtx.arch){if(AB&&o.date>=AB)return toast('Операция архива должна быть раньше '+dFmt(AB)+'.')}
+  else{if(AB&&o.date<AB)return toast('Эта дата в закрытом периоде. Откройте нужный месяц во вкладке «Операции» — операция попадёт в архив.');
+    if(m<cfg.startMonth)return toast('Дата раньше начала учёта ('+mLabel(cfg.startMonth)+'). Сдвиньте начало учёта в настройках.')}
+  if(m>addM(curMonth(),3))return toast('Дата слишком далеко в будущем.');
+  if(o.type==='tr'&&o.acc===o.toAcc)return toast('Для перевода выберите два разных счёта.');
+  const c=catById(o.cat);if(o.type==='out'&&c&&c.role==='agentpay'&&!o.cpId)return toast('Выберите агента, которому выплата.');
+  const rec={type:o.type,date:o.date,amount:Math.round(amt*100)/100,acc:o.acc,comment:(o.comment||'').trim(),createdAt:(dlgCtx.orig&&dlgCtx.orig.createdAt)||Date.now()};
+  if(o.type==='tr')rec.toAcc=o.toAcc;else{rec.cat=o.cat;rec.party=(o.party||'').trim();if(o.dealId)rec.dealId=o.dealId;if(o.cpId)rec.cpId=o.cpId;if(o.cpId&&c&&c.role==='agentpay')rec.agentId=o.cpId;if(o.pnlMonth&&o.pnlMonth!==m)rec.pnlMonth=o.pnlMonth}
+  if(dbState!=='ok')return toast('Нет связи с сервером.');
+  const orig=dlgCtx.orig,id=orig?orig.id:uid('op'),dlgCtx_arch=dlgCtx.arch;rec.id=id;dlg.close();
+  const names={acc:(accById(rec.acc)||{}).name||'',toAcc:rec.toAcc?(accById(rec.toAcc)||{}).name||'':'',cat:rec.cat?(catById(rec.cat)||{}).name||'':'',deal:rec.dealId&&deals[rec.dealId]?clientName(deals[rec.dealId]):'',agent:rec.agentId?(agById(rec.agentId)||{}).name||'':'',cp:cpName(rec.cpId)};
+  if(dlgCtx_arch){const inc=orig?orig.include!==false:true;await queue(async()=>{apply(await api('saveArchOp',rec,names,dlgCtx_arch,inc));toast('Операция архива сохранена')});return}
+  await queue(async()=>{apply(await api('saveOp',rec,names));toast('Операция сохранена')});
+}
+function openDeal(d,preset){
+  const x=d?Object.assign({},d):Object.assign({date:todayStr(),client:'',clientId:'',object:'',kind:'Вторичка',agentId:'',share:'',fixedPay:'',commission:'',expected:'',status:'work',note:''},preset||{});
+  (x.extra||[]).slice(0,2).forEach((e,i)=>{x['agent'+(i+2)+'Id']=e.agentId;x['share'+(i+2)]=e.share??'';x['fixed'+(i+2)]=e.fixedPay??''});
+  dlgCtx={kind:'deal',orig:d||null,o:x,agN:1+(x.extra||[]).filter(e=>e&&e.agentId).length};drawDeal();if(!dlg.open)dlg.showModal();
+}
+function drawDeal(){
+  const d=dlgCtx.o,opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===sel?'selected':''}>${esc(l)}</option>`).join('');
+  const ag=agById(d.agentId);
+  form.innerHTML=`<h2>${dlgCtx.orig?'Сделка':'Новая сделка'}</h2><div class="fg">
+    <div class="f full" style="display:flex;flex-direction:column;gap:4px"><label class="f" for="d-clientId"><span>Клиент</span></label>
+      <div style="display:flex;gap:8px"><select id="d-clientId" name="clientId" style="flex:1">${opt([['','— выберите клиента —'],...Object.values(clients).sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(c=>[c.id,c.name])],d.clientId||'')}</select>
+      <button type="button" data-new-cp>+ Новый</button></div>
+      ${!d.clientId&&d.client?`<span class="note" style="margin:0">Было указано без карточки: «${esc(d.client)}». Выберите или создайте клиента.</span>`:''}</div>
+    <label class="f full"><span>Объект</span><input id="d-object" name="object" value="${esc(d.object)}" placeholder="Адрес, ЖК, БЦ"></label>
+    <label class="f"><span>Тип</span><select id="d-kind" name="kind">${opt(DEAL_KINDS.map(k=>[k,k]),d.kind)}</select></label>
+    <label class="f"><span>Статус</span><select id="d-status" name="status">${opt(Object.entries(DEAL_ST),d.status)}</select></label>
+    <label class="f"><span>Дата договора</span><input id="d-date" name="date" type="date" value="${esc(d.date)}"></label>
+    <label class="f"><span>Ожидаем оплату</span><input id="d-expected" name="expected" type="date" value="${esc(d.expected)}"></label>
+    <label class="f"><span>Комиссия агентства, ₽</span><input id="d-commission" name="commission" type="number" inputmode="decimal" value="${esc(d.commission)}"></label>
+    <label class="f"><span>Агент</span><select id="d-agent" name="agentId">${opt([['','— без агента —'],...agentList().map(a=>[a.id,a.name+' ('+num(a.share)+'%)'])],d.agentId)}</select></label>
+    <label class="f"><span>Доля агента, % (если не как обычно)</span><input id="d-share" name="share" type="number" value="${esc(d.share)}" placeholder="${ag?num(ag.share):''}"></label>
+    <label class="f"><span>или фикс агенту, ₽</span><input id="d-fixed" name="fixedPay" type="number" value="${esc(d.fixedPay)}"></label>
+    ${[2,3].filter(i=>i<=dlgCtx.agN).map(i=>{const id=d['agent'+i+'Id']||'',a2=agById(id);return `<label class="f"><span>Агент ${i}</span><select id="d-agent${i}" name="agent${i}Id">${opt([['','— нет —'],...agentList().map(a=>[a.id,a.name+' ('+num(a.share)+'%)'])],id)}</select></label>
+    <label class="f"><span>Доля агента ${i}, %</span><input id="d-share${i}" name="share${i}" type="number" value="${esc(d['share'+i]??'')}" placeholder="${a2?num(a2.share):''}"></label>
+    <label class="f"><span>или фикс агенту ${i}, ₽</span><input id="d-fixed${i}" name="fixed${i}" type="number" value="${esc(d['fixed'+i]??'')}"></label>`}).join('')}
+    ${dlgCtx.agN<3?`<div class="f full"><button type="button" data-add-agent>+ Ещё агент</button></div>`:''}
+    ${dlgCtx.agN>1?`<p class="note full" style="margin:0">Каждому агенту начисляется его доля (или фикс) с поступлений по сделке. Выплату вносите операцией «Выплаты агентам», выбрав нужного агента контрагентом.</p>`:''}
+    <label class="f full"><span>Заметка</span><input id="d-note" name="note" value="${esc(d.note||'')}"></label></div>
+  ${dlgCtx.orig?dealPayments(dlgCtx.orig):''}
+  <div class="acts"><div>${dlgCtx.orig?`<button type="button" class="danger" data-del-deal>${dlgCtx.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
+  <div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`;
+}
+function dealPayments(d){
+  const s=dealStats(d),ops=s.ops.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt||0)-(b.createdAt||0));
+  const rows=ops.map(o=>{const c=catById(o.cat),sign=o.type==='in'?1:-1;return `<tr class="click" data-open-op="${esc(o.id)}" data-m="${o.date.slice(0,7)}"><td class="num">${dFmt(o.date)}${o.sheet?'<div class="muted" style="font-size:11px">архив</div>':''}</td><td>${esc(c?c.name:'')}<div class="muted" style="font-size:12px">${esc(cpName(o.cpId)||o.party||'')}</div></td><td class="muted">${esc((accById(o.acc)||{}).name||'')}</td><td class="r num ${sign>0?'pos':'neg'}">${sign<0?'−':''}${money(o.amount)}</td></tr>`}).join('');
+  return `<div class="card" style="padding:12px"><h3>Платежи по сделке</h3>
+    ${ops.length?`<div class="tbl-wrap" style="border:0"><table><tbody>${rows}</tbody></table></div>`:s.ar?'':'<p class="note" style="margin:0">Платежей пока нет.</p>'}
+    ${s.ar?`<p class="note" style="margin:4px 0 0">Платежи ${archLabel()} перенесены в архив (лист «Архив ${archLabel()}»): поступило ${money(s.ar.rec)}, агенту ${money(s.ar.paid)}, прочие расходы ${money(s.ar.exp)}, дивиденды ${money(s.ar.dist)}. Они учтены в итогах ниже.</p>`:''}
+    <div class="rows" style="margin-top:8px">
+      <div class="row"><span>Поступило</span><span class="num">${money(s.rec)}</span></div>
+      <div class="row"><span>Налог УСН (по счетам поступления)</span><span class="num">${s.tax?money(-s.tax):'0 ₽'}</span></div>
+      <div class="row"><span>Агенту${s.paid!==s.acc?` <span class="muted">(начислено ${money(s.acc)}, выплачено ${money(s.paid)})</span>`:''}</span><span class="num">${money(-s.agent)}</span></div>
+${(()=>{const das=dealAgents(d);if(das.length<2)return '';const per={};das.forEach(x=>per[x.agentId]={acc:0,paid:0});
+        s.ops.forEach(o=>{agentAccruals(o).forEach(q=>{if(per[q.agentId])per[q.agentId].acc+=q.amount});const c=catById(o.cat);if(o.type==='out'&&c&&c.role==='agentpay'){const id=o.cpId||o.agentId;if(per[id])per[id].paid+=o.amount}});
+        return das.map(x=>{const v=per[x.agentId];return `<div class="row" style="padding-left:14px;font-size:13px"><span class="muted">${esc(cpName(x.agentId)||'')} · ${agShareTxt(x)} · начислено ${money(v.acc)}, выплачено ${money(v.paid)}</span><span class="num ${v.acc-v.paid>0.5?'warn':'muted'}">${v.acc-v.paid>0.5?'к выплате '+money(v.acc-v.paid):'—'}</span></div>`}).join('')})()}
+      <div class="row"><span>Прочие расходы по сделке</span><span class="num">${money(-s.exp)}</span></div>
+      <div class="row total"><span>Заработано агентством</span><span class="num ${cls(s.net)}">${money(s.net)}</span></div>
+      ${s.dist?`<div class="row"><span>Распределено учредителям (дивиденды, не расход сделки)</span><span class="num">${money(-s.dist)}</span></div>
+      <div class="row"><span>Осталось в компании</span><span class="num ${cls(s.net-s.dist)}">${money(s.net-s.dist)}</span></div>`:''}
+    </div>
+    <button type="button" data-pay-in-deal style="margin-top:8px">+ Платёж по сделке</button></div>`;
+}
+async function saveDeal(){
+  readForm();const d=dlgCtx.o;if(!d.clientId&&!String(d.client||'').trim())return toast('Выберите клиента или создайте нового.');
+  if(dbState!=='ok')return toast('Нет связи с сервером.');
+  const rec={clientId:d.clientId||'',client:d.clientId&&clients[d.clientId]?clients[d.clientId].name:String(d.client||'').trim(),object:(d.object||'').trim(),kind:d.kind,status:d.status,date:d.date||'',expected:d.expected||'',commission:num(d.commission),agentId:d.agentId||'',share:d.share===''?'':num(d.share),fixedPay:d.fixedPay===''?'':num(d.fixedPay),note:(d.note||'').trim(),
+    extra:[2,3].map(i=>({agentId:d['agent'+i+'Id']||'',share:(d['share'+i]??'')===''?'':num(d['share'+i]),fixedPay:(d['fixed'+i]??'')===''?'':num(d['fixed'+i])})).filter(x=>x.agentId)};
+  if(!rec.agentId&&rec.extra.length){const f=rec.extra.shift();rec.agentId=f.agentId;rec.share=f.share;rec.fixedPay=f.fixedPay}
+  const ids=[rec.agentId,...rec.extra.map(x=>x.agentId)].filter(Boolean);if(new Set(ids).size!==ids.length)return toast('Один и тот же агент выбран дважды.');
+  const id=dlgCtx.orig?dlgCtx.orig.id:uid('deal');rec.id=id;dlg.close();
+  const agentName=rec.agentId?(agById(rec.agentId)||{}).name||'':'',statusName=DEAL_ST[rec.status]||rec.status;
+  await queue(async()=>{apply(await api('saveDeal',rec,{agent:agentName,status:statusName}));toast('Сделка сохранена')});
+}
+
+function openClient(c,back){
+  const x=c?Object.assign({},c,{types:(c.types||[]).slice()}):{name:'',types:[],birth:'',phone:'',email:'',other:'',note:'',agentShare:''};
+  dlgCtx={kind:'client',orig:c||null,o:x,back:back||null};drawClient();if(!dlg.open)dlg.showModal();
+}
+function drawClient(){
+  const c=dlgCtx.o,orig=dlgCtx.orig;let extra='';
+  const dealName=id=>id&&deals[id]?dealLabel(deals[id]):'Без сделки';
+  const sec=(t,body)=>`<div class="card" style="padding:12px"><h3>${t}</h3>${body}</div>`;
+  const row=(l,v,cl='')=>`<div class="row"><span>${l}</span><span class="num ${cl}">${v}</span></div>`;
+  if(orig){const s=cpStats(orig.id),types=orig.types||[];
+    extra+=sec('Итого',`<div class="rows">${row('Получил от компании',money(s.outSum))}${row('Поступило от него',money(s.brought))}${row('Компания должна',money(s.owes),s.owes?'warn':'')}</div>`);
+    if(types.includes('agent')||s.agent.acc||s.agent.paid){const e=Object.entries(s.agent.byDeal).sort();
+      extra+=sec('Как агент',`${e.length?`<div class="tbl-wrap" style="border:0"><table><thead><tr><th>Сделка</th><th class="r">Начислено</th><th class="r">Выплачено</th><th class="r">Долг</th></tr></thead><tbody>${e.map(([k,v])=>`<tr><td>${k==='__open'?'Долг на начало учёта':k?`<button type="button" class="ghost" style="padding:0;text-align:left;white-space:normal" data-open-deal="${esc(k)}">${esc(dealName(k))}</button>`:'Без сделки'}</td><td class="r num">${money(v.acc)}</td><td class="r num">${money(v.paid)}</td><td class="r num ${v.acc-v.paid>0?'warn':''}">${money(v.acc-v.paid)}</td></tr>`).join('')}</tbody><tfoot><tr class="tot"><td>Итого</td><td class="r num">${money(s.agent.acc)}</td><td class="r num">${money(s.agent.paid)}</td><td class="r num">${money(s.agent.acc-s.agent.paid)}</td></tr></tfoot></table></div>`:'<p class="note" style="margin:0">Агентских начислений и выплат пока нет.</p>'}`)}
+    if(types.includes('founder')||s.divs.sum){const own=(cfg.owners||[]).find(o=>o.cpId===orig.id);const e=Object.entries(s.divs.byDeal);
+      extra+=sec('Как учредитель',`<div class="rows">${own?row('Доля в компании',num(own.share)+'%'):''}${e.map(([k,v])=>row(esc(dealName(k)),money(v))).join('')}${row('<b>Дивиденды всего</b>','<b>'+money(s.divs.sum)+'</b>')}</div>`)}
+    if(types.includes('employee')||s.salary.sum){const e=Object.entries(s.salary.byMonth).sort();
+      extra+=sec('Как сотрудник',`<div class="rows">${e.map(([k,v])=>row(k==='__arch'?'Архив '+archLabel():mLabel(k),money(v))).join('')}${row('<b>Зарплата всего</b>','<b>'+money(s.salary.sum)+'</b>')}</div>${!s.salary.sum?'<p class="note" style="margin:0">Выплат по статье «Зарплата» с этим контрагентом пока нет.</p>':''}`)}
+    if(types.includes('investor')||s.inv.accounts.length||s.inv.loanIn||s.inv.loanBack){const v=s.inv;
+      extra+=sec('Как инвестор (заём компании)',`<div class="rows">${v.accounts.length?row('Личные счета',esc(v.accounts.map(a=>a.name).join(', '))):''}${v.openD?row('Долг на начало учёта',money(v.openD)):''}${row('Потратил на компанию со своих счетов',money(v.put))}${row('Получил на свои счета (поступления, переводы, остаток на старте)',money(-(v.got+v.opening)))}${v.loanIn?row('Внёс займом на счета компании',money(v.loanIn)):''}${v.loanBack?row('Компания вернула займа',money(-v.loanBack)):''}${row('<b>'+(v.debt>=0?'Компания должна':'У него деньги компании')+'</b>','<b>'+money(Math.abs(v.debt))+'</b>',v.debt>0?'warn':'')}</div>${!v.accounts.length?'<p class="note" style="margin:0">Чтобы расходы с личной карты считались займом, укажите владельца счёта в Настройках.</p>':''}`)}
+    if(s.client.deals.length){extra+=sec('Как клиент',`<div class="rows">${s.client.deals.map(d=>{const ds=dealStats(d);return `<div class="row"><span><button type="button" class="ghost" style="padding:0;text-align:left;white-space:normal" data-open-deal="${esc(d.id)}">${esc(d.object||d.kind||'Сделка')}</button> <span class="chip ${d.status}">${DEAL_ST[d.status]||d.status}</span></span><span class="num ${cls(ds.net)}">${money(ds.net)}</span></div>`}).join('')}${row('<b>Заработано агентством</b>','<b>'+money(s.client.net)+'</b>',cls(s.client.net))}</div>`)}
+    if(s.archAg&&(s.archAg.acc||s.archAg.paid))extra+=sec('Агентские в архиве '+archLabel(),`<div class="rows">${row('Начислено по сделкам',money(s.archAg.acc))}${row('Выплачено',money(s.archAg.paid))}</div><p class="note" style="margin:0">В долг не входит: долг на начало учёта задаётся в Настройках.</p>`);
+    if(s.arch){const a=s.arch;extra+=sec('Архив '+archLabel()+' (приблизительно)',`<div class="rows">${row('Получил от компании',money(a.out))}${row('Поступило от него',money(a.in))}${num(a.agentPaid)?row('Агентские выплаты',money(a.agentPaid)):''}${num(a.divs)?row('Дивиденды',money(a.divs)):''}${num(a.salary)?row('Зарплата',money(a.salary)):''}</div><p class="note" style="margin:0">Уже включено в «Итого» выше. Долги на начало учёта задаются в Настройках.</p>`)}
+    const ops=s.ops.slice().sort((a,b)=>b.date.localeCompare(a.date));
+    extra+=sec('Все операции с контрагентом',ops.length?`<div class="tbl-wrap" style="border:0"><table><tbody>${ops.map(o=>{const cc=catById(o.cat),sg=o.type==='in'?1:-1;return `<tr class="click" data-open-op="${esc(o.id)}" data-m="${o.date.slice(0,7)}"><td class="num">${dFmt(o.date)}</td><td>${esc(cc?cc.name:'')}${o.dealId?`<div class="muted" style="font-size:12px">${esc(dealName(o.dealId))}</div>`:''}</td><td class="r num ${sg>0?'pos':'neg'}">${sg<0?'−':''}${money(o.amount)}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="note" style="margin:0">Операций, где он указан контрагентом, пока нет.</p>');
+    extra+=`<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-deal-for-client>+ Сделка с ним как с клиентом</button><button type="button" data-op-for-cp>+ Операция с ним</button></div>`}
+  const canDel=orig&&!Object.values(deals).some(d=>d.clientId===orig.id||dealAgents(d).some(x=>x.agentId===orig.id))&&!allOps().some(o=>o.cpId===orig.id||o.agentId===orig.id)&&!cfg.accounts.some(a=>a.holderId===orig.id);
+  const ty=c.types||[];
+  form.innerHTML=`<h2>${orig?esc(orig.name):'Новый контрагент'}</h2><div class="fg">
+    <label class="f full"><span>ФИО или название</span><input id="c-name" name="name" required value="${esc(c.name)}" placeholder="Фамилия Имя Отчество или ООО «…»"></label>
+    <div class="f full"><span>Типы (можно несколько)</span><div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:2px">${CP_TYPES.map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px"><input type="checkbox" name="types" value="${k}" id="c-t-${k}" style="width:auto" ${ty.includes(k)?'checked':''}>${l}</label>`).join('')}</div></div>
+    <label class="f"><span>Доля агента, % (для типа «Агент»)</span><input id="c-share" name="agentShare" type="number" value="${esc(c.agentShare)}"></label>
+    <label class="f"><span>Дата рождения</span><input id="c-birth" name="birth" type="date" value="${esc(c.birth)}"></label>
+    <label class="f"><span>Телефон</span><input id="c-phone" name="phone" type="tel" value="${esc(c.phone)}" placeholder="+7 ..."></label>
+    <label class="f"><span>Email</span><input id="c-email" name="email" type="email" value="${esc(c.email)}"></label>
+    <label class="f full"><span>Другие контакты</span><input id="c-other" name="other" value="${esc(c.other)}" placeholder="Telegram, WhatsApp, кто рекомендовал"></label>
+    <label class="f full"><span>Заметка</span><input id="c-note" name="note" value="${esc(c.note||'')}"></label></div>
+  ${extra}
+  <div class="acts"><div>${canDel?`<button type="button" class="danger" data-del-client>${dlgCtx.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
+  <div><button type="button" data-close>${dlgCtx.back?'← Назад':'Отмена'}</button><button type="submit" class="primary">Сохранить</button></div></div>`;
+}
+async function saveClient(){
+  readForm();const c=dlgCtx.o;if(!String(c.name||'').trim())return toast('Укажите ФИО или название.');
+  if(dbState!=='ok')return toast('Нет связи с сервером.');
+  const orig=dlgCtx.orig,id=orig?orig.id:uid('cl');
+  const rec={id,name:String(c.name).trim(),types:c.types||[],agentShare:c.agentShare===''||c.agentShare==null?'':num(c.agentShare),birth:c.birth||'',phone:(c.phone||'').trim(),email:(c.email||'').trim(),other:(c.other||'').trim(),note:(c.note||'').trim(),createdAt:(orig&&orig.createdAt)||Date.now()};
+  const back=dlgCtx.back;
+  if(back){clients[id]=rec;if(back.kind==='op')back.o.cpId=id;else back.o.clientId=id;dlgCtx=back;back.kind==='op'?drawOp():drawDeal()}else dlg.close();
+  await queue(async()=>{apply(await api('saveClient',rec));toast('Контрагент сохранён')});
+}
+
+/* ---------- events ---------- */
+form.addEventListener('submit',e=>{e.preventDefault();if(!dlgCtx)return;dlgCtx.kind==='op'?saveOp():dlgCtx.kind==='deal'?saveDeal():saveClient()});
+form.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.hasAttribute('data-close')){if(dlgCtx&&dlgCtx.back){const b=dlgCtx.back;dlgCtx=b;b.kind==='op'?drawOp():drawDeal();return}dlg.close();return}
+  if(t.hasAttribute('data-new-cp')){readForm();openClient(null,dlgCtx);return}
+  if(t.dataset.openOp){const o=findOp(t.dataset.openOp,t.dataset.m);if(o)openOp(o);return}
+  if(t.hasAttribute('data-op-for-cp')){const cid=dlgCtx.orig&&dlgCtx.orig.id;if(cid)openOp(null,{type:'out',cpId:cid});return}
+  if(t.hasAttribute('data-add-agent')){readForm();dlgCtx.agN=Math.min(3,(dlgCtx.agN||1)+1);drawDeal();return}
+  if(t.hasAttribute('data-pay-in-deal')){const d=dlgCtx.orig;if(d)openOp(null,{type:'in',cat:'com',dealId:d.id,cpId:d.clientId||''});return}
+  if(t.dataset.openDeal){openDeal(deals[t.dataset.openDeal]);return}
+  if(t.hasAttribute('data-deal-for-client')){const cid=dlgCtx.orig&&dlgCtx.orig.id;if(cid)openDeal(null,{clientId:cid});return}
+  if(t.hasAttribute('data-del-client')){
+    if(!dlgCtx.confirmDel){dlgCtx.confirmDel=true;t.textContent='Точно удалить?';return}
+    const c=dlgCtx.orig;dlg.close();if(dbState!=='ok')return;
+    await queue(async()=>{apply(await api('deleteClient',c.id));toast('Контрагент удалён')});return}
+  if(t.dataset.otype){readForm();dlgCtx.o.type=t.dataset.otype;drawOp();return}
+  if(t.hasAttribute('data-del-op')||t.hasAttribute('data-del-deal')){
+    if(!dlgCtx.confirmDel){dlgCtx.confirmDel=true;t.textContent='Точно удалить?';return}
+    const o=dlgCtx.orig,kind=dlgCtx.kind;dlg.close();if(dbState!=='ok')return;
+    if(kind==='op')await queue(async()=>{apply(await api('deleteOp',o.id));toast('Операция удалена')});
+    else{if(allOps().some(x=>x.dealId===o.id)){toast('По сделке есть операции — поставьте статус «Сорвалась» или «Закрыта».');return}
+      await queue(async()=>{apply(await api('deleteDeal',o.id));toast('Сделка удалена')})}}
+});
+form.addEventListener('change',e=>{if(e.target.matches('[data-ocat]')){readForm();drawOp()}});
+form.addEventListener('click',e=>{const tr=e.target.closest('tr[data-open-op]');if(tr&&!e.target.closest('button')){const o=findOp(tr.dataset.openOp,tr.dataset.m);if(o)openOp(o)}});
+dlg.addEventListener('close',()=>{dlgCtx=null});
+
+$('#addop').addEventListener('click',()=>{if(V.tab==='ops'&&archM(V.month))return openOp(null,{date:V.month+'-01'},lastArchSheet());openOp(null,V.tab==='ops'&&V.month!==curMonth()?{date:V.month+'-01'}:null)});
+$('#prev').addEventListener('click',()=>step(-1));$('#next').addEventListener('click',()=>step(1));
+function step(k){if(V.tab==='cash'||V.tab==='pnl')V.year=String(+V.year+k);else V.month=addM(V.month,k);render()}
+$('#tabs').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(!a)return;e.preventDefault();
+  if(V.tab==='settings'&&a.dataset.tab!=='settings'){draft=null;draftDirty=false}
+  V.tab=a.dataset.tab;try{history.replaceState(null,'','#'+V.tab)}catch(_){}render()});
+
+const app=$('#app');
+app.addEventListener('click',e=>{
+  if(e.target.closest('input[data-inc]'))return;
+  const t=e.target.closest('[data-edit-op],[data-edit-deal],[data-pay-deal],[data-new-deal],[data-new-client],[data-edit-client],[data-dealf],[data-add],[data-del],[data-save-cfg],[data-reset-draft],[data-copy-plan],[data-close-period],[data-inc-all]');if(!t)return;
+  if(t.dataset.payDeal){e.stopPropagation();const d=deals[t.dataset.payDeal];openOp(null,{type:'in',cat:'com',dealId:d.id,cpId:d.clientId||'',party:d.clientId?'':clientName(d)});return}
+  if(t.dataset.editOp){const o=findOp(t.dataset.editOp,t.dataset.m);if(o)openOp(o);return}
+  if(t.dataset.incAll!=null){setInc(vOpsVisibleIds(),t.dataset.incAll==='1');return}
+  if(t.dataset.editDeal){openDeal(deals[t.dataset.editDeal]);return}
+  if(t.hasAttribute('data-new-deal')){openDeal(null);return}
+  if(t.hasAttribute('data-new-client')){openClient(null);return}
+  if(t.dataset.editClient){openClient(clients[t.dataset.editClient]);return}
+  if(t.dataset.dealf){V.dealF=t.dataset.dealf;render();return}
+  if(t.dataset.add){const a=t.dataset.add;
+    if(a==='accounts')draft.accounts.push({id:uid('acc'),name:'Новый счёт',opening:0,tax:0,holderId:''});
+    if(a==='agents')draft.agents.push({id:uid('ag'),name:'',share:40});
+    if(a==='owners')draft.owners.push({name:'',share:0,cpId:''});
+    if(a==='openingDebts')(draft.openingDebts=draft.openingDebts||[]).push({cpId:'',kind:'founder',amount:0});
+    if(a==='cat-in')draft.categories.push({id:uid('c'),name:'Новая статья',kind:'in',pnl:'revenue'});
+    if(a==='cat-out')draft.categories.push({id:uid('c'),name:'Новая статья',kind:'out',pnl:'fixed'});
+    draftDirty=true;render();return}
+  if(t.dataset.del){draft[t.dataset.del].splice(+t.dataset.i,1);draftDirty=true;render();return}
+  if(t.hasAttribute('data-reset-draft')){draft=null;draftDirty=false;render();return}
+  if(t.hasAttribute('data-save-cfg')){saveCfg();return}
+  if(t.hasAttribute('data-close-period')){closePeriodUI();return}
+  if(t.hasAttribute('data-copy-plan')){const prev=plans[addM(V.month,-1)];if(!prev||!prev.lines){toast('В прошлом месяце плана нет.');return}
+    if(dbState!=='ok')return;const m=V.month;queue(async()=>{apply(await api('savePlan',m,Object.assign({},prev.lines)));toast('План скопирован')})}
+});
+app.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='cq'){V.cq=t.value;clearTimeout(app.ct);app.ct=setTimeout(()=>{render();const q=$('#cq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250);return}
+  if(t.dataset.f==='q'){V.f.q=t.value;clearTimeout(app.qt);app.qt=setTimeout(()=>{render();const q=$('#fq');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}},250);return}
+  if(t.dataset.s){const it=draft[t.dataset.s][+t.dataset.i];it[t.dataset.k]=(t.type==='number')?t.value:t.value;draftDirty=true;markDirty();return}
+  if(t.dataset.g){draft[t.dataset.g]=t.value;draftDirty=true;markDirty()}
+});
+function markDirty(){const s=app.querySelector('.acts .muted');if(s)s.textContent='Есть несохранённые изменения';const r=app.querySelector('[data-reset-draft]');if(r)r.disabled=false}
+app.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.f&&t.dataset.f!=='q'){V.f[t.dataset.f]=t.value;render();return}
+  if(t.hasAttribute('data-cptype')){V.cpType=t.value;render();return}
+  if(t.dataset.inc){setInc([t.dataset.inc],t.checked);return}
+  if(t.dataset.s&&t.tagName==='SELECT'){const it=draft[t.dataset.s][+t.dataset.i];it[t.dataset.k]=t.value;
+    if(t.dataset.k==='kind')it.pnl=t.value==='in'?'revenue':'fixed';draftDirty=true;render();return}
+  if(t.dataset.plan!=null){if(dbState!=='ok')return toast('Нет связи с сервером.');const m=V.month,lines=Object.assign({},(plans[m]&&plans[m].lines)||{});
+    if(t.value==='')delete lines[t.dataset.plan];else lines[t.dataset.plan]=num(t.value);
+    plans[m]={lines};queue(async()=>{apply(await api('savePlan',m,lines))});render()}
+});
+function vOpsVisibleIds(){return [...app.querySelectorAll('input[data-inc]')].map(x=>x.dataset.inc)}
+function setInc(ids,val){if(!ids.length)return;if(dbState!=='ok')return toast('Нет связи с сервером.');
+  const bySheet={};ids.forEach(id=>{const o=archOps.find(x=>x.id===id);if(o){o.include=val;(bySheet[o.sheet]=bySheet[o.sheet]||[]).push(id)}});render();
+  Object.entries(bySheet).forEach(([sh,list])=>queue(async()=>{apply(await api('setArchInclude',sh,list,val))}));}
+async function closePeriodUI(){
+  const D=($('#s-close')||{}).value||'';V.closeDate=D;
+  if(!/^\d{4}-\d{2}-01$/.test(D))return toast('Выберите первое число месяца.');
+  if(draftDirty)return toast('Сначала сохраните или отмените изменения в настройках.');
+  const cnt=allOps().filter(o=>o.date<D).length;if(!cnt)return toast('Операций раньше этой даты нет.');
+  if(!V.closeConfirm){V.closeConfirm=true;render();toast('Будет перенесено операций: '+cnt+'. Нажмите ещё раз, чтобы подтвердить.');return}
+  V.closeConfirm=false;if(dbState!=='ok')return toast('Нет связи с сервером.');
+  const A=JSON.parse(JSON.stringify(cfg.archive||{months:{},deals:{},cps:{}}));A.months=A.months||{};A.deals=A.deals||{};A.cps=A.cps||{};
+  opsCut=D;let out;
+  try{
+    const old=allOps(),bal=balances(D),L=liabilities();
+    for(const o of old){if(o.type==='tr')continue;const m=o.date.slice(0,7),M=A.months[m]||(A.months[m]={in:{},out:{},tax:0});
+      const side=o.type==='in'?M.in:M.out;side[o.cat]=(side[o.cat]||0)+o.amount;if(o.type==='in')M.tax+=taxAccrual(o)}
+    for(const d of Object.values(deals)){const st=dealStats(d);if(!st.ops.length)continue;const p=A.deals[d.id]||(A.deals[d.id]={rec:0,tax:0,acc:0,paid:0,exp:0,dist:0});
+      for(const k of ['rec','tax','acc','paid','exp','dist'])p[k]+=st[k]}
+    for(const c of Object.values(clients)){const st=cpStats(c.id);if(!st.ops.length&&!st.agent.acc)continue;
+      const p=A.cps[c.id]||(A.cps[c.id]={in:0,out:0,divs:0,salary:0,agentPaid:0,agentAcc:0,divsByDeal:{}});
+      p.in+=st.inSum;p.out+=st.outSum;p.divs+=st.divs.sum;p.salary+=st.salary.sum;p.agentPaid+=st.agent.paid;p.agentAcc+=st.agent.acc;
+      for(const k in st.divs.byDeal){const kk=k||'';p.divsByDeal[kk]=(p.divsByDeal[kk]||0)+st.divs.byDeal[k]}}
+    A.before=D;
+    const debts=[];
+    holders().forEach(h=>{const v=investorStats(h).debt;if(Math.abs(v)>=1)debts.push({cpId:h,kind:'founder',amount:Math.round(v)})});
+    Object.entries(L.agents).forEach(([id,v])=>{if(Math.abs(v)>=1)debts.push({cpId:id,kind:'agent',amount:Math.round(v)})});
+    out=Object.assign(JSON.parse(JSON.stringify(cfg)),{startMonth:D.slice(0,7),archive:A,openingDebts:debts,
+      accounts:cfg.accounts.map(a=>Object.assign({},a,{opening:a.holderId?0:Math.round((bal[a.id]||0)*100)/100,openingTax:Math.round((L.taxBy[a.id]||0)*100)/100}))});
+  }finally{opsCut=null}
+  await queue(async()=>{draft=null;draftDirty=false;apply(await api('closePeriod',D,out));render();toast('Операции до '+dFmt(D)+' перенесены в архив')});
+}
+async function saveCfg(){
+  const D=draft;
+  if(!/^\d{4}-\d{2}$/.test(D.startMonth||''))return toast('Укажите месяц начала учёта.');
+  const own=D.owners.reduce((s,o)=>s+num(o.share),0);if(D.owners.length&&Math.abs(own-100)>0.01)return toast('Доли учредителей должны давать 100% (сейчас '+own+'%).');
+  if(D.accounts.some(a=>!String(a.name).trim())||D.categories.some(c=>!String(c.name).trim()))return toast('У каждого счёта и статьи должно быть название.');
+  const earliest=Object.keys(opsByMonth).filter(m=>(opsByMonth[m]||[]).length).sort()[0];
+  if(earliest&&D.startMonth>earliest)return toast('Есть операции за '+mLabel(earliest)+' — начало учёта не может быть позже.');
+  const out={startMonth:D.startMonth,taxRate:num(D.taxRate),splitBase:D.splitBase==='net'?'net':'gross',
+    accounts:D.accounts.map(a=>({id:a.id,name:String(a.name).trim(),opening:num(a.opening),tax:a.tax===''||a.tax==null?0:num(a.tax),openingTax:num(a.openingTax),holderId:a.holderId||''})),
+    openingDebts:(D.openingDebts||[]).filter(x=>x.cpId&&num(x.amount)).map(x=>({cpId:x.cpId,kind:x.kind==='agent'?'agent':'founder',amount:num(x.amount)})),
+    archive:cfg.archive||undefined,
+    agents:cfg.agents,
+    owners:D.owners.filter(o=>o.cpId||String(o.name||'').trim()).map(o=>({name:o.cpId?cpName(o.cpId):String(o.name).trim(),cpId:o.cpId||'',share:num(o.share)})),
+    categories:D.categories.map(c=>{const r={id:c.id,name:String(c.name).trim(),kind:c.kind,pnl:c.pnl};if(c.role)r.role=c.role;return r})};
+  if(dbState!=='ok')return toast('Нет связи с сервером.');
+  await queue(async()=>{draft=null;draftDirty=false;apply(await api('saveConfig',out));render();toast('Настройки сохранены')});
+}
+/* ---------- пользователь, доступ, журнал ---------- */
+function renderWho(){const el=$('#who');if(!el||!ME)return;
+  document.body.classList.toggle('ro',!canEdit());
+  const short={owner:'учредитель',accountant:'бухгалтер',viewer:'просмотр'}[ME.role]||'';
+  el.innerHTML=`<span><b>${esc(ME.name)}</b><br>${esc(short)}</span><button type="button" id="mypw">Пароль</button><button type="button" id="logout">Выйти</button>`;
+  if(ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}}
+document.addEventListener('click',async e=>{
+  if(e.target.closest('#logout')){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}
+  if(e.target.closest('#mypw'))openPw(false)});
+function openPw(forced){let d=$('#pwdlg');if(!d){d=document.createElement('dialog');d.id='pwdlg';document.body.appendChild(d)}
+  d.innerHTML=`<form class="dlg" method="dialog" id="pwform"><h2>${forced?'Задайте свой пароль':'Смена пароля'}</h2>
+    ${forced?'<p class="note" style="margin:0">Вы вошли по временному паролю. Придумайте свой — не короче 10 символов, с буквами и цифрами.</p>':''}
+    <div class="fg"><label class="f full"><span>Текущий пароль</span><input type="password" name="old" autocomplete="current-password" required></label>
+    <label class="f full"><span>Новый пароль</span><input type="password" name="n1" autocomplete="new-password" required minlength="10"></label>
+    <label class="f full"><span>Новый пароль ещё раз</span><input type="password" name="n2" autocomplete="new-password" required minlength="10"></label></div>
+    <div class="acts"><div></div><div>${forced?'':'<button type="button" data-pw-close>Отмена</button>'}<button type="submit" class="primary">Сохранить</button></div></div></form>`;
+  d.querySelector('[data-pw-close]')?.addEventListener('click',()=>d.close());
+  if(forced)d.addEventListener('cancel',ev=>ev.preventDefault());
+  d.querySelector('#pwform').addEventListener('submit',async ev=>{ev.preventDefault();const f=new FormData(ev.target);
+    if(f.get('n1')!==f.get('n2'))return toast('Новые пароли не совпадают.');
+    try{await api('changeOwnPassword',f.get('old'),f.get('n1'));ME.mustChange=false;d.close();toast('Пароль изменён')}catch(err){toast(err.message)}});
+  d.showModal()}
+
+const ACC={users:null,roles:{},audit:null,loading:false,newPw:null,t:0};
+function genPw(){const a='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint32Array(12));
+  let s='';for(let i=0;i<12;i++)s+=a[r[i]%a.length];return /\d/.test(s)&&/[a-z]/i.test(s)?s:genPw()}
+async function accLoad(){if(ACC.loading)return;ACC.loading=true;
+  try{const u=await api('listUsers');ACC.users=u.users;ACC.roles=u.roles;ACC.audit=await api('listAudit',150)}catch(e){toast(e.message)}
+  ACC.loading=false;ACC.t=Date.now();if(V.tab==='access')render()}
+const dt=ms=>{const d=new Date(ms);return d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})};
+function vAccess(){
+  if(!isOwner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
+  if(!ACC.users){accLoad();return '<div class="card empty">Загружаю…</div>'}
+  if(Date.now()-ACC.t>10000)setTimeout(accLoad,0);
+  const roleOpts=sel=>Object.entries(ACC.roles).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${esc(l)}</option>`).join('');
+  let h=`<h2>Пользователи</h2>`;
+  if(ACC.newPw)h+=`<div class="banner" style="margin:0 0 12px">Временный пароль для <b>${esc(ACC.newPw.login)}</b>: <code style="font-size:15px;user-select:all">${esc(ACC.newPw.pw)}</code><br>Передайте его лично. При первом входе система попросит сменить пароль. Больше этот пароль нигде показан не будет. <button type="button" data-acc="hidepw">Скрыть</button></div>`;
+  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${ACC.users.map(u=>`<tr><td><b>${esc(u.name)}</b>${u.id===ME.id?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
+      <td><select data-acc-role="${u.id}" ${u.id===ME.id?'disabled':''}>${roleOpts(u.role)}</select></td>
+      <td>${u.active?(u.mustChange?'<span class="chip work">ждёт смены пароля</span>':'<span class="chip closed">активен</span>'):'<span class="chip lost">отключён</span>'}</td>
+      <td class="r">${u.id===ME.id?'':`<button type="button" data-acc="reset" data-id="${u.id}" data-login="${esc(u.login)}">Новый пароль</button> <button type="button" data-acc="toggle" data-id="${u.id}">${u.active?'Отключить':'Включить'}</button>`}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="card" style="margin-top:12px"><h3>Добавить пользователя</h3><div class="fg">
+    <label class="f"><span>Имя</span><input id="acc-name" placeholder="Элеонора Дрягина"></label>
+    <label class="f"><span>Логин (латиницей)</span><input id="acc-login" placeholder="eleonora" autocapitalize="off" autocomplete="off"></label>
+    <label class="f"><span>Роль</span><select id="acc-role">${roleOpts('accountant')}</select></label>
+    <div class="f" style="justify-content:flex-end"><button type="button" class="primary" data-acc="add">Создать и получить пароль</button></div></div>
+    <p class="note" style="margin:8px 0 0"><b>Учредитель</b> — всё, включая настройки, пользователей и закрытие периода. <b>Бухгалтер</b> — вносит и правит операции, сделки, контрагентов и планы. <b>Просмотр</b> — только смотрит отчёты.</p></div>`;
+  h+=`<h2>Данные</h2><div class="card"><div class="rows">
+    <div class="row"><span>Выгрузить все данные в файл (резервная копия, перенос)</span><button type="button" data-acc="export">Скачать .json</button></div>
+    <div class="row"><span>Загрузить данные из файла выгрузки. <b>Заменит</b> все операции, сделки, контрагентов, планы и настройки. Пользователи сохраняются.</span><label class="btn"><input type="file" id="acc-import" accept=".json,application/json" hidden><span class="like-btn">Загрузить .json…</span></label></div></div>
+    <p class="note" style="margin:8px 0 0">Сервер также сам делает резервную копию базы каждую ночь.</p></div>`;
+  h+=`<h2>Журнал изменений</h2><div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Что</th></tr></thead><tbody>
+    ${(ACC.audit||[]).map(a=>`<tr><td class="num">${dt(a.at)}</td><td>${esc(a.user_name||'')}</td><td>${esc(a.action)}</td><td class="muted">${esc([a.entity,a.entity_id].filter(Boolean).join(' · '))}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Пока пусто</td></tr>'}
+  </tbody></table></div><p class="note">Показаны последние 150 записей.</p>`;
+  return h}
+$('#app').addEventListener('change',async e=>{
+  const r=e.target.closest('[data-acc-role]');
+  if(r){try{const u=ACC.users.find(x=>x.id==r.dataset.accRole);const out=await api('saveUser',{id:u.id,name:u.name,role:r.value,active:u.active});ACC.users=out.users;toast('Роль изменена');render()}catch(err){toast(err.message);render()}return}
+  if(e.target.id==='acc-import'){const f=e.target.files[0];if(!f)return;
+    const ok=prompt('Импорт заменит все текущие данные (кроме пользователей). Чтобы продолжить, напишите слово ЗАМЕНИТЬ');
+    if(ok!=='ЗАМЕНИТЬ'){e.target.value='';return toast('Импорт отменён')}
+    try{const data=JSON.parse(await f.text());const c=await api('importData',data,'ЗАМЕНИТЬ');
+      toast(`Загружено: операций ${c.ops}, в архиве ${c.archOps}, сделок ${c.deals}, контрагентов ${c.clients}`);apply(await api('loadAll'));ACC.audit=null;ACC.users=null;render()}
+    catch(err){toast('Импорт не выполнен: '+err.message)}e.target.value=''}});
+$('#app').addEventListener('click',async e=>{const b=e.target.closest('[data-acc]');if(!b)return;const a=b.dataset.acc;
+  try{
+    if(a==='hidepw'){ACC.newPw=null;render();return}
+    if(a==='add'){const name=$('#acc-name').value.trim(),login=$('#acc-login').value.trim().toLowerCase(),role=$('#acc-role').value,pw=genPw();
+      const out=await api('saveUser',{name,login,role,password:pw});ACC.users=out.users;ACC.newPw={login,pw};ACC.audit=await api('listAudit',150);render();return}
+    if(a==='reset'){if(!confirm('Выдать пользователю новый временный пароль? Текущие входы будут завершены.'))return;const pw=genPw();
+      const out=await api('resetUserPassword',Number(b.dataset.id),pw);ACC.users=out.users;ACC.newPw={login:b.dataset.login,pw};render();return}
+    if(a==='toggle'){const u=ACC.users.find(x=>x.id==b.dataset.id);const out=await api('saveUser',{id:u.id,name:u.name,role:u.role,active:!u.active});ACC.users=out.users;render();return}
+    if(a==='export'){const d=await api('exportData');const blob=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);const l=document.createElement('a');l.href=url;l.download='dg-export-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);return}
+  }catch(err){toast(err.message)}});
+
+window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(TABS.some(t=>t[0]===k)&&k!==V.tab){V.tab=k;render()}});
+init();
+})();
+</script>
+
+</body></html>

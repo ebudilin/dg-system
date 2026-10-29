@@ -1,0 +1,6 @@
+[Unit]
+Description=Дорогой Город — резервная копия базы
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/dg/deploy/backup.sh

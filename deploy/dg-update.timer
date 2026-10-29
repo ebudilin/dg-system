@@ -1,0 +1,9 @@
+[Unit]
+Description=Проверка обновлений каждые 2 минуты
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target
