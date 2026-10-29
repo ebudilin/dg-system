@@ -7,8 +7,8 @@ const { def, can, ApiError, meOf, audit, bump, tx, str, isDate, numOrBlank, J, P
 
 const STAGES = { new: 'Новая', work: 'В работе', show: 'Показы', talks: 'Переговоры', won: 'Договор', lost: 'Отказ' };
 const LEAD_KINDS = { buy: 'Покупка', sell: 'Продажа', rent: 'Снять в аренду', lease: 'Сдать в аренду', commercial: 'Коммерция', legal: 'Юр. сопровождение', other: 'Другое' };
-const OBJ_KINDS = { flat: 'Квартира', house: 'Дом / участок', office: 'Офис', gab: 'ГАБ', retail: 'Торговое помещение', warehouse: 'Склад / производство', lot: 'Лот застройщика', other: 'Другое' };
-const OBJ_STATUS = { active: 'В работе', reserved: 'Бронь', closed: 'Сделка закрыта', off: 'Снят' };
+const OBJ = require('./objects');
+const OBJ_KINDS = OBJ.D.kinds, OBJ_STATUS = OBJ.D.status;
 const DEAL_ST = { work: 'В работе', deal: 'Договор подписан', closed: 'Закрыта', lost: 'Сорвалась' };
 const ACT_TYPES = { call: 'Звонок', meeting: 'Встреча', show: 'Показ', message: 'Сообщение', note: 'Заметка', event: 'Событие' };
 const DEAL_KIND_BY_LEAD = { buy: 'Вторичка', sell: 'Вторичка', rent: 'Аренда', lease: 'Аренда', commercial: 'Коммерция', legal: 'Юр. сопровождение', other: 'Вторичка' };
@@ -42,7 +42,8 @@ function crmLoad(db, u) {
     leads: rows('leads', 'updated_at DESC'),
     tasks: db.prepare('SELECT data FROM tasks WHERE done=0 OR updated_at>? ORDER BY due').all(monthAgo).map(r => P(r.data)).filter(Boolean),
     objects: rows('objects', 'updated_at DESC'),
-    dict: { stages: STAGES, leadKinds: LEAD_KINDS, objKinds: OBJ_KINDS, objStatus: OBJ_STATUS, actTypes: ACT_TYPES }
+    inq: OBJ.inquiryCounts(db),
+    dict: { stages: STAGES, leadKinds: LEAD_KINDS, objKinds: OBJ_KINDS, objStatus: OBJ_STATUS, actTypes: ACT_TYPES, obj: OBJ.D }
   };
 }
 
@@ -283,43 +284,10 @@ def('deleteTask', 'crm_w', (db, u, id) => {
   return crmLoad(db, u);
 });
 
-/* ---------- объекты ---------- */
-def('saveObject', 'crm_w', (db, u, o) => {
-  if (!o || !(String(o.title || '').trim() || String(o.address || '').trim())) throw new ApiError('Укажите название или адрес объекта.');
-  tx(db, () => {
-    const prevRow = o.id ? db.prepare('SELECT data FROM objects WHERE id=?').get(str(o.id, 64)) : null;
-    const prev = prevRow ? P(prevRow.data) : null;
-    const x = {
-      id: str(o.id || uid('obj'), 64), title: str(o.title, 300).trim(), address: str(o.address, 500).trim(), metro: str(o.metro, 100),
-      kind: OBJ_KINDS[o.kind] ? o.kind : 'other', offer: o.offer === 'rent' ? 'rent' : 'sale', status: OBJ_STATUS[o.status] ? o.status : 'active',
-      area: numOrBlank(o.area), price: numOrBlank(o.price), rooms: str(o.rooms, 20), floor: str(o.floor, 40),
-      ownerId: optRef(db, 'counterparties', o.ownerId), developer: str(o.developer, 200), link: str(o.link, 1000), note: str(o.note, 5000),
-      createdAt: (prev && prev.createdAt) || now(), updatedAt: now()
-    };
-    db.prepare('INSERT INTO objects(id,updated_at,data) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at, data=excluded.data').run(x.id, x.updatedAt, J(x));
-    if (prev && prev.status !== x.status) addActivity(db, u, { type: 'event', text: `Статус объекта: ${OBJ_STATUS[prev.status]} → ${OBJ_STATUS[x.status]}`, objectId: x.id, clientId: x.ownerId });
-    audit(db, u, prev ? 'изменение' : 'создание', 'объект', x.id, prev, x);
-    bump(db);
-  });
-  return crmLoad(db, u);
-});
-
-def('deleteObject', 'crm_w', (db, u, id) => {
-  tx(db, () => {
-    const row = db.prepare('SELECT data FROM objects WHERE id=?').get(str(id, 64));
-    if (!row) return;
-    const needle = '"' + str(id, 64) + '"';
-    if (db.prepare('SELECT 1 FROM leads WHERE instr(data, ?)>0 LIMIT 1').get(needle)) throw new ApiError('Объект указан в заявке — сначала уберите его оттуда.');
-    db.prepare('DELETE FROM objects WHERE id=?').run(str(id, 64));
-    audit(db, u, 'удаление', 'объект', id, P(row.data), null);
-    bump(db);
-  });
-  return crmLoad(db, u);
-});
-
 /* ---------- восстановление из файла (вызывается из importData внутри транзакции) ---------- */
 function restore(db, crm) {
-  db.exec('DELETE FROM leads; DELETE FROM tasks; DELETE FROM objects; DELETE FROM activities;');
+  db.exec('DELETE FROM leads; DELETE FROM tasks; DELETE FROM objects; DELETE FROM activities; DELETE FROM inquiries;');
+  (crm.inquiries || []).forEach(q => db.prepare('INSERT INTO inquiries(id,object_id,at,data) VALUES(?,?,?,?)').run(str(q.id, 64), str(q.objectId, 64), Number(q.at) || now(), J(q)));
   (crm.leads || []).forEach(l => db.prepare('INSERT INTO leads(id,stage,updated_at,data) VALUES(?,?,?,?)').run(str(l.id, 64), STAGES[l.stage] ? l.stage : 'new', Number(l.updatedAt) || now(), J(l)));
   (crm.tasks || []).forEach(t => db.prepare('INSERT INTO tasks(id,due,done,assignee,updated_at,data) VALUES(?,?,?,?,?,?)').run(str(t.id, 64), t.due || null, t.done ? 1 : 0, t.assigneeId || null, Number(t.updatedAt) || now(), J(t)));
   (crm.objects || []).forEach(o => db.prepare('INSERT INTO objects(id,updated_at,data) VALUES(?,?,?)').run(str(o.id, 64), Number(o.updatedAt) || now(), J(o)));

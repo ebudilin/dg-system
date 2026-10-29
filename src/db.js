@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 2;
+const SCHEMA = 3;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -101,6 +101,23 @@ function migrate(db) {
       db.exec("UPDATE users SET role='staff', finance='edit' WHERE role='accountant'");
       db.exec("UPDATE users SET finance='view' WHERE role='viewer' AND finance='none'");
       setMeta(db, 'schema', '2');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 3) {
+    // Карточка объекта: новые статусы, обращения по объекту.
+    safetyCopy(db, 'schema-3');
+    tx(db, () => {
+      db.exec(`CREATE TABLE IF NOT EXISTS inquiries (id TEXT PRIMARY KEY, object_id TEXT NOT NULL, at INTEGER NOT NULL, data TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS inq_object ON inquiries(object_id, at);`);
+      const map = { active: 'active', reserved: 'deposit', closed: 'sold', off: 'paused' };
+      for (const r of db.prepare('SELECT id, data FROM objects').all()) {
+        let o; try { o = JSON.parse(r.data); } catch (_) { continue; }
+        if (!o) continue;
+        const st = map[o.status] || (['draft', 'active', 'paused', 'deposit', 'failed', 'sold'].includes(o.status) ? o.status : 'active');
+        if (st !== o.status) { o.status = st; db.prepare('UPDATE objects SET data=? WHERE id=?').run(JSON.stringify(o), r.id); }
+        if (o.ownerId && !Array.isArray(o.owners)) { o.owners = [o.ownerId]; db.prepare('UPDATE objects SET data=? WHERE id=?').run(JSON.stringify(o), r.id); }
+      }
+      setMeta(db, 'schema', '3');
     });
   }
 }

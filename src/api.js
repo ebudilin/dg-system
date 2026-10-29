@@ -301,7 +301,7 @@ def('listAudit', 'owner', (db, u, limit) => db.prepare('SELECT id,at,user_name,a
   .all(Math.min(500, Math.max(1, Number(limit) || 200))));
 
 /* ---------- импорт / экспорт ---------- */
-const CRM_TABLES = ['leads', 'tasks', 'objects', 'activities'];
+const CRM_TABLES = ['leads', 'tasks', 'objects', 'activities', 'inquiries'];
 function exportCrm(db) {
   const out = {};
   CRM_TABLES.forEach(t => { out[t] = db.prepare(`SELECT data FROM ${t}`).all().map(r => P(r.data)).filter(Boolean); });
