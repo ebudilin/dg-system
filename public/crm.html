@@ -180,7 +180,9 @@ dialog.wide{width:min(860px,calc(100vw - 24px))}
 @media (max-width:700px){.qadd{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.qadd input:first-child{grid-column:1/-1}}
 .like-btn{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;white-space:nowrap}
 .acc-tbl td,.acc-tbl th{white-space:nowrap}
-.acc-tbl select{width:auto}
+ .acc-tbl select{width:auto}
+.users-tbl{table-layout:fixed}.users-tbl th,.users-tbl td{white-space:normal;overflow-wrap:anywhere}.users-tbl select{width:100%;max-width:100%}.users-tbl td:last-child button{margin:2px}.users-tbl td:last-child{text-align:left}.users-tbl th:nth-child(1){width:15%}.users-tbl th:nth-child(2){width:9%}.users-tbl th:nth-child(3){width:13%}.users-tbl th:nth-child(4){width:14%}.users-tbl th:nth-child(5){width:21%}.users-tbl th:nth-child(6){width:13%}.users-tbl th:nth-child(7){width:15%}.users-tbl .chip{white-space:normal}
+@media(max-width:900px){.users-tbl{min-width:780px}.users-wrap{overflow-x:auto}}
 dialog.xwide{width:min(1040px,calc(100vw - 24px))}
 @media (max-width:700px){dialog.xwide{width:100vw;max-height:100vh;border-radius:0}}
 .ohead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
@@ -817,7 +819,7 @@ function openTask(t,preset){
   openDlg({kind:'task',orig:t||null,o:x,draw:drawTask});
 }
 function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
-  form.innerHTML=`<h2>${t?'Задача':'Новая задача'}</h2><div class="fg">
+  form.innerHTML=`<h2>${t?'Задача':'Новая задача'}</h2>${t?`<p class="note" style="margin:0 0 12px"><b>Поставил:</b> ${esc(uName(t.createdBy)||'не указан')}${t.createdAt?', '+esc(dtFmt(t.createdAt)):''}</p>`:''}<div class="fg">
     <label class="f full"><span>Что сделать</span><input name="title" value="${esc(x.title)}" required></label>
     <label class="f"><span>Срок</span><input name="due" type="date" value="${esc(x.due)}"></label>
     <label class="f"><span>Время</span><input name="time" type="time" value="${esc(x.time)}"></label>
@@ -829,7 +831,7 @@ function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
     <label class="f"><span>Объект</span><select name="objectId">${objectsOpt(x.objectId)}</select></label>
     <label class="f full"><span>Подробности</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label>
     ${t?`<label class="checks full"><label><input type="checkbox" name="done" ${x.done?'checked':''}> Выполнено</label></label>`:''}</div>
-    ${t?`<p class="note" style="margin:0">Поставил: ${esc(uName(t.createdBy))}, ${dtFmt(t.createdAt)}</p>`:''}${acts(!!t)}`}
+    ${acts(!!t)}`}
 
 /* оформление сделки из заявки */
 function openToDeal(l){
@@ -980,7 +982,7 @@ function vAdmin(){
   const ro=sel=>opt(Object.entries(ACC.roles),sel),fo=sel=>opt(Object.entries(ACC.finance),sel);
   let h=`<h2>Пользователи</h2>`;
   if(ACC.newPw)h+=`<div class="banner" style="margin:0 0 12px">Временный пароль для <b>${esc(ACC.newPw.login)}</b>: <code style="font-size:15px;user-select:all">${esc(ACC.newPw.pw)}</code><br>Передайте его лично. При первом входе система попросит сменить пароль. Больше этот пароль нигде показан не будет. <button type="button" data-acc="hidepw">Скрыть</button></div>`;
-  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль в CRM</th><th>Финансы</th><th>Телефония, агент, Max</th><th>Статус</th><th></th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap users-wrap"><table class="acc-tbl users-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль в CRM</th><th>Финансы</th><th>Телефония, агент, Max</th><th>Статус</th><th></th></tr></thead><tbody>
     ${ACC.users.map(u=>{const me=u.id===ME.id,du=D.users.find(x=>x.id===u.id)||{};return `<tr><td>${ava(u.id,du.photo,u.name,26)} <b>${esc(u.name)}</b>${me?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
       <td><select data-acc-role="${u.id}" ${me?'disabled':''}>${ro(u.role)}</select></td>
       <td>${u.role==='owner'?'<span class="muted">полный доступ</span>':`<select data-acc-fin="${u.id}">${fo(u.finance)}</select>`}</td>
