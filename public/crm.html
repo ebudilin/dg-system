@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM · Дорогой Город</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
@@ -343,6 +343,21 @@ button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background
 button:hover{border-color:var(--muted)}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button.primary:hover{filter:brightness(1.08)}
+
+/* ==== Современный редизайн ==== */
+body{font:15px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
+button{border-radius:var(--r-sm);font-weight:500;box-shadow:var(--sh-sm);transition:.18s}
+button:hover{transform:translateY(-1px);box-shadow:var(--sh)}
+button.primary{background:linear-gradient(135deg,#2F6BFF,#2456DB);border:none;color:#fff;box-shadow:0 6px 16px rgba(47,107,255,.32)}
+input,select,textarea{border-radius:var(--r-sm);padding:9px 12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm);transition:.2s}
+.tile:hover{box-shadow:var(--sh);transform:translateY(-2px)}
+.tile.hero{background:linear-gradient(135deg,#2F6BFF,#2456DB);border:none;color:#fff}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff;font-weight:600}
+header.top{background:rgba(245,247,250,.92);backdrop-filter:blur(10px)}
 </style></head>
 <body>
 <header class="top">
@@ -425,7 +440,7 @@ const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
-const TABS=()=>[['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],['kb','Справочник']];
+const TABS=()=>[['calls','Звонки и обращения'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],['kb','Справочник']];
 function renderHead(){
   $('#appsw').style.display=fin()?'':'none';
   $('#who').innerHTML=ME?meChip(ME.roleName):'';
@@ -569,7 +584,7 @@ function vObjects(){
   const cnt={};D.objects.forEach(o=>cnt[o.status]=(cnt[o.status]||0)+1);
   h+=`<div class="stbar">${Object.entries(OD.status).map(([k,l])=>`<button class="ost os-${k}" data-ost="${k}" aria-pressed="${f.status===k}">${esc(l)} <b>${cnt[k]||0}</b></button>`).join('')}</div>`;
   if(!list.length)return h+`<div class="card empty">${D.objects.length?'По фильтру ничего нет.':'Объектов пока нет. Добавьте первый кнопкой «+ Объект».'}</div>`;
-  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Объект / категория</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
     ${list.map(o=>{const r=readiness(o),days=o.activeSince&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-o.activeSince)/864e5):null,iq=(D.inq||{})[o.id],exp=(o.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0),ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
       return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([OD.kinds[o.kind],o.offer==='rent'?'аренда':'продажа',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}<div style="font-size:11px;margin-top:2px">${((D.files||{})[o.id]||{}).photo?`<span class="muted">📷 ${D.files[o.id].photo}</span> `:''}${o.cian&&o.cian.state==='on'?'<span class="chip closed">ЦИАН</span>':o.cian&&o.cian.state==='ready'?'<span class="chip work">ЦИАН: ждёт решения</span>':''}</div></td>
       <td><span class="ochip os-${o.status}">${esc(OD.status[o.status]||o.status)}</span></td><td>${esc(uName(o.responsibleId)||'—')}</td>
@@ -1133,7 +1148,7 @@ function cianHtml(){const c=dlgCtx;if(!c.orig)return '<p class="muted">Снач�
 
 /* ---------- Звонки (Novofon) ---------- */
 const CALLS={list:null,t:0,loading:false};
-async function callsLoad(){if(CALLS.loading)return;CALLS.loading=true;try{CALLS.list=await api('listCalls',7);CALLS.t=Date.now()}catch(e){toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
+async function callsLoad(){if(CALLS.loading)return;CALLS.loading=true;try{CALLS.list=await api('listCalls',7);CALLS.t=Date.now();if(!IQ.list)iqLoad()}catch(e){toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
 const ph=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);d=d.slice(-10);return d.length===10?`+7 ${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6,8)}-${d.slice(8)}`:String(s||'')};
 function vCalls(){
   if(!CALLS.list){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки…</div>'}
@@ -1157,7 +1172,7 @@ function vCalls(){
   ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
   if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
   h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
-    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td>
+    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td>${callObjInfo(c)}</td>
       <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vOwner(c)?' · номер '+esc(vOwner(c)):''}</div>`:''}</td>
       <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
       <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
@@ -1217,7 +1232,7 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-nf-save],
 
 /* ---------- Обращения по объектам ---------- */
 const IQ={list:null,t:0,loading:false};
-async function iqLoad(){if(IQ.loading)return;IQ.loading=true;try{IQ.list=await api('listAllInquiries');IQ.t=Date.now()}catch(e){toast(e.message)}IQ.loading=false;if(V.tab==='inqs')render()}
+async function iqLoad(){if(IQ.loading)return;IQ.loading=true;try{IQ.list=await api('listAllInquiries');IQ.t=Date.now()}catch(e){toast(e.message)}IQ.loading=false;if(V.tab==='calls'||V.tab==='inqs')render()}
 const key10=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);return d.length>=10?d.slice(-10):''};
 const toLocal=ms=>{if(!ms)return '';const d=new Date(ms);return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
 const ST_CHIP={new:'',show_set:'work',shown:'deal',thinking:'work',talks:'work',deposit:'deal',deal:'closed',declined:'out',noreply:'out'};
@@ -1632,7 +1647,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu'
 /* ---------- запуск ---------- */
 async function init(){$('#sources').innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">`).join('');render();
   try{apply(await api('crmLoad'))}catch(e){$('#app').innerHTML=`<div class="banner">Не удалось загрузить данные: ${esc(e.message)}. Обновите страницу.</div>`;return}
-  if(location.hash==='#profile'){V.tab='leads';history.replaceState(null,'','#leads');render();openProfile()}
+  if(location.hash==='#profile'){V.tab='calls';history.replaceState(null,'','#leads');render();openProfile()}
   setInterval(async()=>{if(document.hidden||saving>0||dlgCtx||dragId)return;
     try{const v=await api('getVersion');if(v!==version)apply(await api('crmLoad'))}catch(_){}},20000)}
 init();
