@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM · Дорогой Город</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
@@ -343,50 +343,6 @@ button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background
 button:hover{border-color:var(--muted)}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button.primary:hover{filter:brightness(1.08)}
-
-/* ===== Современные компоненты ===== */
-body{font:15px/1.55 var(--font-ui)}
-.wrap{max-width:1280px}
-h2{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:26px 0 14px}
-h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px;font-weight:600}
-button{border-radius:var(--r-sm);font-weight:500;box-shadow:var(--sh-sm);transition:all .18s ease}
-button:hover{transform:translateY(-1px);box-shadow:var(--sh);border-color:var(--muted)}
-button.primary{background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.3)}
-button.primary:hover{box-shadow:0 6px 16px rgba(37,99,235,.4);filter:brightness(1.05)}
-button.ghost{border-color:transparent;box-shadow:none}
-input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;transition:border-color .15s, box-shadow .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-sm);transition:all .2s ease}
-.tile:hover{box-shadow:var(--sh);transform:translateY(-2px);border-color:var(--line)}
-.tile.hero{background:linear-gradient(135deg,var(--accent),#1D4ED8);border:none;color:#fff;box-shadow:0 8px 20px rgba(37,99,235,.28)}
-.tile.hero .k,.tile.hero .s{color:#fff;opacity:.85}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--sh-sm)}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
-.chip.closed{background:var(--pos-soft);color:var(--pos);border-color:transparent}
-.chip.work,.chip.deal{background:var(--accent-soft);color:var(--accent);border-color:transparent}
-.chip.lost,.chip.out{background:var(--neg-soft);color:var(--neg);border-color:transparent}
-.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden}
-table{border-collapse:collapse}
-th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--sunk);text-align:left}
-td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:14px}
-tbody tr{transition:background .12s}
-tbody tr:hover{background:var(--sunk)}
-tbody tr:last-child td{border-bottom:none}
-.trow{padding:11px 4px;border-bottom:1px solid var(--line)}
-.grpseg button,.seg button{border-radius:8px;font-weight:500}
-.grpseg button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
-a{color:var(--accent)}
-
-/* ===== Звонки и обращения: единая лента ===== */
-.callrow{display:flex;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s;align-items:flex-start}
-.callrow:last-child{border-bottom:none}
-.callrow:hover{background:var(--sunk)}
-.callrow.unread{background:var(--accent-soft);border-left:3px solid var(--accent)}
-.callrow.unread:hover{background:#DCE7FC}
-.callmain{flex:1;min-width:0}
-.calltop{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:14px}
-.calltop .muted{font-size:13px}
-.tbadge{background:var(--accent);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:700}
 </style></head>
 <body>
 <header class="top">
@@ -455,7 +411,6 @@ const clName=id=>{const c=cl(id);return c?c.name:''};
 const usr=id=>D&&D.users.find(u=>u.id===id);
 const uName=id=>{const u=usr(id);return u?u.name:''};
 const obj=id=>D&&byId(D.objects,id);
-const objectsById={};let _objIdx=0;function rebuildObjIdx(){_objIdx++;if(!D)return;D.objects.forEach(o=>objectsById[o.id]=o)}
 const objName=o=>o?(o.title||o.address||'Объект'):'';
 const lead=id=>D&&byId(D.leads,id);
 const deal=id=>D&&byId(D.deals,id);
@@ -990,7 +945,6 @@ form.addEventListener('change',e=>{if(dlgCtx&&dlgCtx.kind==='task'&&e.target.nam
 async function toggleDone(id,val){const t=D.tasks.find(x=>x.id===id);if(!t)return;try{await run('saveTask',Object.assign({},t,{done:val}));toast(val?'Готово':'Задача снова открыта')}catch(_){render()}}
 
 /* ---------- события страницы ---------- */
-document.addEventListener('click',e=>{const j=e.target.closest('[data-tab-jump]');if(j){e.preventDefault();V.tab=j.dataset.tabJump;try{history.replaceState(null,'','#'+V.tab)}catch(_){};render();return}});
 $('#tabs').addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(!a)return;e.preventDefault();V.tab=a.dataset.tab;history.replaceState(null,'','#'+V.tab);render()});
 window.addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(k&&k!==V.tab){V.tab=k;render()}});
 $('#addbtn').addEventListener('click',()=>{if(V.tab==='deals')openDeal(null);else if(V.tab==='tasks')openTask();else if(V.tab==='clients')openClient();else if(V.tab==='objects')openObject();else if(V.tab==='inqs')openInq(null);else openLead()});
@@ -1197,12 +1151,7 @@ function vCalls(){
   const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`
     :c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`
     :c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
-  const iqCount=IQ.list?IQ.list.length:0;
-  let h=`<div class="card" style="margin:0 0 14px;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:11px"><span style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:18px">📞</span>
-    <div><b style="font-size:15px">Звонки и обращения</b><div class="muted" style="font-size:12px;margin-top:1px">Разбирайте звонки — сразу видно объект или категорию</div></div></div>
-    <a href="#" data-tab-jump="inqs" style="font-size:13px;font-weight:600">Обращения по объектам (${iqCount}) →</a></div>
-  <div class="toolbar" style="align-items:center">
+  let h=`<div class="toolbar" style="align-items:center">
     <div class="seg" role="group"><button type="button" data-clv="todo" aria-pressed="${F.view==='todo'}">Не разобранные <b>${nTodo}</b></button><button type="button" data-clv="all" aria-pressed="${F.view==='all'}">Все звонки</button><button type="button" data-clv="spam" aria-pressed="${F.view==='spam'}">Спам <b>${spamAll.length}</b></button></div>
     <div class="seg" role="group"><button type="button" data-clm="0" aria-pressed="${!F.mine}">Все сотрудники</button><button type="button" data-clm="1" aria-pressed="${F.mine}">Мои</button></div></div>
   ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
@@ -1234,6 +1183,105 @@ function callDlg(id,mode){const c=CALLS.list.find(x=>x.id===id);if(!c)return;
     :`<h2>Чей это номер — ${esc(ph(c.phone))}?</h2><label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId,'— выберите —')}</select></label>
       <p class="note" style="margin:0">Номер добавится в карточку клиента, звонки попадут в его историю.</p>
       <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Привязать</button></div></div>`}});
+}
+app.addEventListener('click',async e=>{const b=e.target.closest('[data-call-lead],[data-call-link],[data-call-ignore]');if(!b)return;
+  if(b.dataset.callLead)return callDlg(b.dataset.callLead,'lead');
+  if(b.dataset.callLink)return callDlg(b.dataset.callLink,'link');
+  try{await run('resolveCall',b.dataset.callIgnore,'ignore');CALLS.list=null;render();toast('Номер убран из разбора')}catch(_){}});
+/* ---------- Интеграции (учредитель) ---------- */
+const INTEG={nf:null,cian:null,loading:false};
+async function integLoad(){if(INTEG.loading)return;INTEG.loading=true;try{INTEG.nf=await api('novofonSettings');INTEG.vn=null;INTEG.max=null;INTEG.cian=await api('cianSettings')}catch(e){toast(e.message)}INTEG.loading=false;if(V.tab==='admin')render()}
+function integHtml(){if(!INTEG.nf){integLoad();return '<div class="card"><p class="muted">Загружаю…</p></div>'}
+  const n=INTEG.nf,c=INTEG.cian,feed=location.origin+c.feedPath,inFeed=D.objects.filter(o=>o.cian&&o.cian.state==='on').length,ready=D.objects.filter(o=>o.cian&&o.cian.state==='ready');
+  return `<h2>Интеграции</h2><div class="cols"><div class="card"><h3>Телефония Novofon</h3>
+    <div class="fg"><label class="f full"><span>Ключ API ${n.hasKey?'<b class="pos">— сохранён</b>':''}</span><input type="password" id="nf-key" placeholder="${n.hasKey?'Оставьте пустым, чтобы не менять':'Вставьте ключ из кабинета Novofon'}" autocomplete="off"></label>
+      <label class="f"><span>Кому ставить «перезвонить» по новым номерам</span><select id="nf-user">${opt([['','Учредителю'],...D.users.filter(u=>u.active).map(u=>[u.id,u.name])],n.defaultUserId)}</select></label>
+      <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" id="nf-on" ${n.enabled?'checked':''}> Забирать звонки каждые 3 минуты</label></label></div>
+    <div class="r2" style="margin-top:8px"><button type="button" class="primary" data-nf-save>Сохранить</button><button type="button" data-nf-sync ${n.hasKey?'':'disabled'}>Проверить и загрузить сейчас</button></div>
+    <p class="note">${n.lastSync?`Последняя загрузка: ${dtFmt(n.lastSync)} — ${n.lastError?`<span class="neg">${esc(n.lastError)}</span>`:`успешно, новых звонков: ${n.lastCount}`}`:'Ещё не подключено.'}</p>
+    <p class="note">Где взять ключ: кабинет Novofon → настройки пользователя-администратора → вкладка API → «Использовать ключ API». Там же в «Настройки → Правила и настройки безопасности → API» добавьте IP сервера <b class="num">79.174.86.166</b> в белый список.</p></div>
+    <div class="card"><h3>ЦИАН — XML-фид</h3>
+    <label class="f"><span>Ссылка на фид (её указывают в ЦИАН)</span><div class="r2"><input id="cian-feed" value="${esc(feed)}" readonly><button type="button" data-copy-feed>Копировать</button></div></label>
+    <div class="fg" style="margin-top:8px"><label class="f"><span>Общий телефон (если у агента нет своего номера)</span><input id="cian-phone" value="${esc(c.phone)}"></label>
+      <div class="f" style="justify-content:flex-end"><button type="button" data-cian-save>Сохранить телефон</button></div></div>
+    <p class="note">В фиде сейчас объектов: <b>${inFeed}</b>. ${ready.length?`Ждут вашего решения: ${ready.map(o=>`<a class="lnk" data-open-object="${esc(o.id)}">${esc(objName(o))}</a>`).join(', ')}.`:''}</p>
+    <p class="note"><button type="button" class="ghost" data-cian-token style="padding:2px 6px;font-size:12px">Сменить ссылку на фид</button> — если ссылка попала не туда. Старая перестанет работать, новую нужно указать в ЦИАН.</p></div></div>`}
+app.addEventListener('click',async e=>{const b=e.target.closest('[data-nf-save],[data-nf-sync],[data-copy-feed],[data-cian-save],[data-cian-token]');if(!b)return;
+  try{
+    if(b.hasAttribute('data-nf-save')){INTEG.nf=await api('saveNovofonSettings',{apiKey:$('#nf-key').value,enabled:$('#nf-on').checked,defaultUserId:$('#nf-user').value});toast(INTEG.nf.enabled?'Сохранено, звонки будут загружаться':'Сохранено');render();return}
+    if(b.hasAttribute('data-nf-sync')){b.disabled=true;b.textContent='Проверяю…';const r=await api('novofonSyncNow');INTEG.nf=r.settings;INTEG.vn=null;toast(r.ok?`Связь есть. Звонков за период: ${r.received}, новых: ${r.added}`:'Ошибка: '+r.error);CALLS.list=null;render();return}
+    if(b.hasAttribute('data-copy-feed')){$('#cian-feed').select();try{await navigator.clipboard.writeText($('#cian-feed').value)}catch(_){document.execCommand('copy')}toast('Ссылка скопирована');return}
+    if(b.hasAttribute('data-cian-save')){INTEG.cian=await api('saveCianSettings',{phone:$('#cian-phone').value});toast('Телефон сохранён');render();return}
+    if(b.hasAttribute('data-cian-token')){if(!confirm('Сменить ссылку на фид? Старую ЦИАН больше не сможет прочитать.'))return;INTEG.cian=await api('saveCianSettings',{newToken:true});toast('Новая ссылка готова — укажите её в ЦИАН');render();return}
+  }catch(err){toast(err.message)}});
+
+/* ---------- Обращения по объектам ---------- */
+const IQ={list:null,t:0,loading:false};
+async function iqLoad(){if(IQ.loading)return;IQ.loading=true;try{IQ.list=await api('listAllInquiries');IQ.t=Date.now()}catch(e){toast(e.message)}IQ.loading=false;if(V.tab==='inqs')render()}
+const key10=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);return d.length>=10?d.slice(-10):''};
+const toLocal=ms=>{if(!ms)return '';const d=new Date(ms);return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
+const ST_CHIP={new:'',show_set:'work',shown:'deal',thinking:'work',talks:'work',deposit:'deal',deal:'closed',declined:'out',noreply:'out'};
+const stChip=q=>`<span class="chip ${ST_CHIP[q.stage]||''}">${esc(D.dict.obj.inqStages[q.stage]||q.stage||'Новое')}</span>${q.stage==='show_set'&&q.showAt?` <span class="num" style="font-size:12px">${dtFmt(q.showAt)}</span>`:''}`;
+const whoChip=q=>q.who==='agent'?`<span class="chip">Агент${q.agency?' · '+esc(q.agency):''}</span>`:'<span class="chip deal">Прямой интересант</span>';
+const SHOWN=['shown','thinking','talks','deposit','deal'];
+function inqCallsHtml(cs){if(!cs||!cs.length)return '';
+  return `<h3 style="margin:4px 0 6px">Звонки с этого номера</h3><div class="tbl-wrap"><table><tbody>${cs.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>'}</td><td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td></tr>`).join('')}</tbody></table></div>`}
+
+function openInq(q,opts){opts=opts||{};
+  const x=Object.assign({objectId:'',name:'',phone:'',who:'buyer',agency:'',channel:'',stage:'new',result:'',reason:'',svc:'',note:''},q||{});
+  x.showAtL=q&&q.showAt?toLocal(q.showAt):'';
+  openDlg({kind:'inq',orig:q&&q.id?q:null,o:x,call:opts.call||null,back:opts.back||null,fixedObj:!!opts.fixedObj,wide:true,draw:drawInq});
+  if(q&&q.id&&!q.calls)api('getInquiry',q.id).then(r=>{const c=dlgCtx;if(c&&c.kind==='inq'&&c.orig&&c.orig.id===r.id){c.orig.calls=r.calls;const el=$('#iq-calls');if(el)el.innerHTML=inqCallsHtml(r.calls)}}).catch(()=>{})}
+function drawInq(){const c=dlgCtx,x=c.o,q=c.orig,OD=D.dict.obj,o=obj(x.objectId),ro=!can();
+  const ld=q&&q.leadId&&lead(q.leadId);
+  form.innerHTML=`<h2>${q?'Обращение':'Новое обращение'}${o&&c.fixedObj?' — '+esc(objName(o)):''}</h2>
+    ${c.call?`<p class="note" style="margin:-6px 0 0">Звонок с ${esc(ph(c.call.phone))}, ${dtFmt(c.call.at)}${c.call.rec?` · <a class="lnk" href="${esc(c.call.rec)}" target="_blank" rel="noopener">▶ запись</a>`:''}</p>`:''}
+    <div class="fg">
+      ${c.fixedObj?'':`<label class="f full"><span>Объект, по которому звонили</span><select name="objectId">${objectsOpt(x.objectId)}</select></label>`}
+      <label class="f"><span>Кто звонил</span><select name="who">${opt(Object.entries(OD.inqWho),x.who)}</select></label>
+      ${x.who==='agent'?`<label class="f"><span>Агентство</span><input name="agency" value="${esc(x.agency)}" placeholder="Название агентства"></label>`:`<label class="f"><span>Откуда узнал</span><input name="channel" list="iq-ch" value="${esc(x.channel)}" placeholder="ЦИАН, Авито…"></label>`}
+      <label class="f"><span>Имя</span><input name="name" value="${esc(x.name)}" placeholder="Как представился"></label>
+      <label class="f"><span>Телефон</span><input name="phone" inputmode="tel" value="${esc(x.phone)}" ${c.call?'readonly':''}></label>
+      ${x.who==='agent'?`<label class="f full"><span>Откуда узнал</span><input name="channel" list="iq-ch" value="${esc(x.channel)}" placeholder="ЦИАН, Авито…"></label>`:''}
+      <label class="f"><span>Что происходит</span><select name="stage">${opt(Object.entries(OD.inqStages),x.stage)}</select></label>
+      ${x.stage==='show_set'?`<label class="f"><span>Дата и время показа</span><input type="datetime-local" name="showAtL" value="${esc(x.showAtL)}"></label>`:
+        x.stage==='declined'?`<label class="f"><span>Почему не подошёл</span><select name="reason">${opt([['','— выберите —'],...OD.inqDecline.map(s=>[s,s])],x.reason)}</select></label>`:'<div></div>'}
+      <label class="f full"><span>${x.stage==='new'?'Что обсудили':'Итог, впечатления, договорённости'}</span><textarea name="result" rows="3" placeholder="${x.stage==='shown'?'Что понравилось, что смутило, когда даст ответ':'Коротко: о чём договорились'}">${esc(x.result)}</textarea></label>
+      ${x.who==='agent'?'':`<label class="f full"><span>Что ищет (для подбора)</span><input name="note" value="${esc(x.note)}" placeholder="Бюджет, район, площадь, сроки, ипотека"></label>`}
+    </div>
+    ${x.stage==='show_set'?'<p class="note" style="margin:-4px 0 0">Ответственному по объекту поставится задача «Показ» на это время. После показа поменяйте этап на «Показ проведён».</p>':''}
+    ${x.who==='agent'?'<p class="note" style="margin:0">Агент попадёт в контакты (группа «Партнёры и сервисы»). Ему можно отправлять наши новые объекты.</p>':
+      `<div class="banner" style="margin:0"><b>Прямой интересант</b> — это не только покупатель этого объекта, но и потенциальный клиент на наши услуги. Если объект не подойдёт — предложите подбор. <a class="lnk" data-go-kb="price">Цены на услуги</a></div>
+      <div class="fg">${ld?`<div class="f full"><span style="font-size:12px;color:var(--muted)">Услуги подбора</span><a class="lnk" data-iq-lead-open="${esc(ld.id)}">Заявка на подбор: ${esc(D.dict.stages[ld.stage])} · ${esc(uName(ld.ownerId)||'')}</a></div>`:
+        `<label class="f"><span>Услуги подбора</span><select name="svc">${opt(Object.entries(OD.inqSvc).filter(([k])=>k!=='lead'),x.svc)}</select></label>${q&&can()?'<div class="f" style="justify-content:flex-end"><button type="button" data-iq-tolead>Создать заявку на подбор</button></div>':''}`}</div>`}
+    <div id="iq-calls">${q?inqCallsHtml(q.calls):''}</div>
+    ${q?`<p class="note" style="margin:0">Создано ${dtFmt(q.at)}${q.userName?' · '+esc(q.userName):''}</p>`:''}
+    <datalist id="iq-ch">${OD.inqChannels.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+    <div class="acts"><div>${q&&can()?`<button type="button" class="danger" data-iq-del>${c.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
+      <div><button type="button" data-iq-cancel>${c.back?'← К объекту':'Отмена'}</button>${ro?'':'<button type="submit" class="primary">Сохранить</button>'}</div></div>`}
+async function submitInq(){const c=dlgCtx,x=c.o,q=c.orig;
+  const p={id:q?q.id:undefined,objectId:x.objectId,name:x.name,phone:x.phone,who:x.who,agency:x.agency,channel:x.channel,stage:x.stage,result:x.result,reason:x.reason,svc:x.svc,note:x.note,
+    showAt:x.stage==='show_set'?(x.showAtL?new Date(x.showAtL).getTime():null):(q&&q.showAt)||null};
+  if(!p.objectId)return toast('Выберите объект.');
+  if(!String(p.name||'').trim()&&!key10(p.phone))return toast('Укажите имя или телефон.');
+  if(p.stage==='show_set'&&!p.showAt)return toast('Укажите дату и время показа.');
+  if(p.stage==='declined'&&!p.reason)return toast('Укажите, почему не подошёл.');
+  const back=c.back;
+  try{
+    if(c.call){dlg.close();await run('resolveCall',c.call.id,'inquiry',p);CALLS.list=null}
+    else{if(!back)dlg.close();await run('saveInquiry',p)}
+    IQ.list=null;toast(p.stage==='show_set'?'Сохранено, задача на показ поставлена':'Обращение сохранено');
+    if(back)back();else render()
+  }catch(_){}}
+form.addEventListener('change',e=>{const c=dlgCtx;if(!c||c.kind!=='inq')return;if(['who','stage','objectId'].includes(e.target.name)){readForm();c.draw()}});
+form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='inq')return;const b=e.target.closest('button,a');if(!b)return;
+  if(b.hasAttribute('data-iq-cancel')){if(c.back)c.back();else dlg.close();return}
+  if(b.hasAttribute('data-go-kb')){dlg.close();V.tab='kb';V.kb.sec=b.dataset.goKb;V.kb.art='';history.replaceState(null,'','#kb');render();return}
+  if(b.dataset.iqLeadOpen){openLead(lead(b.dataset.iqLeadOpen));return}
+  if(b.hasAttribute('data-iq-del')){if(!c.confirmDel){c.confirmDel=true;readForm();c.draw();return}const back=c.back;
+    try{if(!back)dlg.close();await run('deleteInquiry',c.orig.id);IQ.list=null;toast('Обращение удалено');if(back)back()}catch(_){}return}
+  if(b.hasAttribute('data-iq-tolead')){readForm();try{const r=await run('inquiryToLead',c.orig.id);IQ.list=null;toast('Заявка на подбор создана — она во вкладке «Заявки»');
+    if(r&&r.leadId){c.orig.leadId=r.leadId;c.orig.svc='lead';c.draw()}}catch(_){}return}
 });
 
 // карточка объекта → вкладка «Обращения»
