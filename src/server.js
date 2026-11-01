@@ -64,10 +64,24 @@ function sessionCookie(req, token, maxAge) {
 }
 
 // Защита от подделки запросов: запись принимается только со своей страницы.
+// Учитывает работу за реверс-прокси: порт, под которым систему видит клиент, может
+// отличаться от порта приложения (например 81 -> 3001), поэтому за прокси сравниваем
+// имя хоста, а порт сверяем только при прямом подключении.
 function sameOrigin(req) {
   const o = req.headers.origin;
   if (!o) return true; // старые браузеры и fetch с той же страницы без Origin
-  try { return new URL(o).host === req.headers.host; } catch (_) { return false; }
+  let u;
+  try { u = new URL(o); } catch (_) { return false; }
+  const fwdHost = String(req.headers['x-forwarded-host'] || '').split(',')[0].trim();
+  const rawHost = String(fwdHost || req.headers.host || '').toLowerCase();
+  if (!rawHost) return false;
+  const hostName = rawHost.replace(/:\d+$/, '');
+  if (u.hostname.toLowerCase() !== hostName) return false;
+  const behindProxy = !!(req.headers['x-forwarded-for'] || req.headers['x-real-ip']);
+  if (behindProxy) return true; // порт мог быть переписан прокси
+  const originPort = u.port || (u.protocol === 'https:' ? '443' : '80');
+  const hostPort = (rawHost.match(/:(\d+)$/) || [])[1] || originPort;
+  return originPort === hostPort;
 }
 
 function currentUser(req) {
