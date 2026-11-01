@@ -303,22 +303,65 @@ dialog .tbl-wrap{max-height:none}
 .me-menu .mh{padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;font-size:12px;color:var(--muted)}.me-menu .mh b{display:block;color:var(--ink);font-size:14px}
 @media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
 .prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+
+/* ===== РЕДИЗАЙН: боковая навигация ===== */
+:root{--side-w:248px;--side-bg:#0F1B17;--side-ink:#C9D6D0;--side-muted:#7E918A;--side-line:#1E2E28;--side-accent:#2E8A66}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);margin:0}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:var(--side-w);background:var(--side-bg);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex:none;border-right:1px solid var(--side-line)}
+.side-brand{padding:20px 20px 16px;border-bottom:1px solid var(--side-line)}
+.side-brand .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.side-brand .logo .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#2E8A66,#1F5A48);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex:none}
+.side-brand .tag{font-size:11px;color:var(--side-muted);margin-top:8px}
+.side-sec{padding:16px 14px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--side-muted);font-weight:600}
+.side-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+.side-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--side-ink);text-decoration:none;font-size:14px;font-weight:500}
+.side-nav a:hover{background:var(--side-line);color:#fff}
+.side-nav a[aria-current="page"]{background:var(--side-accent);color:#fff;font-weight:600}
+.side-nav a .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--side-muted)}
+.side-nav a[aria-current="page"] .dot{background:#fff}
+.side-apps{display:flex;gap:6px;padding:6px;margin:14px 12px 0;background:rgba(255,255,255,.04);border:1px solid var(--side-line);border-radius:10px}
+.side-apps a{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 4px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;color:var(--side-muted)}
+.side-apps a.on{background:var(--side-accent);color:#fff}
+.side-user{margin-top:auto;padding:14px;border-top:1px solid var(--side-line)}
+.content{flex:1;min-width:0;padding:22px 26px 60px;max-width:1240px}
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.page-head h1{font-size:22px;margin:0;letter-spacing:-.01em}
+.page-head .crumb{color:var(--muted);font-size:13px;margin-top:4px}
+@media (max-width:860px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center}
+  .side-brand{display:none}
+  .side-user{margin:0;margin-left:auto;border:none;padding:10px}
+  .side-apps{margin:8px}
+  .side-nav{flex-direction:row;flex-wrap:wrap;padding:6px}
+  .content{padding:16px}
+}
 </style></head>
 <body>
-<header class="top">
-  <div class="wrap" style="padding-bottom:0">
-    <div class="bar">
-      <div class="brand"><b>Дорогой Город<span class="sect-badge">CRM</span></b><span>Клиенты, заявки, задачи, объекты</span></div>
-      <nav class="appsw" id="appsw" aria-label="Раздел системы"><a href="/" class="sw-crm" aria-current="page"><i></i>CRM</a><a href="/finance" class="sw-fin"><i></i>Финансы</a></nav>
-      <div class="right">
-        <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
-        <div class="who" id="who"></div>
-      </div>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="logo"><span class="mark">ДГ</span> Дорогой Город</div>
+      <div class="tag">Система учёта недвижимости</div>
     </div>
-    <nav class="tabs" id="tabs"></nav>
+    <div class="side-apps" id="appsw" aria-label="Раздел системы">
+      <a href="/" class="on">CRM</a><a href="/finance">Финансы</a>
+    </div>
+    <div class="side-sec">Разделы CRM</div>
+    <nav class="side-nav" id="tabs"></nav>
+    <div class="side-user"><div class="who" id="who"></div></div>
+  </aside>
+  <div class="content">
+    <div class="page-head">
+      <div><h1 id="page-title">CRM</h1><div class="crumb" id="page-crumb"></div></div>
+      <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
+    </div>
+    <main id="app"></main>
   </div>
-</header>
-<main class="wrap" id="app"></main>
+</div>
 <dialog id="dlg"><form class="dlg" id="dlgform" method="dialog"></form></dialog>
 <datalist id="sources"></datalist>
 <div class="toast" id="toast" hidden></div>
@@ -393,7 +436,11 @@ function renderHead(){
 }
 function render(){
   if(!TABS().some(t=>t[0]===V.tab))V.tab='today';
-  $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('')+(owner()&&fin()?'<a href="/finance#team" title="Отчёт по агентам — в разделе «Финансы»">Команда ↗</a>':'');
+  const _tabs=TABS();
+  $('#tabs').innerHTML=_tabs.map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}><span class="dot"></span><span>${l}</span></a>`).join('')+(owner()&&fin()?'<a href="/finance#team" title="Отчёт по агентам — в разделе «Финансы»"><span class="dot"></span><span>Команда ↗</span></a>':'');
+  const _t=_tabs.find(t=>t[0]===V.tab);const _pt=$('#page-title'),_pc=$('#page-crumb');
+  if(_pt)_pt.textContent=(_t?_t[1]:'CRM');
+  if(_pc)_pc.textContent='Дорогой Город · CRM';
   $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',inqs:'+ Обращение'}[V.tab]||'+ Заявка';
   $('#addbtn').hidden=!can()||['admin','calls','kb'].includes(V.tab);
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
