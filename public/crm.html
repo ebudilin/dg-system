@@ -7,12 +7,18 @@
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --sunk:#F6F8F7; --ink:#15201C; --muted:#5B6863; --line:#D8DFDC;
-  --accent:#1F5A48; --accent-ink:#FFFFFF; --accent-soft:#DDEBE5;
-  --pos:#1D7A45; --neg:#B0302A; --warn:#9A6400; --pos-soft:#E0F1E6; --neg-soft:#F7E3E1; --warn-soft:#F5ECD8;
-  --font-ui:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-num:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --r:10px;
+  /* фон и поверхности */
+  --bg:#F4F6F8; --surface:#FFFFFF; --sunk:#F0F3F5; --ink:#0F1D2B; --muted:#64748B; --line:#E4E9EE;
+  /* бренд: свежий синий + мята */
+  --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#E7EEFD; --accent-2:#10B981; --accent-2-soft:#D1F5E8;
+  /* семантика */
+  --pos:#059669; --neg:#E11D48; --warn:#D97706; --pos-soft:#D1F5E8; --neg-soft:#FDE3EA; --warn-soft:#FEF0DB;
+  /* тени и скругления */
+  --sh-sm:0 1px 2px rgba(15,29,43,.05); --sh:0 4px 12px rgba(15,29,43,.07); --sh-lg:0 12px 28px rgba(15,29,43,.12);
+  --r:14px; --r-lg:18px; --r-sm:10px;
+  --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-num:"Inter",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  font-feature-settings:"cv02","cv03","cv04","cv11";
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
@@ -381,7 +387,7 @@ const SOURCES=['Рекомендация','Повторный клиент','А�
 const OPEN_STAGES=['new','work','show','talks'];
 
 let D=null, ME=null, version=null, saving=0, dlgCtx=null;
-const V={tab:(location.hash||'').slice(1)||'leads', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
+const V={tab:(location.hash||'').slice(1)||'calls', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
 const can=()=>!!ME&&(ME.role==='owner'||ME.role==='staff');
 const fin=()=>!!ME&&(ME.finance==='view'||ME.finance==='edit');
 const finW=()=>!!ME&&ME.finance==='edit';
@@ -419,20 +425,20 @@ const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
-const TABS=()=>[['leads','Заявки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['inqs','Обращения'],['deals','Сделки'],['kb','Справочник']];
+const TABS=()=>[['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['deals','Сделки'],['kb','Справочник']];
 function renderHead(){
   $('#appsw').style.display=fin()?'':'none';
   $('#who').innerHTML=ME?meChip(ME.roleName):'';
   if(ME&&ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}
 }
 function render(){
-  if(!TABS().some(t=>t[0]===V.tab))V.tab='leads';
+  if(!TABS().some(t=>t[0]===V.tab))V.tab='calls';
   $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
-  $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',inqs:'+ Обращение'}[V.tab]||'+ Заявка';
+  $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',calls:'+ Звонок'}[V.tab]||'+ Заявка';
   $('#addbtn').hidden=!can()||['admin','calls','kb'].includes(V.tab);
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
   const keep=document.activeElement&&document.activeElement.id,pos=keep&&document.activeElement.selectionStart;
-  $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,calls:vCalls,admin:vAdmin,inqs:vInqs,kb:vKb}[V.tab])();
+  $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,calls:vCalls,admin:vAdmin,kb:vKb}[V.tab])();
   if(keep){const el=document.getElementById(keep);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}
 }
 
