@@ -7,18 +7,13 @@
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
 :root{
-  /* фон и поверхности */
-  --bg:#F4F6F8; --surface:#FFFFFF; --sunk:#F0F3F5; --ink:#0F1D2B; --muted:#64748B; --line:#E4E9EE;
-  /* бренд: свежий синий + мята */
-  --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#E7EEFD; --accent-2:#10B981; --accent-2-soft:#D1F5E8;
-  /* семантика */
-  --pos:#059669; --neg:#E11D48; --warn:#D97706; --pos-soft:#D1F5E8; --neg-soft:#FDE3EA; --warn-soft:#FEF0DB;
-  /* тени и скругления */
-  --sh-sm:0 1px 2px rgba(15,29,43,.05); --sh:0 4px 12px rgba(15,29,43,.07); --sh-lg:0 12px 28px rgba(15,29,43,.12);
-  --r:14px; --r-lg:18px; --r-sm:10px;
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#EDF1F6; --ink:#14213D; --muted:#5C6B84; --line:#E3E8F0;
+  --accent:#3B5BC7; --accent-ink:#FFFFFF; --accent-soft:#E9EDF9; --accent-2:#0E9F8C; --accent-2-soft:#DCF3EE;
+  --pos:#0E9F8C; --neg:#D1495B; --warn:#C98A04; --pos-soft:#DCF3EE; --neg-soft:#FBE4E8; --warn-soft:#FCF0D9;
   --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-num:"Inter",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  font-feature-settings:"cv02","cv03","cv04","cv11";
+  --r:14px; --r-lg:18px; --r-sm:10px;
+  --sh-sm:0 1px 2px rgba(20,33,61,.06); --sh:0 6px 16px rgba(20,33,61,.08);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
@@ -348,16 +343,16 @@ button.primary:hover{filter:brightness(1.08)}
 body{font:15px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
 button{border-radius:var(--r-sm);font-weight:500;box-shadow:var(--sh-sm);transition:.18s}
 button:hover{transform:translateY(-1px);box-shadow:var(--sh)}
-button.primary{background:linear-gradient(135deg,#2F6BFF,#2456DB);border:none;color:#fff;box-shadow:0 6px 16px rgba(47,107,255,.32)}
+button.primary{background:linear-gradient(135deg,#3B5BC7,#3148A8);border:none;color:#fff;box-shadow:0 6px 16px rgba(59,91,199,.32)}
 input,select,textarea{border-radius:var(--r-sm);padding:9px 12px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm);transition:.2s}
 .tile:hover{box-shadow:var(--sh);transform:translateY(-2px)}
-.tile.hero{background:linear-gradient(135deg,#2F6BFF,#2456DB);border:none;color:#fff}
+.tile.hero{background:linear-gradient(135deg,#3B5BC7,#3148A8);border:none;color:#fff}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
 nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff;font-weight:600}
-header.top{background:rgba(245,247,250,.92);backdrop-filter:blur(10px)}
+header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(10px)}
 </style></head>
 <body>
 <header class="top">
@@ -1172,7 +1167,7 @@ function vCalls(){
   ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
   if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
   h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
-    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td>${callObjInfo(c)}</td>
+    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td>${callObjInfo(c)}</td><td>${callObjInfo(c)}</td>
       <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vOwner(c)?' · номер '+esc(vOwner(c)):''}</div>`:''}</td>
       <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
       <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
