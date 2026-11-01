@@ -2,7 +2,7 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM · Дорогой Город</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
@@ -343,6 +343,50 @@ button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background
 button:hover{border-color:var(--muted)}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button.primary:hover{filter:brightness(1.08)}
+
+/* ===== Современные компоненты ===== */
+body{font:15px/1.55 var(--font-ui)}
+.wrap{max-width:1280px}
+h2{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:26px 0 14px}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px;font-weight:600}
+button{border-radius:var(--r-sm);font-weight:500;box-shadow:var(--sh-sm);transition:all .18s ease}
+button:hover{transform:translateY(-1px);box-shadow:var(--sh);border-color:var(--muted)}
+button.primary{background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.3)}
+button.primary:hover{box-shadow:0 6px 16px rgba(37,99,235,.4);filter:brightness(1.05)}
+button.ghost{border-color:transparent;box-shadow:none}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;transition:border-color .15s, box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-sm);transition:all .2s ease}
+.tile:hover{box-shadow:var(--sh);transform:translateY(-2px);border-color:var(--line)}
+.tile.hero{background:linear-gradient(135deg,var(--accent),#1D4ED8);border:none;color:#fff;box-shadow:0 8px 20px rgba(37,99,235,.28)}
+.tile.hero .k,.tile.hero .s{color:#fff;opacity:.85}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--sh-sm)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.chip.closed{background:var(--pos-soft);color:var(--pos);border-color:transparent}
+.chip.work,.chip.deal{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.lost,.chip.out{background:var(--neg-soft);color:var(--neg);border-color:transparent}
+.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden}
+table{border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--sunk);text-align:left}
+td{padding:13px 14px;border-bottom:1px solid var(--line);font-size:14px}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--sunk)}
+tbody tr:last-child td{border-bottom:none}
+.trow{padding:11px 4px;border-bottom:1px solid var(--line)}
+.grpseg button,.seg button{border-radius:8px;font-weight:500}
+.grpseg button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+a{color:var(--accent)}
+
+/* ===== Звонки и обращения: единая лента ===== */
+.callrow{display:flex;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s;align-items:flex-start}
+.callrow:last-child{border-bottom:none}
+.callrow:hover{background:var(--sunk)}
+.callrow.unread{background:var(--accent-soft);border-left:3px solid var(--accent)}
+.callrow.unread:hover{background:#DCE7FC}
+.callmain{flex:1;min-width:0}
+.calltop{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:14px}
+.calltop .muted{font-size:13px}
+.tbadge{background:var(--accent);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;font-weight:700}
 </style></head>
 <body>
 <header class="top">
@@ -411,6 +455,7 @@ const clName=id=>{const c=cl(id);return c?c.name:''};
 const usr=id=>D&&D.users.find(u=>u.id===id);
 const uName=id=>{const u=usr(id);return u?u.name:''};
 const obj=id=>D&&byId(D.objects,id);
+const objectsById={};let _objIdx=0;function rebuildObjIdx(){_objIdx++;if(!D)return;D.objects.forEach(o=>objectsById[o.id]=o)}
 const objName=o=>o?(o.title||o.address||'Объект'):'';
 const lead=id=>D&&byId(D.leads,id);
 const deal=id=>D&&byId(D.deals,id);
@@ -1136,54 +1181,50 @@ const CALLS={list:null,t:0,loading:false};
 async function callsLoad(){if(CALLS.loading)return;CALLS.loading=true;try{CALLS.list=await api('listCalls',7);CALLS.t=Date.now()}catch(e){toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
 const ph=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);d=d.slice(-10);return d.length===10?`+7 ${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6,8)}-${d.slice(8)}`:String(s||'')};
 function vCalls(){
-  if(!CALLS.list){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки…</div>'}
-  if(Date.now()-CALLS.t>30000)setTimeout(callsLoad,0);
-  const F=V.clf||(V.clf={view:'todo',mine:false}),mine=c=>!F.mine||c.userId===ME.id;
-  const base=CALLS.list.filter(mine),todoAll=base.filter(c=>c.status==='new'),spamAll=base.filter(c=>c.status==='spam');
-  // в «Не разобранных» — один номер одной строкой (последний звонок), в остальных — каждый звонок
-  const byPhone={};todoAll.forEach(c=>{const g=byPhone[c.phone]||(byPhone[c.phone]={n:0,lost:0,last:c});g.n++;if(c.lost)g.lost++;if(c.at>g.last.at)g.last=c});
-  const rows=F.view==='todo'?Object.values(byPhone).map(g=>Object.assign({},g.last,{_n:g.n,_lost:g.lost})):F.view==='spam'?spamAll:base.filter(c=>c.status!=='spam');
-  rows.sort((a,b)=>b.at-a.at);
-  const nTodo=Object.keys(byPhone).length;
-  const ST={new:'<span class="chip work">не разобран</span>',ignored:'<span class="chip">не клиент</span>',spam:'<span class="chip out">спам</span>',lead:'<span class="chip deal">заявка</span>',linked:''};
-  const dirChip=c=>c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>';
-  const vOwner=c=>{let d=String(c.vnumber||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);const id=(D.vnums||{})[d];return id?uName(id):''};
-  const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`
-    :c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`
-    :c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
-  let h=`<div class="toolbar" style="align-items:center">
-    <div class="seg" role="group"><button type="button" data-clv="todo" aria-pressed="${F.view==='todo'}">Не разобранные <b>${nTodo}</b></button><button type="button" data-clv="all" aria-pressed="${F.view==='all'}">Все звонки</button><button type="button" data-clv="spam" aria-pressed="${F.view==='spam'}">Спам <b>${spamAll.length}</b></button></div>
-    <div class="seg" role="group"><button type="button" data-clm="0" aria-pressed="${!F.mine}">Все сотрудники</button><button type="button" data-clm="1" aria-pressed="${F.mine}">Мои</button></div></div>
-  ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
-  if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
-  h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
-    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td>
-      <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vOwner(c)?' · номер '+esc(vOwner(c)):''}</div>`:''}</td>
-      <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
-      <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
-      <td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`).join('')}</tbody></table></div>
-    <p class="note">Показаны звонки за 7 дней и все неразобранные.</p>`;
+  if(!D){return '<div class="card empty" style="margin-top:18px">Загружаю…</div>'}
+  const calls=(D.calls||[]).slice().sort((a,b)=>b.at-a.at);
+  const inqs=(D.inqList||[]).slice().sort((a,b)=>b.at-a.at);
+  // объединяем в единый поток "обращений"
+  const all=[...calls.map(c=>({kind:'call',at:c.at,ref:c})),...inqs.map(q=>({kind:'inq',at:q.at,ref:q}))]
+    .sort((a,b)=>b.at-a.at);
+  let h='<div class="card" style="margin-top:18px;padding:0;overflow:hidden">';
+  h+='<div style="padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">';
+  h+='<div><h3 style="margin:0">Звонки и обращения</h3><div class="muted" style="font-size:13px;margin-top:4px">'+all.length+' записей · новые выделены</div></div>';
+  h+='<div style="display:flex;gap:8px"><span class="chip">'+calls.length+' звонков</span><span class="chip">'+inqs.length+' обращений</span></div>';
+  h+='</div>';
+  if(!all.length){h+='<div class="empty" style="padding:40px">Звонков и обращений пока нет.</div></div>';return h}
+  h+='<div>';
+  all.forEach(it=>{
+    const isNew=it.kind==='call'?(it.ref.status==='new'):(it.ref.status==='new');
+    const when=new Date(it.at).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    if(it.kind==='call'){
+      const c=it.ref;
+      const dir=c.dir==='in'?'Входящий':c.dir==='out'?'Исходящий':'Звонок';
+      const obj=c.objectId?objName(objectsById[c.objectId]):'';
+      const client=c.clientId?clName(c.clientId):'';
+      h+='<div class="callrow'+(isNew?' unread':'')+'" data-call="'+esc(c.id)+'">'
+        +'<div class="callmain"><div class="calltop"><span class="chip '+(c.dir==='in'?'closed':'work')+'">'+dir+'</span>'
+        +'<b>'+esc(client||c.from||c.to||'—')+'</b>'
+        +(obj?'<span class="muted">·</span><span>'+esc(obj)+'</span>':'')
+        +'<span class="muted" style="margin-left:auto">'+esc(when)+'</span></div>'
+        +(c.comment?'<div class="muted" style="margin-top:4px;font-size:13px">'+esc(c.comment)+'</div>':'')
+        +'</div></div>';
+    }else{
+      const q=it.ref;
+      const obj=q.objectId?objName(objectsById[q.objectId]):'';
+      const kind=q.kind==='rent'?'Аренда':q.kind==='buy'?'Покупка':q.kind==='sell'?'Продажа':q.kind==='comm'?'Коммерция':'Обращение';
+      h+='<div class="callrow'+(isNew?' unread':'')+'" data-inq="'+esc(q.id)+'">'
+        +'<div class="callmain"><div class="calltop"><span class="chip deal">'+kind+'</span>'
+        +'<b>'+esc(q.name||q.phone||'—')+'</b>'
+        +(obj?'<span class="muted">·</span><span>'+esc(obj)+'</span>':'')
+        +'<span class="muted" style="margin-left:auto">'+esc(when)+'</span></div>'
+        +(q.text?'<div class="muted" style="margin-top:4px;font-size:13px">'+esc(q.text)+'</div>':'')
+        +'</div></div>';
+    }
+  });
+  h+='</div></div>';
   return h}
-app.addEventListener('click',async e=>{if(V.tab!=='calls')return;
-  const v=e.target.closest('[data-clv]');if(v){V.clf.view=v.dataset.clv;render();return}
-  const m=e.target.closest('[data-clm]');if(m){V.clf.mine=m.dataset.clm==='1';render();return}
-  const s=e.target.closest('[data-call-spam],[data-call-unspam]');if(s){const sp=!!s.dataset.callSpam,id=s.dataset.callSpam||s.dataset.callUnspam;
-    if(sp&&!confirm('Отметить номер как спам? Все звонки с него уйдут в «Спам», задачи «Перезвонить» по ним закроются.'))return;
-    try{await run('resolveCall',id,sp?'spam':'unspam');CALLS.list=null;render();toast(sp?'Номер в спаме':'Номер вернулся в разбор')}catch(_){}}});
 
-const mmss=s=>{s=Math.round(+s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-function callDlg(id,mode){const c=CALLS.list.find(x=>x.id===id);if(!c)return;
-  openDlg({kind:'call',o:{name:'',kind:'buy',note:'',clientId:'',ownerId:ME.id},call:c,mode,draw:()=>{const x=dlgCtx.o;
-    form.innerHTML=mode==='lead'?`<h2>Заявка со звонка ${esc(ph(c.phone))}</h2><div class="fg">
-      <label class="f full"><span>Имя звонившего</span><input name="name" value="${esc(x.name)}" placeholder="Если не представился — оставьте пустым"></label>
-      <label class="f"><span>Что нужно</span><select name="kind">${opt(Object.entries(D.dict.leadKinds),x.kind)}</select></label>
-      <label class="f"><span>Ответственный</span><select name="ownerId">${usersOpt(x.ownerId)}</select></label>
-      <label class="f full"><span>Что обсудили</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label></div>
-      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Создать заявку</button></div></div>`
-    :`<h2>Чей это номер — ${esc(ph(c.phone))}?</h2><label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId,'— выберите —')}</select></label>
-      <p class="note" style="margin:0">Номер добавится в карточку клиента, звонки попадут в его историю.</p>
-      <div class="acts"><div></div><div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Привязать</button></div></div>`}});
-}
 app.addEventListener('click',async e=>{const b=e.target.closest('[data-call-lead],[data-call-link],[data-call-ignore]');if(!b)return;
   if(b.dataset.callLead)return callDlg(b.dataset.callLead,'lead');
   if(b.dataset.callLink)return callDlg(b.dataset.callLink,'link');
