@@ -129,6 +129,11 @@ async function handle(req, res) {
     return send(res, 200, page('crm.html'), 'text/html; charset=utf-8');
   }
 
+  if (p === '/pulse') {
+    const u = currentUser(req);
+    if (!u) return send(res, 302, '', null, { Location: '/login' });
+    return send(res, 200, page('pulse.html'), 'text/html; charset=utf-8');
+  }
   if (p === '/finance') {
     const u = currentUser(req);
     if (!u) return send(res, 302, '', null, { Location: '/login' });
