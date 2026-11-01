@@ -304,64 +304,55 @@ dialog .tbl-wrap{max-height:none}
 @media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
 .prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 
-/* ===== РЕДИЗАЙН: боковая навигация ===== */
-:root{--side-w:248px;--side-bg:#0F1B17;--side-ink:#C9D6D0;--side-muted:#7E918A;--side-line:#1E2E28;--side-accent:#2E8A66}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{background:var(--bg);margin:0}
-.layout{display:flex;min-height:100vh}
-.sidebar{width:var(--side-w);background:var(--side-bg);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex:none;border-right:1px solid var(--side-line)}
-.side-brand{padding:20px 20px 16px;border-bottom:1px solid var(--side-line)}
-.side-brand .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em}
-.side-brand .logo .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#2E8A66,#1F5A48);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex:none}
-.side-brand .tag{font-size:11px;color:var(--side-muted);margin-top:8px}
-.side-sec{padding:16px 14px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--side-muted);font-weight:600}
-.side-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px}
-.side-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--side-ink);text-decoration:none;font-size:14px;font-weight:500}
-.side-nav a:hover{background:var(--side-line);color:#fff}
-.side-nav a[aria-current="page"]{background:var(--side-accent);color:#fff;font-weight:600}
-.side-nav a .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--side-muted)}
-.side-nav a[aria-current="page"] .dot{background:#fff}
-.side-apps{display:flex;gap:6px;padding:6px;margin:14px 12px 0;background:rgba(255,255,255,.04);border:1px solid var(--side-line);border-radius:10px}
-.side-apps a{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 4px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;color:var(--side-muted)}
-.side-apps a.on{background:var(--side-accent);color:#fff}
-.side-user{margin-top:auto;padding:14px;border-top:1px solid var(--side-line)}
-.content{flex:1;min-width:0;padding:22px 26px 60px;max-width:1240px}
-.page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-.page-head h1{font-size:22px;margin:0;letter-spacing:-.01em}
-.page-head .crumb{color:var(--muted);font-size:13px;margin-top:4px}
-@media (max-width:860px){
-  .layout{flex-direction:column}
-  .sidebar{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center}
-  .side-brand{display:none}
-  .side-user{margin:0;margin-left:auto;border:none;padding:10px}
-  .side-apps{margin:8px}
-  .side-nav{flex-direction:row;flex-wrap:wrap;padding:6px}
-  .content{padding:16px}
-}
+/* ===== Современный светлый стиль ===== */
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-ui);margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:0 48px}
+header.top{position:sticky;top:0;z-index:20;background:rgba(238,241,240,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:16px 12px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand b{font-size:19px;letter-spacing:-.02em;font-weight:700}
+.brand span{color:var(--muted);font-size:12px}
+.brand .sect-badge{display:inline-block;margin-left:9px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:2px}
+.right{display:flex;align-items:center;gap:10px}
+.appsw{display:inline-flex;gap:3px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.appsw a{display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 16px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap;transition:.15s}
+.appsw a:hover{background:var(--sunk);color:var(--ink)}
+.appsw .sw-crm i{width:8px;height:8px;border-radius:50%;background:#2E8A66}
+.appsw .sw-fin i{width:8px;height:8px;border-radius:50%;background:#3A78C4}
+.appsw a[aria-current="page"]{background:var(--accent);color:#fff}
+.appsw a[aria-current="page"] i{background:#fff}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none;margin-top:4px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{padding:8px 15px;border-radius:999px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:500;font-size:14px;transition:.15s}
+nav.tabs a:hover{color:var(--ink);background:var(--surface)}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg);font-weight:600}
+.who{display:flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;color:var(--muted)}
+.who b{color:var(--ink);font-weight:600}
+@media (max-width:700px){.who span{display:none}}
+/* карточки и плитки — легкие тени и скругления */
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:0 1px 2px rgba(0,0,0,.03);transition:box-shadow .2s}
+.tile:hover{box-shadow:0 4px 12px rgba(0,0,0,.07)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 14px;font-weight:500;transition:.15s}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
 </style></head>
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <div class="side-brand">
-      <div class="logo"><span class="mark">ДГ</span> Дорогой Город</div>
-      <div class="tag">Система учёта недвижимости</div>
+<header class="top">
+  <div class="wrap" style="padding-bottom:0">
+    <div class="bar">
+      <div class="brand"><b>Дорогой Город<span class="sect-badge">CRM</span></b><span>Клиенты, заявки, задачи, объекты</span></div>
+      <nav class="appsw" id="appsw" aria-label="Раздел системы"><a href="/" class="sw-crm" aria-current="page"><i></i>CRM</a><a href="/finance" class="sw-fin"><i></i>Финансы</a></nav>
+      <div class="right">
+        <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
+        <div class="who" id="who"></div>
+      </div>
     </div>
-    <div class="side-apps" id="appsw" aria-label="Раздел системы">
-      <a href="/" class="on">CRM</a><a href="/finance">Финансы</a>
-    </div>
-    <div class="side-sec">Разделы CRM</div>
-    <nav class="side-nav" id="tabs"></nav>
-    <div class="side-user"><div class="who" id="who"></div></div>
-  </aside>
-  <div class="content">
-    <div class="page-head">
-      <div><h1 id="page-title">CRM</h1><div class="crumb" id="page-crumb"></div></div>
-      <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
-    </div>
-    <main id="app"></main>
+    <nav class="tabs" id="tabs"></nav>
   </div>
-</div>
+</header>
+<main class="wrap" id="app"></main>
 <dialog id="dlg"><form class="dlg" id="dlgform" method="dialog"></form></dialog>
 <datalist id="sources"></datalist>
 <div class="toast" id="toast" hidden></div>
@@ -390,7 +381,7 @@ const SOURCES=['Рекомендация','Повторный клиент','А�
 const OPEN_STAGES=['new','work','show','talks'];
 
 let D=null, ME=null, version=null, saving=0, dlgCtx=null;
-const V={tab:(location.hash||'').slice(1)||'today', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
+const V={tab:(location.hash||'').slice(1)||'leads', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
 const can=()=>!!ME&&(ME.role==='owner'||ME.role==='staff');
 const fin=()=>!!ME&&(ME.finance==='view'||ME.finance==='edit');
 const finW=()=>!!ME&&ME.finance==='edit';
@@ -428,19 +419,15 @@ const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
-const TABS=()=>[['today','Сегодня'],['leads','Заявки'],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['inqs','Обращения'],['deals','Сделки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['kb','Справочник'],...(owner()?[['admin','Доступ']]:[])];
+const TABS=()=>[['leads','Заявки'],['calls','Звонки'+(D&&D.newCalls?` <b class="tbadge">${D.newCalls}</b>`:'')],['tasks','Задачи'],['clients','Клиенты'],['objects','Объекты'],['inqs','Обращения'],['deals','Сделки'],['kb','Справочник']];
 function renderHead(){
   $('#appsw').style.display=fin()?'':'none';
   $('#who').innerHTML=ME?meChip(ME.roleName):'';
   if(ME&&ME.mustChange&&!openPw.shown){openPw.shown=true;setTimeout(()=>openPw(true),300)}
 }
 function render(){
-  if(!TABS().some(t=>t[0]===V.tab))V.tab='today';
-  const _tabs=TABS();
-  $('#tabs').innerHTML=_tabs.map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}><span class="dot"></span><span>${l}</span></a>`).join('')+(owner()&&fin()?'<a href="/finance#team" title="Отчёт по агентам — в разделе «Финансы»"><span class="dot"></span><span>Команда ↗</span></a>':'');
-  const _t=_tabs.find(t=>t[0]===V.tab);const _pt=$('#page-title'),_pc=$('#page-crumb');
-  if(_pt)_pt.textContent=(_t?_t[1]:'CRM');
-  if(_pc)_pc.textContent='Дорогой Город · CRM';
+  if(!TABS().some(t=>t[0]===V.tab))V.tab='leads';
+  $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
   $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',inqs:'+ Обращение'}[V.tab]||'+ Заявка';
   $('#addbtn').hidden=!can()||['admin','calls','kb'].includes(V.tab);
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
@@ -1639,7 +1626,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu'
 /* ---------- запуск ---------- */
 async function init(){$('#sources').innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">`).join('');render();
   try{apply(await api('crmLoad'))}catch(e){$('#app').innerHTML=`<div class="banner">Не удалось загрузить данные: ${esc(e.message)}. Обновите страницу.</div>`;return}
-  if(location.hash==='#profile'){V.tab='today';history.replaceState(null,'','#today');render();openProfile()}
+  if(location.hash==='#profile'){V.tab='leads';history.replaceState(null,'','#leads');render();openProfile()}
   setInterval(async()=>{if(document.hidden||saving>0||dlgCtx||dragId)return;
     try{const v=await api('getVersion');if(v!==version)apply(await api('crmLoad'))}catch(_){}},20000)}
 init();

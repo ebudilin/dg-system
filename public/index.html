@@ -129,6 +129,26 @@ dialog::backdrop{background:rgba(10,16,14,.45)}
 .note{font-size:12px;color:var(--muted);margin-top:8px;max-width:70ch}
 .pf input{width:130px;text-align:right}
 @media (prefers-reduced-motion:no-preference){.meter i{transition:width .3s}}
+
+/* Пульс компании: мини-графики и сравнение периодов на сводке */
+.spark{display:flex;align-items:flex-end;gap:3px;height:58px;margin-top:10px}
+.spark .col{flex:1;background:var(--accent-soft);border-radius:3px 3px 0 0;min-height:2px;transition:height .4s ease}
+.spark .col.neg{background:var(--neg-soft)}
+.spark .col:hover{background:var(--accent)}
+.spark-x{display:flex;gap:3px;margin-top:4px;font-size:10px;color:var(--muted)}
+.spark-x span{flex:1;text-align:center;white-space:nowrap;overflow:hidden}
+.grid.pulsegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:820px){.grid.pulsegrid{grid-template-columns:1fr}}
+.delta{font-size:12px;font-weight:600;white-space:nowrap}
+.delta.up{color:var(--pos)} .delta.down{color:var(--neg)} .delta.flat{color:var(--muted)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--muted)} .kv .v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:600}
+.agentmini{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.agentmini:last-child{border-bottom:none}
+.agentmini .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.agentmini .st{color:var(--muted);font-size:11px}
+.agentmini .vv{font-family:var(--font-num);width:110px;text-align:right;font-variant-numeric:tabular-nums}
 </style>
 </head><body>
 
@@ -409,6 +429,28 @@ function render(){
 }
 
 /* ---------- Сводка ---------- */
+
+/* ---------- Пульс: динамика, сравнение месяцев, загрузка агентов ---------- */
+function sparkBars(data,key){const max=Math.max(...data.map(x=>Math.abs(x[key])),1);
+  return '<div class="spark">'+data.map(x=>{const v=x[key],h=Math.round(Math.abs(v)/max*100);
+    return '<div class="col '+(v<0?'neg':'')+'" style="height:'+Math.max(h,2)+'%" title="'+x.m+': '+money(v)+'"></div>'}).join('')+'</div>'+
+    '<div class="spark-x">'+data.map(x=>'<span>'+x.m.slice(5)+'</span>').join('')+'</div>'}
+function monthSeries(n){const out=[],cm=curMonth(),start=(cfg&&cfg.startMonth)||addM(cm,-(n-1));
+  for(let i=n-1;i>=0;i--){const m=addM(cm,-i);if(m>=start){const ops=allOps();const q=pnlMonth(m,ops);const c=cashMonth(m);out.push({m,revenue:q.revenue,profit:q.profit,net:c.net})}}
+  return out}
+function deltaHtml(cur,prev){if(prev==null)return '<span class="delta flat">—</span>';
+  const d=cur-prev,pct=prev?Math.round(d/prev*100):0,cls=d>0?'up':d<0?'down':'flat',sg=d>0?'+':'';
+  return '<span class="delta '+cls+'">'+sg+money(d)+' · '+sg+pct+'%</span>'}
+function agentLoad(year){const agents={};
+  const ensure=id=>{if(!agents[id]){const a=agById(id);agents[id]={id,name:(a&&a.name)||id,active:0,pipe:0,accr:0,won:0}}return agents[id]};
+  Object.values(deals).forEach(d=>{const list=dealAgents(d),st=dealStats(d);
+    list.forEach(x=>{const a=ensure(x.agentId);
+      if(d.status==='work'||d.status==='deal'){a.active++;a.pipe+=st.left}
+      if(d.status==='closed'||d.status==='deal')a.won++})});
+  const y=String(year);reportOps().forEach(o=>{if(o.type!=='in')return;if(pm(o).slice(0,4)!==y)return;
+    agentAccruals(o).forEach(x=>ensure(x.agentId).accr+=x.amount)});
+  return Object.values(agents).sort((a,b)=>b.accr-a.accr)}
+
 function vSummary(){
   const now=balances(),L=liabilities(),hs=new Set(holders());
   const companyMoney=cfg.accounts.reduce((s,a)=>s+(a.holderId?0:(now[a.id]||0)),0)+Object.values(L.inv).reduce((s,v)=>s+Math.max(0,-v),0);
@@ -457,6 +499,30 @@ function vSummary(){
     <p class="note">Начисляется, когда по сделке приходит комиссия; гасится операцией «Выплаты агентам» с этим агентом.</p></div>
     <div class="card"><h3>Долг учредителям</h3><div class="rows">${invRows||'<div class="row muted"><span>Долгов нет</span></div>'}${invDebt.length?`<div class="row total"><span>Итого компания должна</span><span class="num warn">${money(L.invTotal)}</span></div>`:''}</div>
     <p class="note">Эта же сумма — в плитке «Должны учредителям». Растёт от расходов с личного счёта учредителя и займов, уменьшается возвратами («Возврат займов»).</p></div></div>`;
+  ;const yr=curMonth().slice(0,4),stC={work:0,deal:0,closed:0,lost:0};
+  Object.values(deals).forEach(d=>{stC[d.status]=(stC[d.status]||0)+1});
+  const wonY=Object.values(deals).filter(d=>(d.status==='closed'||d.status==='deal')&&String(d.date||'').slice(0,4)===yr).length;
+  const agents=agentLoad(yr);
+  h+='<div class="grid pulsegrid" style="margin-top:14px">'
+    +'<div class="card"><h3>Динамика выручки, 12 мес</h3>'+sparkBars(ser,'revenue')
+    +'<div class="kv" style="margin-top:10px"><span class="k">Выручка за '+curM.m+'</span><span class="v">'+money(curM.revenue)+'</span></div>'
+    +'<div class="kv"><span class="k">К прошлому месяцу</span><span class="v">'+deltaHtml(curM.revenue,prevM?prevM.revenue:null)+'</span></div></div>'
+    +'<div class="card"><h3>Динамика прибыли, 12 мес</h3>'+sparkBars(ser,'profit')
+    +'<div class="kv" style="margin-top:10px"><span class="k">Прибыль за '+curM.m+'</span><span class="v">'+money(curM.profit)+'</span></div>'
+    +'<div class="kv"><span class="k">К прошлому месяцу</span><span class="v">'+deltaHtml(curM.profit,prevM?prevM.profit:null)+'</span></div></div>'
+    +'</div>';
+  h+='<div class="grid pulsegrid" style="margin-top:12px">'
+    +'<div class="card"><h3>Статистика сделок</h3>'
+    +'<div class="kv"><span class="k">В работе</span><span class="v">'+stC.work+'</span></div>'
+    +'<div class="kv"><span class="k">Договор подписан</span><span class="v">'+stC.deal+'</span></div>'
+    +'<div class="kv"><span class="k">Закрыто (оплачено)</span><span class="v">'+stC.closed+'</span></div>'
+    +'<div class="kv"><span class="k">Сорвалась</span><span class="v" style="color:var(--neg)">'+stC.lost+'</span></div>'
+    +'<div class="kv"><span class="k">Закрыто в '+yr+'</span><span class="v">'+wonY+'</span></div>'
+    +'</div>'
+    +'<div class="card"><h3>Загрузка агентов ('+yr+')</h3>'
+    +(agents.length?('<div class="tbl-wrap" style="border:none">'+agents.map(a=>'<div class="agentmini"><span class="nm">'+esc(a.name)+'</span><span class="st">в работе '+a.active+' · закр. '+a.won+'</span><span class="vv">'+money(a.accr)+'</span></div>').join('')+'</div>'):'<div class="empty">Нет данных по агентам.</div>')
+    +'<div class="note" style="margin:8px 0 0">Сумма — начисленные комиссии за '+yr+' по правилам выплат.</div></div>'
+    +'</div>';
   return h;
 }
 function chart(){

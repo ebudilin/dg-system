@@ -267,7 +267,7 @@ const CP_SHORT={owner:'Собственник',buyer:'Покупатель',tena
 /* ---------- state ---------- */
 let dbState='connecting', cfg=structuredClone(DEFAULT_CFG), cfgExists=false;
 const opsByMonth={}; let deals={}, plans={}, clients={}, archOps=[];
-const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['team','Команда'],['settings','Настройки']];
+const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['team','Команда'],['settings','Настройки'],['access','Доступ']];
 let ME=null;
 const isOwner=()=>!!ME&&ME.role==='owner', canEdit=()=>!!ME&&ME.finance==='edit';
 const TABS=ALL_TABS.filter(t=>true);
