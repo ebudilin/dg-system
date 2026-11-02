@@ -511,6 +511,19 @@ dialog,.dlg{border-radius:12px}
 .adopen:hover{filter:brightness(.97)}
 .adopen.off{border-color:var(--line);background:var(--sunk);color:var(--muted);font-weight:500;cursor:default}
 @media (max-width:600px){.adrow{flex-wrap:wrap}.adopen{width:100%;text-align:center}}
+
+/* список объектов: одинаковая сетка колонок во всех разделах */
+.obj-tbl{table-layout:fixed;min-width:980px}
+.obj-tbl th,.obj-tbl td{overflow:hidden;text-overflow:ellipsis}
+.obj-tbl th:first-child,.obj-tbl td:first-child{width:auto;white-space:normal}
+.obj-tbl td{vertical-align:top}
+.obj-tbl .meter{min-width:60px}
+/* мини-ссылки на площадки под адресом */
+.ad-minis{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.ad-mini{font-size:10.5px;font-weight:600;line-height:1;padding:3px 6px;border-radius:4px;
+  border:1px solid var(--accent-soft);background:var(--accent-soft);color:var(--accent);text-decoration:none}
+.ad-mini:hover{filter:brightness(.95)}
+.ad-mini.off{border-color:var(--line);background:transparent;color:var(--muted);font-weight:500;opacity:.62}
 </style></head>
 <body>
 <header class="top">
@@ -782,7 +795,12 @@ function vObjects(){
   const rowHtml = o => {
     const r=readiness(o),days=['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-(o.listedFrom?new Date(o.listedFrom+'T00:00:00').getTime():o.activeSince||Date.now()))/864e5):null,
       iq=(D.inq||{})[o.id],ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
-    return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([o.kind?OD.kinds[o.kind]:'',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}</td>
+    const ads = o.ads || {};
+    const adLinks = [['cian','ЦИАН'],['avito','Авито'],['domclick','ДомКлик']]
+      .map(([k,label]) => ads[k]
+        ? `<a class="ad-mini" href="${esc(ads[k])}" target="_blank" rel="noopener" data-ad-link title="Объявление на ${label}">${label}</a>`
+        : `<span class="ad-mini off" title="Не размещено на ${label}">${label}</span>`).join('');
+    return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([o.kind?OD.kinds[o.kind]:'',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div><div class="ad-minis">${adLinks}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}</td>
       <td><span class="ochip os-${o.status}">${esc(OD.status[o.status]||o.status)}</span></td><td>${esc(uName(o.responsibleId)||'—')}</td>
       <td class="r num">${(()=>{const h=o.priceHistory||[],st=h.length&&(h[0].price!=null?h[0].price:h[0].from);return st&&o.price&&+o.price<+st?`<span class="neg" title="Стартовая цена ${money(st)}">↓${Math.round((st-o.price)/st*100)}% </span>`:''})()}${money(o.price)}${ppm?`<div class="muted" style="font-size:11px">${NF.format(ppm)} ₽/м²</div>`:''}</td>
       <td class="r num">${o.area?NF.format(o.area)+' м²':''}</td>
@@ -801,7 +819,7 @@ function vObjects(){
       grp.sort((a,b)=>(a.title||a.address||'').localeCompare(b.title||b.address||'','ru'));
       total += grp.length;
       h += `<div class="grp">${esc(OD.kinds[kind])} · ${grp.length}</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th>Готовность</th></tr></thead>
+      <div class="tbl-wrap"><table class="obj-tbl"><colgroup><col><col style="width:128px"><col style="width:168px"><col style="width:150px"><col style="width:96px"><col style="width:126px"><col style="width:112px"><col style="width:136px"></colgroup><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Готовность</th></tr></thead>
       <tbody>${grp.map(rowHtml).join('')}</tbody></table></div>`;
     }
     h += '</div>';
@@ -1260,6 +1278,7 @@ app.addEventListener('click',e=>{
     run('saveTask',Object.assign(t,{assigneeId:ME.id,clientId:c.id})).then(()=>toast('Задача поставлена')).catch(()=>{});return}
   const ob=e.target.closest('[data-obj-remind]');if(ob){const o=obj(ob.dataset.objRemind);if(!o)return;
     run('tipToTask',o.id,ob.dataset.what,today()).then(()=>toast('Задача поставлена ответственному')).catch(()=>{});return}
+  if(e.target.closest('[data-ad-link]'))return; // ссылка на объявление — открываем её, а не карточку
   const o=e.target.closest('[data-open-lead],[data-open-client],[data-open-object],[data-open-deal],[data-open-task]');if(!o||e.target.closest('input[type=checkbox],select'))return;
   if(o.dataset.openLead)openLead(lead(o.dataset.openLead));else if(o.dataset.openClient)openClient(cl(o.dataset.openClient));
   else if(o.dataset.openObject)openObject(obj(o.dataset.openObject));else if(o.dataset.openDeal)openDeal(deal(o.dataset.openDeal));
