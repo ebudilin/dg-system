@@ -490,13 +490,18 @@ dialog,.dlg{border-radius:12px}
 
 /* карточка звонка: выбор типа */
 .ck-kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.ck-kind{display:flex;flex-direction:column;gap:3px;text-align:left;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.ck-kind{display:flex;flex-direction:column;gap:3px;text-align:left;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;white-space:normal;min-width:0;overflow-wrap:anywhere;height:auto;align-items:flex-start}
 .ck-kind:hover{border-color:#AAB7C9}
 .ck-kind.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
-.ck-kind b{font-size:13px;font-weight:600}
-.ck-kind span{font-size:11px;color:var(--muted);line-height:1.35}
-@media (max-width:820px){.ck-kinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:480px){.ck-kinds{grid-template-columns:1fr}}
+.ck-kind b{font-size:13px;font-weight:600;white-space:normal}
+.ck-kind span{font-size:11px;color:var(--muted);line-height:1.35;white-space:normal;display:block}
+@media (max-width:900px){.ck-kinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ck-kinds{grid-template-columns:1fr}}
+/* обсуждение в карточке звонка не должно «схлопываться» */
+#disc-wrap{min-height:1px}
+.disc-box{margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:14px 15px;background:var(--surface)}
+.disc-box h3{margin:0 0 10px}
+#disc-wrap .disc-editor textarea{min-height:64px}
 </style></head>
 <body>
 <header class="top">
@@ -1998,10 +2003,12 @@ function drawCallForm(){
     <h3>Тип звонка</h3>
     <div class="ck-kinds">${kindBtns}</div>
     <div class="ck-body" style="margin-top:14px">${body}</div>
-    <h3 style="margin-top:20px">Обсуждение звонка</h3>
-    <div id="disc-wrap" data-ent="call" data-id="${esc(c.id)}"></div>
+    <div class="disc-box"><h3>Обсуждение звонка</h3>
+      <div id="disc-wrap" data-ent="call" data-id="${esc(c.id)}"></div></div>
     <div class="acts"><div></div><div><button type="button" data-close>Отмена</button>
       <button type="button" class="primary" data-ck-save ${can() ? '' : 'disabled'}>Сохранить</button></div></div>`;
+  // форма перерисована — блок обсуждения нужно подключить заново
+  discMount();
 }
 
 // чтение полей формы в состояние
