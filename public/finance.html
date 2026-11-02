@@ -277,7 +277,9 @@ button,input,select,textarea{border-radius:6px}
 }
 
 /* ===== Настройки: плитки-разделы ===== */
-.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin:18px 0 6px}
+.set-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 6px}
+@media (max-width:900px){.set-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.set-grid{grid-template-columns:1fr}}
 .set-tile{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s}
 .set-tile:hover{border-color:#AAB7C9;box-shadow:var(--sh-sm)}
 .set-tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -946,6 +948,7 @@ function drawOp(){
 }
 function readForm(){const o=dlgCtx.o,multi={};form.querySelectorAll('[name]').forEach(el=>{if(el.type==='checkbox'){(multi[el.name]=multi[el.name]||[]);if(el.checked)multi[el.name].push(el.value)}else o[el.name]=el.value});Object.assign(o,multi)}
 const dlg=$('#dlg'),form=$('#dlgform');
+let dlgCtx=null;
 async function saveOp(){
   readForm();const o=dlgCtx.o,amt=num(o.amount);
   if(!(amt>0))return toast('Укажите сумму больше нуля.');

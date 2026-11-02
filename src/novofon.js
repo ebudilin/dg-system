@@ -201,6 +201,27 @@ def('resolveCall', 'crm_w', (db, u, id, action, x) => {
     });
     return require('./crm').crmLoad(db, u);
   }
+  if (action === 'other') {
+    // Звонок не по объекту, не по услугам и не спам: предложения о сотрудничестве,
+    // банки, поставщики. Сохраняем как «другое» с комментарием, чтобы было понятно, что это.
+    const note = str(x && x.note, 2000).trim();
+    if (!note) throw new ApiError('Напишите, о чём был звонок.');
+    tx(db, () => {
+      const same = db.prepare("SELECT id, data FROM calls WHERE phone=? AND status IN ('new','other')").all(row.phone);
+      for (const r of same) {
+        const d = P(r.data) || {};
+        d.comment = note;
+        d.otherAt = row.at;
+        d.otherBy = u.name;
+        db.prepare("UPDATE calls SET status='other', data=? WHERE id=?").run(J(d), r.id);
+      }
+      crm.addActivity(db, null, { type: 'event', text: `Звонок ${fmtPhone(row.phone)} — другое: ${note}`,
+        at: row.at, userName: u.name, callId: row.id });
+      audit(db, u, 'разбор звонка: другое', 'звонок', id, null, { note });
+      bump(db);
+    });
+    return require('./crm').crmLoad(db, u);
+  }
   if (action === 'lead') {
     const l = crm.saveLeadTx(db, u, { newClientName: str(x.name, 200).trim() || fmtPhone(row.phone), newClientPhone: fmtPhone(row.phone), kind: x.kind || 'buy',
       source: x.source || 'Звонок', note: str(x.note, 2000), ownerId: x.ownerId ? Number(x.ownerId) : u.id, stage: 'new' });
