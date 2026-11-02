@@ -84,7 +84,10 @@ def('saveUserLinks', 'owner', (db, u, id, x) => {
   if (emp) { const other = all(db).find(o => o.id !== Number(id) && String(o.prefs.novofonEmpId || '') === emp); if (other) throw new ApiError(`Этот сотрудник Novofon уже привязан к пользователю «${other.name}».`); }
   const agent = str(x.finAgentId, 64);
   if (agent && !db.prepare('SELECT 1 FROM counterparties WHERE id=?').get(agent)) throw new ApiError('Агент не найден в контрагентах.');
-  const nums = [...new Set((Array.isArray(x.vnums) ? x.vnums : String(x.vnums || '').split(/[,;\n]/)).map(normPhone).filter(Boolean))].slice(0, 10);
+  // Если виртуальные номера не переданы — сохраняем прежние, а не обнуляем.
+  const prevV = (get(db, id).vnums || []);
+  const rawV = x.vnums !== undefined ? x.vnums : prevV;
+  const nums = [...new Set((Array.isArray(rawV) ? rawV : String(rawV || '').split(/[,;\n]/)).map(normPhone).filter(Boolean))].slice(0, 10);
   const vm = vnumMap(db);
   nums.forEach(n => { const o = vm[n]; if (o && o !== Number(id)) { const ou = all(db).find(z => z.id === o); throw new ApiError(`Номер ${fmt(n)} уже закреплён за «${ou ? ou.name : 'другим сотрудником'}».`); } });
   const p = set(db, id, { novofonEmpId: emp || null, novofonEmpName: str(x.novofonEmpName, 200), novofonPhones: str(x.novofonPhones, 300), vnums: nums, finAgentId: agent || null });

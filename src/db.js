@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 7;
+const SCHEMA = 8;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -153,6 +153,15 @@ function migrate(db) {
         db.prepare('UPDATE inquiries SET data=? WHERE id=?').run(JSON.stringify(q), r.id);
       }
       setMeta(db, 'schema', '5');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 8) {
+    // Последняя активность пользователя (для раздела «Пользователи»)
+    safetyCopy(db, 'schema-8');
+    tx(db, () => {
+      const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+      if (!cols.includes('last_seen')) db.exec('ALTER TABLE users ADD COLUMN last_seen INTEGER NOT NULL DEFAULT 0');
+      setMeta(db, 'schema', '8');
     });
   }
   if (Number(getMeta(db, 'schema') || 0) < 7) {

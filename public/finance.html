@@ -275,6 +275,27 @@ button,input,select,textarea{border-radius:6px}
   .brand-tx b{font-size:14px}.brand-tx span{display:none}.brand-mark{width:28px;height:28px;font-size:11px}
   .appsw a{font-size:11px;padding:5px 9px}
 }
+
+/* ===== Настройки: плитки-разделы ===== */
+.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin:18px 0 6px}
+.set-tile{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s}
+.set-tile:hover{border-color:#AAB7C9;box-shadow:var(--sh-sm)}
+.set-tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.set-tile.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.set-ic{width:34px;height:34px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:15px;flex:none}
+.set-tx{min-width:0}
+.set-tx b{display:block;font-size:13.5px;font-weight:600;margin-bottom:2px}
+.set-tx span{display:block;font-size:11.5px;color:var(--muted);line-height:1.4}
+.set-tx .cnt{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:1px 6px}
+.set-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;box-shadow:none;margin-bottom:4px}
+.set-back:hover{color:var(--ink);background:none;border:0}
+.set-sec{margin-top:6px}
+.set-sec h2{margin-top:0}
+.usr-last{font-size:12px;color:var(--muted);white-space:nowrap}
+.usr-last.on{color:var(--pos)}
+.usr-last.never{color:var(--warn)}
+.link-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,1.4fr) minmax(0,1fr);gap:10px;align-items:end}
+@media (max-width:760px){.link-row{grid-template-columns:1fr}}
 </style>
 </head><body>
 
@@ -329,7 +350,7 @@ const mShort=m=>MON[+m.slice(5,7)-1];
 const dFmt=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4):'';
 const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const num=v=>{if(v==null||v==='')return 0;const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isFinite(n)?n:0};
-function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200)}
+function toast(t,ms){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,ms||3200)}
 
 /* ---------- defaults (used until settings are saved) ---------- */
 const DEFAULT_CFG={
@@ -373,7 +394,7 @@ const CP_SHORT={owner:'Собственник',buyer:'Покупатель',tena
 /* ---------- state ---------- */
 let dbState='connecting', cfg=structuredClone(DEFAULT_CFG), cfgExists=false;
 const opsByMonth={}; let deals={}, plans={}, clients={}, archOps=[];
-const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['team','Команда'],['settings','Настройки'],['access','Доступ']];
+const ALL_TABS=[['summary','Сводка'],['ops','Операции'],['deals','Сделки'],['clients','Контрагенты'],['cash','ДДС'],['pnl','ОПиУ'],['plan','План-факт'],['team','Команда'],['settings','Настройки']];
 let ME=null;
 const isOwner=()=>!!ME&&ME.role==='owner', canEdit=()=>!!ME&&ME.finance==='edit';
 const TABS=ALL_TABS.filter(t=>true);
@@ -557,10 +578,18 @@ function render(){
   const app=$('#app');let h='';
   if(dbState==='none')h+=`<div class="banner">Не удалось загрузить данные. ${esc(loadErr)} Обновите страницу; если не помогло — проверьте, что у вас есть доступ к таблице.</div>`;
   if(dbState==='connecting')h+=`<div class="banner" style="background:var(--sunk)">Загружаю данные…</div>`;
-  h+=({summary:vSummary,ops:vOps,deals:vDeals,clients:vClients,cash:vCash,pnl:vPnl,plan:vPlan,settings:vSettings,access:vAccess,team:vTeam}[V.tab])();
+  h+=({summary:vSummary,ops:vOps,deals:vDeals,clients:vClients,cash:vCash,pnl:vPnl,plan:vPlan,settings:vSettings,access:vSettings,team:vTeam}[V.tab])();
   app.innerHTML=h;
   const rw=app.querySelector('.report');if(rw&&V.year===curMonth().slice(0,4)){const i=+curMonth().slice(5,7);const th=rw.querySelectorAll('th')[i];if(th)rw.scrollLeft=Math.max(0,th.offsetLeft-rw.clientWidth+th.offsetWidth*2)}
 }
+document.addEventListener('click',e=>{
+  const tile=e.target.closest('[data-set-sec]');
+  if(tile){SETSEC=tile.dataset.setSec;render();window.scrollTo({top:0});return}
+  if(e.target.closest('[data-set-back]')){SETSEC=null;render();window.scrollTo({top:0});return}
+  const ls=e.target.closest('[data-lnk-save]');
+  if(ls){e.preventDefault();saveLinks(ls.dataset.lnkSave,ls);return}
+});
+
 
 /* ---------- Сводка ---------- */
 function vSummary(){
@@ -806,55 +835,83 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-site
   const links={},requisites={};
   document.querySelectorAll('[data-site-link]').forEach(i=>links[i.dataset.siteLink]=i.value.trim());
   document.querySelectorAll('[data-site-req]').forEach(i=>requisites[i.dataset.siteReq]=i.value.trim());
-  try{await api('saveSiteSettings',{links,requisites});toast('Сохранено');SITEST.loaded=false;siteLoad()}catch(err){toast(err.message)}});
-function vSettings(){
-  if(!draft){draft=structuredClone(cfg);draftDirty=false}
-  const D=draft,inp=(list,i,f,v,type='text',extra='')=>`<input type="${type}" data-s="${list}" data-i="${i}" data-k="${f}" id="s-${list}-${i}-${f}" value="${esc(v)}" ${extra}>`;
-  let h=(isOwner()?siteSettingsHtml()+'<div style="height:14px"></div>':'')+`<h2>Настройки учёта</h2>${!cfgExists&&dbState==='ok'?'<div class="banner">Настройки ещё не сохранены — показаны значения по умолчанию.</div>':''}
-  <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
-  <div class="card"><h3>Общее</h3><div class="fg">
+  try{const r=await api('saveSiteSettings',{links,requisites});toast(r&&r.requisitesIncomplete?'Ссылки сохранены. Реквизиты не заполнены — укажите полное наименование.':'Сохранено');SITEST.loaded=false;siteLoad()}catch(err){toast(err.message,6000)}});
+let SETSEC = null;   // открытый раздел настроек (null — плитки)
+const SET_TILES = [
+  ['users', '👥', 'Пользователи и доступ', 'Сотрудники, роли, пароли, доступ в CMS'],
+  ['links', '🔗', 'Связи сотрудников', 'Novofon, агент в финансах, мессенджер MAX'],
+  ['site', '🌐', 'Сайт и реквизиты', 'Ссылки в футере, реквизиты ООО, PDF'],
+  ['general', '⚙️', 'Общие', 'Начало учёта, ставка УСН, сплит агента'],
+  ['accounts', '🏦', 'Счета и касса', 'Счета, кассы, личные счета сотрудников'],
+  ['debts', '📉', 'Долги на начало', 'Кому должна компания и кто должен ей'],
+  ['agents', '🤝', 'Агенты и сплиты', 'Доли агентов по умолчанию'],
+  ['owners', '👑', 'Доли учредителей', 'Распределение прибыли'],
+  ['cats', '🏷️', 'Статьи', 'Доходы и расходы, попадание в ОПиУ'],
+  ['period', '🗄️', 'Закрытие периода', 'Перенос операций в архив']
+];
+const gen=()=>`<div class="card"><h3>Общее</h3><div class="fg">
     <label class="f"><span>Начало учёта (месяц)</span><input type="month" id="s-start" data-g="startMonth" value="${esc(D.startMonth)}"></label>
     <label class="f"><span>Ставка УСН для новых счетов, %</span><input type="number" id="s-tax" data-g="taxRate" value="${esc(D.taxRate)}" step="0.1"></label>
     <label class="f full"><span>Сплит агента считается от</span><select id="s-split" data-g="splitBase"><option value="gross" ${D.splitBase==='gross'?'selected':''}>полной суммы комиссии</option><option value="net" ${D.splitBase==='net'?'selected':''}>комиссии за вычетом УСН</option></select></label></div>
-    <p class="note">Остатки на счетах ниже — на 1-е число месяца начала учёта.</p></div>
-  <div class="card" style="grid-column:1/-1"><h3>Счета и касса</h3><div class="set-list">${D.accounts.map((a,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.5fr) minmax(0,.9fr) 70px minmax(0,.9fr) minmax(0,1.2fr) auto">
+    <p class="note">Остатки на счетах ниже — на 1-е число месяца начала учёта.</p></div>`;
+const acc=()=>`<div class="card"><h3>Счета и касса</h3><div class="set-list">${D.accounts.map((a,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.5fr) minmax(0,.9fr) 70px minmax(0,.9fr) minmax(0,1.2fr) auto">
     <label class="f"><span>Название</span>${inp('accounts',i,'name',a.name)}</label><label class="f"><span>Остаток на старте, ₽</span>${inp('accounts',i,'opening',a.opening,'number')}</label>
     <label class="f"><span>УСН, %</span>${inp('accounts',i,'tax',a.tax==null?'':a.tax,'number','step="0.1" placeholder="0"')}</label>
     <label class="f"><span>Налог к уплате на старте, ₽</span>${inp('accounts',i,'openingTax',a.openingTax==null?'':a.openingTax,'number','placeholder="0"')}</label>
     <label class="f"><span>Личный счёт (расходы = долг компании)</span><select data-s="accounts" data-i="${i}" data-k="holderId" id="s-accounts-${i}-holderId"><option value="">— счёт компании —</option>${cpList().map(x=>`<option value="${esc(x.id)}" ${a.holderId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
     <button type="button" class="ghost" data-del="accounts" data-i="${i}" aria-label="Удалить счёт" ${allOps().some(o=>o.acc===a.id||o.toAcc===a.id)?'disabled title="По счёту есть операции"':''}>✕</button></div>`).join('')}
-    <button type="button" data-add="accounts">+ Счёт</button></div></div>
-  <div class="card" style="grid-column:1/-1"><h3>Долги на начало учёта</h3><div class="set-list">${(D.openingDebts||[]).map((x,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) auto">
+    <button type="button" data-add="accounts">+ Счёт</button></div></div>`;
+const dbt=()=>`<div class="card"><h3>Долги на начало учёта</h3><div class="set-list">${(D.openingDebts||[]).map((x,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(0,1fr) auto">
     <label class="f"><span>Кому должна компания</span><select data-s="openingDebts" data-i="${i}" data-k="cpId" id="s-od-${i}-cp"><option value="">— выберите —</option>${cpList().map(c=>`<option value="${esc(c.id)}" ${x.cpId===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     <label class="f"><span>Что за долг</span><select data-s="openingDebts" data-i="${i}" data-k="kind" id="s-od-${i}-kind"><option value="founder" ${x.kind==='founder'?'selected':''}>Учредителю / инвестору (заём)</option><option value="agent" ${x.kind==='agent'?'selected':''}>Агенту (невыплаченная доля)</option></select></label>
     <label class="f"><span>Сумма, ₽ (минус — он должен компании)</span>${inp('openingDebts',i,'amount',x.amount,'number')}</label>
     <button type="button" class="ghost" data-del="openingDebts" data-i="${i}" aria-label="Удалить долг">✕</button></div>`).join('')}
     <button type="button" data-add="openingDebts">+ Долг на начало</button></div>
-    <p class="note">Суммы на 1-е число месяца начала учёта (${mLabel(D.startMonth).toLowerCase()}). Долг учредителю дальше растёт от расходов с его личного счёта и уменьшается поступлениями на этот счёт и возвратами займа.</p></div>
-  <div class="card" style="grid-column:1/-1"><h3>Закрыть прошлый период</h3>${cfg.archive?`<p class="note" style="margin:0 0 8px">Сейчас в архиве операции ${archLabel()} (лист «Архив ${archLabel()}» в таблице). Их итоги видны в ДДС, ОПиУ, сделках и карточках контрагентов.</p>`:''}
+    <p class="note">Суммы на 1-е число месяца начала учёта (${mLabel(D.startMonth).toLowerCase()}). Долг учредителю дальше растёт от расходов с его личного счёта и уменьшается поступлениями на этот счёт и возвратами займа.</p></div>`;
+const per=()=>`<div class="card"><h3>Закрыть прошлый период</h3>${cfg.archive?`<p class="note" style="margin:0 0 8px">Сейчас в архиве операции ${archLabel()} (лист «Архив ${archLabel()}» в таблице). Их итоги видны в ДДС, ОПиУ, сделках и карточках контрагентов.</p>`:''}
     <div class="toolbar" style="margin:0"><label class="f"><span>Перенести в архив операции раньше</span><input type="date" id="s-close" value="${esc(V.closeDate||'2026-10-01')}"></label>
     <button type="button" class="danger" data-close-period>${V.closeConfirm?'Точно перенести?':'Перенести в архив'}</button></div>
-    <p class="note">Операции до этой даты переедут на отдельный лист таблицы, а в настройках запишутся остатки по счетам, резерв налога и долги на эту дату, посчитанные по прежним данным. Их потом можно поправить на реальные. Итоги по месяцам, сделкам и контрагентам сохранятся.</p></div>
-  <div class="card"><h3>Агенты и сплиты</h3><div class="rows">${agentList().map(a=>`<div class="row click" data-edit-client="${esc(a.id)}" style="cursor:pointer"><span>${esc(a.name)}</span><span class="num">${num(a.share)}%</span></div>`).join('')}</div>
-    <p class="note">Агенты — это контрагенты с типом «Агент»; доля задаётся в их карточке. В сделке её можно поменять или задать фиксированную выплату.</p></div>
-  <div class="card"><h3>Доли учредителей</h3><div class="set-list">${D.owners.map((o,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.4fr) 90px auto">
+    <p class="note">Операции до этой даты переедут на отдельный лист таблицы, а в настройках запишутся остатки по счетам, резерв налога и долги на эту дату, посчитанные по прежним данным. Их потом можно поправить на реальные. Итоги по месяцам, сделкам и контрагентам сохранятся.</p></div>`;
+const agn=()=>`<div class="card"><h3>Агенты и сплиты</h3><div class="rows">${agentList().map(a=>`<div class="row click" data-edit-client="${esc(a.id)}" style="cursor:pointer"><span>${esc(a.name)}</span><span class="num">${num(a.share)}%</span></div>`).join('')}</div>
+    <p class="note">Агенты — это контрагенты с типом «Агент»; доля задаётся в их карточке. В сделке её можно поменять или задать фиксированную выплату.</p></div>`;
+const own=()=>`<div class="card"><h3>Доли учредителей</h3><div class="set-list">${D.owners.map((o,i)=>`<div class="set-row" style="grid-template-columns:minmax(0,1.4fr) 90px auto">
     <label class="f"><span>Учредитель</span><select data-s="owners" data-i="${i}" data-k="cpId" id="s-owners-${i}-cpId"><option value="">${o.name&&!o.cpId?esc(o.name)+' (без карточки)':'— выберите —'}</option>${cpList().map(x=>`<option value="${esc(x.id)}" ${o.cpId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label><label class="f"><span>Доля, %</span>${inp('owners',i,'share',o.share,'number')}</label>
     <button type="button" class="ghost" data-del="owners" data-i="${i}" aria-label="Удалить">✕</button></div>`).join('')}
-    <button type="button" data-add="owners">+ Учредитель</button></div></div>
-  </div>
-  <div class="card" style="margin-top:12px"><h3>Статьи доходов и расходов</h3><div class="set-list">${D.categories.map((c,i)=>{const used=allOps().some(o=>o.cat===c.id);return `<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,1.2fr) auto">
+    <button type="button" data-add="owners">+ Учредитель</button></div></div>`;
+const cat=()=>`<div class="card"><h3>Статьи доходов и расходов</h3><div class="set-list">${D.categories.map((c,i)=>{const used=allOps().some(o=>o.cat===c.id);return `<div class="set-row" style="grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,1.2fr) auto">
     <label class="f"><span>Статья</span>${inp('categories',i,'name',c.name)}</label>
     <label class="f"><span>Тип</span><select data-s="categories" data-i="${i}" data-k="kind" id="s-categories-${i}-kind" ${used||c.role?'disabled':''}><option value="in" ${c.kind==='in'?'selected':''}>Поступление</option><option value="out" ${c.kind==='out'?'selected':''}>Расход</option></select></label>
     <label class="f"><span>В ОПиУ</span><select data-s="categories" data-i="${i}" data-k="pnl" id="s-categories-${i}-pnl" ${c.role?'disabled':''}>${Object.entries(PNL_LABEL).filter(([k])=>c.kind==='in'?(k==='revenue'||k==='none'):k!=='revenue').map(([k,l])=>`<option value="${k}" ${c.pnl===k?'selected':''}>${l}</option>`).join('')}</select></label>
     <button type="button" class="ghost" data-del="categories" data-i="${i}" aria-label="Удалить статью" ${used||c.role?'disabled title="Статья используется"':''}>✕</button></div>`}).join('')}
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-add="cat-in">+ Статья поступлений</button><button type="button" data-add="cat-out">+ Статья расходов</button></div></div></div>
-  <div class="acts" style="margin-top:16px"><span class="muted">${draftDirty?'Есть несохранённые изменения':''}</span><div><button type="button" data-reset-draft ${draftDirty?'':'disabled'}>Отменить</button><button type="button" class="primary" data-save-cfg>Сохранить настройки</button></div></div>`;
-  return h;
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-add="cat-in">+ Статья поступлений</button><button type="button" data-add="cat-out">+ Статья расходов</button></div></div></div>`;
+
+function vSettings(){
+  if(!draft){draft=structuredClone(cfg);draftDirty=false}
+  if(!isOwner()&&['users','links','site','owners'].includes(SETSEC))SETSEC=null;
+  if(!SETSEC)return setTilesHtml();
+  const back='<button type="button" class="set-back" data-set-back>← Все настройки</button>';
+  if(SETSEC==='users')return back+'<div class="set-sec" id="sec-users"><h2>Пользователи и доступ</h2>'+accessHtml()+actBar()+'</div>';
+  if(SETSEC==='links')return back+'<div class="set-sec" id="sec-links"><h2>Связи сотрудников</h2>'+linksHtml()+'</div>';
+  if(SETSEC==='site')return back+'<div class="set-sec" id="sec-site">'+siteSettingsHtml()+'</div>';
+  const D=draft, inp=(list,i,f,v,type='text',extra='')=>`<input type="${type}" data-s="${list}" data-i="${i}" data-k="${f}" id="s-${list}-${i}-${f}" value="${esc(v)}" ${extra}>`;
+  const body = SETSEC==='general'?gen() : SETSEC==='accounts'?acc() : SETSEC==='debts'?dbt()
+    : SETSEC==='agents'?agn() : SETSEC==='owners'?own() : SETSEC==='cats'?cat() : per();
+  const title={general:'Общие',accounts:'Счета и касса',debts:'Долги на начало учёта',agents:'Агенты и сплиты',owners:'Доли учредителей',cats:'Статьи доходов и расходов',period:'Закрытие периода'}[SETSEC]||'Настройки';
+  return back+`<div class="set-sec"><h2>${title}</h2>${body}</div>`
+    +(['general','agents','owners','cats'].includes(SETSEC)?actBar():'');
+}
+function actBar(){
+  return `<div class="acts" style="margin-top:16px"><span class="muted">${draftDirty?'Есть несохранённые изменения':''}</span><div><button type="button" data-reset-draft ${draftDirty?'':'disabled'}>Отменить</button><button type="button" class="primary" data-save-cfg>Сохранить настройки</button></div></div>`;
+}
+function setTilesHtml(){
+  const cnt={users:(ACC.users||[]).length,links:(ACC.users||[]).filter(u=>u.novofonEmpId||u.finAgentId).length};
+  return `<h2>Настройки</h2><p class="note" style="margin:0 0 4px">Всё управление системой — в одном месте. Выберите раздел.</p>
+  <div class="set-grid">${SET_TILES.map(([k,ic,t,d])=>{
+    const n=k==='users'||k==='links'?`<span class="cnt">${cnt[k]||0}</span>`:'';
+    return `<button type="button" class="set-tile ${SETSEC===k?'on':''}" data-set-sec="${k}"><span class="set-ic">${ic}</span><span class="set-tx"><b>${t}</b><span>${d}</span>${n}</span></button>`;
+  }).join('')}</div>`;
 }
 
-/* ---------- dialogs ---------- */
-const dlg=$('#dlg'),form=$('#dlgform');
-let dlgCtx=null;
 function openOp(op,preset,archSheet){
   const o=op?Object.assign({},op):Object.assign({type:'in',date:todayStr(),acc:cfg.accounts[0]&&cfg.accounts[0].id,cat:'',amount:''},preset||{});
   if(op&&!o.cpId&&o.agentId)o.cpId=o.agentId;
@@ -888,6 +945,7 @@ function drawOp(){
   <div><button type="button" data-close>Отмена</button><button type="submit" class="primary">Сохранить</button></div></div>`;
 }
 function readForm(){const o=dlgCtx.o,multi={};form.querySelectorAll('[name]').forEach(el=>{if(el.type==='checkbox'){(multi[el.name]=multi[el.name]||[]);if(el.checked)multi[el.name].push(el.value)}else o[el.name]=el.value});Object.assign(o,multi)}
+const dlg=$('#dlg'),form=$('#dlgform');
 async function saveOp(){
   readForm();const o=dlgCtx.o,amt=num(o.amount);
   if(!(amt>0))return toast('Укажите сумму больше нуля.');
@@ -1176,19 +1234,53 @@ function genPw(){const a='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ234567
   let s='';for(let i=0;i<12;i++)s+=a[r[i]%a.length];return /\d/.test(s)&&/[a-z]/i.test(s)?s:genPw()}
 async function accLoad(){if(ACC.loading)return;ACC.loading=true;
   try{const u=await api('listUsers');ACC.users=u.users;ACC.roles=u.roles;ACC.audit=await api('listAudit',150)}catch(e){toast(e.message)}
-  ACC.loading=false;ACC.t=Date.now();if(V.tab==='access')render()}
+  ACC.loading=false;ACC.t=Date.now();if(V.tab==='access'||(V.tab==='settings'&&['users','links'].includes(SETSEC)))render()}
 const dt=ms=>{const d=new Date(ms);return d.toLocaleDateString('ru-RU')+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})};
-function vAccess(){
+function lastSeenHtml(ts){
+  if(!ts)return '<span class="usr-last never">ни разу не входил</span>';
+  const d=new Date(ts),min=Math.floor((Date.now()-ts)/60000);
+  let when;
+  if(min<15)when='сейчас в системе';
+  else if(min<60)when=min+' мин назад';
+  else if(min<1440)when=Math.floor(min/60)+' ч назад';
+  else if(min<2880)when='вчера, '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  else when=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  return `<span class="usr-last ${min<15?'on':''}" title="${esc(d.toLocaleString('ru-RU'))}">${when}</span>`;
+}
+function linksHtml(){
+  if(!isOwner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
+  if(!ACC.users){accLoad();return '<div class="card empty">Загружаю…</div>'}
+  if(Date.now()-ACC.t>10000)setTimeout(accLoad,0);
+  const agentOpts=sel=>'<option value="">— не привязан —</option>'+agentList().map(a=>`<option value="${esc(a.id)}" ${a.id===sel?'selected':''}>${esc(a.name)}</option>`).join('');
+  return `<p class="note" style="margin:0 0 12px">Связи нужны, чтобы звонки, сделки и деньги автоматически попадали на нужного сотрудника: номер в Novofon — кому принадлежит входящий звонок; агент в финансах — чьи доли в сделках; MAX — куда приходят уведомления и упоминания.</p>
+  <div class="card" style="padding:0"><div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Сотрудник</th><th>Номер в Novofon</th><th>Агент в финансах</th><th>MAX</th><th></th></tr></thead><tbody>
+  ${ACC.users.map(u=>`<tr><td><b>${esc(u.name)}</b><div class="muted" style="font-size:11px">${esc(u.roleName||'')}</div></td>
+    <td><input data-lnk="novofon" data-id="${u.id}" value="${esc(u.novofonPhones||'')}" placeholder="+7 …" style="min-width:150px"></td>
+    <td><select data-lnk="agent" data-id="${u.id}" style="min-width:150px">${agentOpts(u.finAgentId)}</select></td>
+    <td>${u.maxUserId?`<span class="chip closed">подключён</span><div class="muted" style="font-size:11px">${esc(u.maxName||'')}</div>`:'<span class="muted" style="font-size:12px">не подключён</span>'}</td>
+    <td class="r"><button type="button" data-lnk-save="${u.id}">Сохранить</button></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+async function saveLinks(id,btn){
+  const phone=document.querySelector(`[data-lnk="novofon"][data-id="${id}"]`).value.trim();
+  const agent=document.querySelector(`[data-lnk="agent"][data-id="${id}"]`).value;
+  if(btn)btn.disabled=true;
+  try{await api('saveUserLinks',Number(id),{novofonPhones:phone,finAgentId:agent});toast('Связи сохранены');ACC.users=null;accLoad()}
+  catch(e){toast(e.message)}finally{if(btn)btn.disabled=false}
+}
+
+function accessHtml(){
   if(!isOwner())return '<div class="card empty">Раздел доступен только учредителям.</div>';
   if(!ACC.users){accLoad();return '<div class="card empty">Загружаю…</div>'}
   if(Date.now()-ACC.t>10000)setTimeout(accLoad,0);
   const roleOpts=sel=>Object.entries(ACC.roles).map(([k,l])=>`<option value="${k}" ${k===sel?'selected':''}>${esc(l)}</option>`).join('');
-  let h=`<h2>Пользователи</h2>`;
+  let h=``;
   if(ACC.newPw)h+=`<div class="banner" style="margin:0 0 12px">Временный пароль для <b>${esc(ACC.newPw.login)}</b>: <code style="font-size:15px;user-select:all">${esc(ACC.newPw.pw)}</code><br>Передайте его лично. При первом входе система попросит сменить пароль. Больше этот пароль нигде показан не будет. <button type="button" data-acc="hidepw">Скрыть</button></div>`;
-  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th></th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap"><table class="acc-tbl"><thead><tr><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Был в системе</th><th></th></tr></thead><tbody>
     ${ACC.users.map(u=>`<tr><td><b>${esc(u.name)}</b>${u.id===ME.id?' <span class="muted">(вы)</span>':''}</td><td class="num">${esc(u.login)}</td>
       <td><select data-acc-role="${u.id}" ${u.id===ME.id?'disabled':''}>${roleOpts(u.role)}</select></td>
       <td>${u.active?(u.mustChange?'<span class="chip work">ждёт смены пароля</span>':'<span class="chip closed">активен</span>'):'<span class="chip lost">отключён</span>'}</td>
+      <td>${lastSeenHtml(u.lastSeen)}</td>
       <td class="r">${u.id===ME.id?'':`<button type="button" data-acc="reset" data-id="${u.id}" data-login="${esc(u.login)}">Новый пароль</button> <button type="button" data-acc="toggle" data-id="${u.id}">${u.active?'Отключить':'Включить'}</button>`}</td></tr>`).join('')}
   </tbody></table></div>
   <div class="card" style="margin-top:12px"><h3>Добавить пользователя</h3><div class="fg">
@@ -1337,5 +1429,8 @@ init();
     document.body.appendChild(box);
   }catch(_){}
 })();
+
+/* ===== Настройки: связи сотрудников и навигация по плиткам ===== */
+
 </script>
 </body></html>

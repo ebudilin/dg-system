@@ -11,7 +11,7 @@ const { getMeta } = require('./db');
 // Какие сущности можно обсуждать.
 const ENTITIES = {
   task: 'задача', deal: 'сделка', kb: 'материал справочника',
-  object: 'объект', client: 'клиент', lead: 'заявка'
+  object: 'объект', client: 'клиент', lead: 'заявка', call: 'звонок'
 };
 const MAX_FILE = 25e6;                       // один файл — не больше 25 МБ
 const MAX_FILES = 8;                         // вложений в комментарии
@@ -47,6 +47,7 @@ function entityTitle(db, entity, id) {
     if (entity === 'client') { const r = db.prepare('SELECT data FROM counterparties WHERE id=?').get(id); const x = P(r && r.data); return x ? x.name : ''; }
     if (entity === 'object') { const r = db.prepare('SELECT data FROM objects WHERE id=?').get(id); const x = P(r && r.data); return x ? (x.title || x.address || '') : ''; }
     if (entity === 'lead') { const r = db.prepare('SELECT data FROM leads WHERE id=?').get(id); const x = P(r && r.data); return x ? x.title : ''; }
+    if (entity === 'call') { const r = db.prepare('SELECT data FROM calls WHERE id=?').get(id); const x = P(r && r.data); return x ? ('Звонок ' + (x.phone || '')) : ''; }
     if (entity === 'kb') { const r = db.prepare('SELECT data FROM kb WHERE id=?').get(id); const x = P(r && r.data); return x ? (x.title || x.name || '') : ''; }
   } catch (_) { }
   return '';

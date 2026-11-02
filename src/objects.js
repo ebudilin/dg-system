@@ -121,6 +121,7 @@ function cleanObject(db, o, prev) {
     access: cleanAccess(db, o.access, p.access),
     createdAt: p.createdAt || now(), updatedAt: now(),
     cian: p.cian || null, saleType: o.saleType === 'alternative' ? 'alternative' : 'free',
+    listedFrom: isDate(o.listedFrom) ? o.listedFrom : (isDate(p.listedFrom) ? p.listedFrom : (p.listedFrom || '')),
     activeSince: p.activeSince || null, priceHistory: cleanHistory(o.priceHistory !== undefined ? o.priceHistory : p.priceHistory, p.createdAt)
   };
   x.ownerId = x.owners[0] || '';

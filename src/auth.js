@@ -34,6 +34,7 @@ function validatePassword(pw) {
 }
 
 function createSession(db, userId, ip) {
+  try { db.prepare('UPDATE users SET last_seen=? WHERE id=?').run(Date.now(), userId); } catch (_) { }
   const token = crypto.randomBytes(32).toString('hex');
   const expires = Date.now() + SESSION_DAYS * 86400e3;
   db.prepare('INSERT INTO sessions(token,user_id,expires,ip) VALUES(?,?,?,?)').run(token, userId, expires, ip || '');
@@ -46,6 +47,11 @@ function userBySession(db, token) {
   if (!r || !r.active || r.expires < Date.now()) return null;
   const u = { id: r.id, login: r.login, name: r.name, role: r.role, mustChange: !!r.must_change };
   u.finance = finLevel({ role: r.role, finance: r.finance });
+  // Отметка «был в системе» — не чаще раза в 5 минут, чтобы не писать при каждом запросе.
+  try {
+    const seen = Date.now();
+    db.prepare('UPDATE users SET last_seen=? WHERE id=? AND last_seen<?').run(seen, r.id, seen - 5 * 60e3);
+  } catch (_) { }
   return u;
 }
 

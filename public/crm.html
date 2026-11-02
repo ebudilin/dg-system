@@ -750,14 +750,39 @@ function vObjects(){
   const cnt={};D.objects.forEach(o=>cnt[o.status]=(cnt[o.status]||0)+1);
   h+=`<div class="stbar">${Object.entries(OD.status).map(([k,l])=>`<button class="ost os-${k}" data-ost="${k}" aria-pressed="${f.status===k}">${esc(l)} <b>${cnt[k]||0}</b></button>`).join('')}</div>`;
   if(!list.length)return h+`<div class="card empty">${D.objects.length?'По фильтру ничего нет.':'Объектов пока нет. Добавьте первый кнопкой «+ Объект».'}</div>`;
-  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
-    ${list.map(o=>{const r=readiness(o),days=o.activeSince&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-o.activeSince)/864e5):null,iq=(D.inq||{})[o.id],exp=(o.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0),ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
-      return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([OD.kinds[o.kind],o.offer==='rent'?'аренда':'продажа',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}<div style="font-size:11px;margin-top:2px">${((D.files||{})[o.id]||{}).photo?`<span class="muted">📷 ${D.files[o.id].photo}</span> `:''}${o.cian&&o.cian.state==='on'?'<span class="chip closed">ЦИАН</span>':o.cian&&o.cian.state==='ready'?'<span class="chip work">ЦИАН: ждёт решения</span>':''}</div></td>
+    // Группировка: сначала по типу сделки (продажа/аренда), внутри — по виду объекта.
+  const GRP_ORDER = ['sale','rent'];
+  const OFFER = {sale:'Продажа', rent:'Аренда'};
+  const byOffer = {};
+  list.forEach(o => { const k = o.offer === 'rent' ? 'rent' : 'sale'; (byOffer[k] = byOffer[k] || []).push(o); });
+  const rowHtml = o => {
+    const r=readiness(o),days=['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-(o.listedFrom?new Date(o.listedFrom+'T00:00:00').getTime():o.activeSince||Date.now()))/864e5):null,
+      iq=(D.inq||{})[o.id],ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
+    return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([o.kind?OD.kinds[o.kind]:'',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}</td>
       <td><span class="ochip os-${o.status}">${esc(OD.status[o.status]||o.status)}</span></td><td>${esc(uName(o.responsibleId)||'—')}</td>
-      <td class="r num">${(()=>{const h=o.priceHistory||[],st=h.length&&(h[0].price!=null?h[0].price:h[0].from);return st&&o.price&&+o.price<+st?`<span class="neg" title="Стартовая цена ${money(st)}">↓${Math.round((st-o.price)/st*100)}% </span>`:''})()}${money(o.price)}${ppm?`<div class="muted" style="font-size:11px">${NF.format(ppm)} ₽/м²</div>`:''}</td><td class="r num">${o.area?esc(o.area)+' м²':''}</td>
-      <td class="r num">${days!=null?days+' дн.':''}</td><td class="r num">${iq?iq.n:''}</td><td class="r num">${exp?money(exp):''}</td>
-      <td><div class="meter" title="${r.p}%: не заполнено — ${esc(r.miss.join(', ')||'всё готово')}"><i style="width:${r.p}%"></i></div><span class="muted" style="font-size:11px">${r.p}%</span></td></tr>`}).join('')}
-  </tbody></table></div><p class="note">Объектов: ${list.length}. Готовность — заполнены ключевые поля и выполнены советы по продвижению; наведите на полоску, чтобы увидеть, чего не хватает.</p>`;
+      <td class="r num">${(()=>{const h=o.priceHistory||[],st=h.length&&(h[0].price!=null?h[0].price:h[0].from);return st&&o.price&&+o.price<+st?`<span class="neg" title="Стартовая цена ${money(st)}">↓${Math.round((st-o.price)/st*100)}% </span>`:''})()}${money(o.price)}${ppm?`<div class="muted" style="font-size:11px">${NF.format(ppm)} ₽/м²</div>`:''}</td>
+      <td class="r num">${o.area?NF.format(o.area)+' м²':''}</td>
+      <td class="r num">${days!=null?days+' дн.':''}${o.listedFrom?`<div class="muted" style="font-size:11px">с ${dFmt(o.listedFrom)}</div>`:''}</td><td class="r num">${iq?iq.n:''}</td>
+      <td><div class="meter" title="${r.p}%: не заполнено — ${esc(r.miss.join(', ')||'всё готово')}"><i style="width:${r.p}%"></i></div><span class="muted" style="font-size:11px">${r.p}%</span></td></tr>`;
+  };
+  let total = 0;
+  for (const off of GRP_ORDER) {
+    const items = byOffer[off]; if (!items || !items.length) continue;
+    h += `<div class="obj-offer"><h2>${OFFER[off]} <span class="muted" style="font-size:13px;font-weight:500">· ${items.length}</span></h2>`;
+    // внутри — по видам объекта в порядке словаря
+    const byKind = {};
+    items.forEach(o => { const k = OD.kinds[o.kind] ? o.kind : 'other'; (byKind[k] = byKind[k] || []).push(o); });
+    for (const kind of Object.keys(OD.kinds)) {
+      const grp = byKind[kind]; if (!grp || !grp.length) continue;
+      grp.sort((a,b)=>(a.title||a.address||'').localeCompare(b.title||b.address||'','ru'));
+      total += grp.length;
+      h += `<div class="grp">${esc(OD.kinds[kind])} · ${grp.length}</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th>Готовность</th></tr></thead>
+      <tbody>${grp.map(rowHtml).join('')}</tbody></table></div>`;
+    }
+    h += '</div>';
+  }
+  h += `<p class="note">Объектов: ${total}. Готовность — заполнены ключевые поля и выполнены советы по продвижению; наведите на полоску, чтобы увидеть, чего не хватает.</p>`;
   return h}
 function contractWarn(o){if(!o.contractUntil||['sold','failed'].includes(o.status))return '';const d=Math.ceil((new Date(o.contractUntil+'T12:00:00')-Date.now())/864e5);
   return d<0?'Договор с собственником истёк '+dFmt(o.contractUntil):d<=14?'Договор с собственником истекает через '+d+' дн.':''}
@@ -850,7 +875,7 @@ function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
   form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
 
 /* объект */
-const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение и расходы'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
+const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
 function openObject(o,pane){
   const OD=D.dict.obj;
   const x=o?JSON.parse(JSON.stringify(o)):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'draft',responsibleId:ME.id,source:'',price:'',area:'',owners:[],tips:[],expenses:[],windows:[],yard:[],parking:[]};
@@ -890,7 +915,7 @@ function accessPane(x,o){
 function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','house'].includes(x.kind),pane=c.pane;
   const srcs=[...new Set([...OD.sources,...D.objects.map(y=>y.source).filter(Boolean)])];
   const r=readiness(x),ppm=x.price&&x.area?Math.round(x.price/x.area):0,cw=contractWarn(x);
-  const days=o&&o.activeSince&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-o.activeSince)/864e5):null;
+  const days=o&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-(o.listedFrom?new Date(o.listedFrom+'T00:00:00').getTime():o.activeSince||Date.now()))/864e5):null;
   const P=(k,html)=>`<div class="pane" data-pane="${k}" ${pane===k?'':'hidden'}>${html}</div>`;
   const ownersHtml=`<div class="owners">${x.owners.map(id=>{const cp=cl(id);return cp?`<div class="owner"><div><a class="lnk" data-open-client="${esc(id)}"><b>${esc(cp.name)}</b></a><div class="muted" style="font-size:12px">${esc([cp.birth?'д.р. '+dFmt(cp.birth):'',cp.phone,cp.email].filter(Boolean).join(' · ')||'контакты не указаны')}</div></div>${can()?`<button type="button" class="ghost" data-own-del="${esc(id)}" title="Убрать из собственников">✕</button>`:''}</div>`:''}).join('')}
     ${c.newOwners.map((n,i)=>`<div class="owner new"><div class="fg" style="flex:1"><label class="f"><span>ФИО</span><input data-nown="${i}" data-k="name" value="${esc(n.name)}"></label><label class="f"><span>Дата рождения</span><input type="date" data-nown="${i}" data-k="birth" value="${esc(n.birth)}"></label>
@@ -905,13 +930,6 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
     return `<div class="tip ${done?'done':''}"><input type="checkbox" data-tip-done="${esc(t.key)}" ${done?'checked':''} ${tk||!can()?'disabled':''} aria-label="Сделано"><span>${esc(t.title)}</span>
       ${tk?`<a class="lnk" data-open-task="${esc(tk.id)}">${tk.done?'задача выполнена':'задача: '+esc(uName(tk.assigneeId))+(tk.due?', '+esc(dueLbl(tk)):'')}</a>`:o&&can()&&!done?`<button type="button" data-tip-task="${esc(t.key)}">В задачу</button>`:''}
       ${can()&&!tk?`<button type="button" class="ghost" data-tip-del="${esc(t.key)}" title="Убрать совет">✕</button>`:''}</div>`}).join('');
-  const expTotal=x.expenses.reduce((s,e)=>s+(+e.amount||0),0);
-  const expHtml=`<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th>На что</th><th class="r">Сумма, ₽</th><th>Комментарий</th><th></th></tr></thead><tbody>
-    ${x.expenses.map((e,i)=>{const lk=e.opId?'disabled':'';return `<tr><td><input type="date" data-exp="${i}" data-k="date" value="${esc(e.date)}" ${lk}></td><td><input list="exp-kinds" data-exp="${i}" data-k="kind" value="${esc(e.kind)}" ${lk}></td>
-      <td><input type="number" data-exp="${i}" data-k="amount" value="${esc(e.amount)}" style="text-align:right" ${lk}></td><td><input data-exp="${i}" data-k="note" value="${esc(e.note)}" ${lk}></td>
-      <td style="white-space:nowrap">${e.opId?'<span class="chip closed" title="Внесено операцией в разделе «Финансы»">в финансах ✓</span>':`${finW()&&o?`<button type="button" data-exp-fin="${i}" title="Создать операцию «Расход» в финансах">В финансы</button> `:''}<button type="button" class="ghost" data-exp-del="${i}">✕</button>`}</td></tr>`}).join('')}
-    </tbody><tfoot><tr class="tot"><td colspan="2">Итого</td><td class="r num">${money(expTotal)||'0 ₽'}</td><td colspan="2">${can()?'<button type="button" data-exp-add>+ Расход</button>':''}</td></tr></tfoot></table></div>
-    <datalist id="exp-kinds">${OD.expenseKinds.map(k=>`<option value="${esc(k)}">`).join('')}</datalist>`;
   const descLen=(x.description||'').length;
   form.innerHTML=`<div class="ohead"><div><h2>${o?esc(objName(o)):'Новый объект'}</h2>
       <div class="muted" style="font-size:12px">${esc([OD.kinds[x.kind],x.offer==='rent'?'аренда':'продажа',ppm?NF.format(ppm)+' ₽/м²':'',days!=null?'в экспозиции '+days+' дн.':'',(D.inq||{})[x.id]?'обращений: '+D.inq[x.id].n:''].filter(Boolean).join(' · '))}</div></div>
@@ -932,6 +950,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <label class="f"><span>Общая площадь, м²</span><input name="area" type="number" step="0.1" inputmode="decimal" value="${esc(x.area)}"></label>
       <div class="f"><span style="font-size:12px;color:var(--muted)">Цена за м²</span><div class="num" style="padding:8px 0" id="ppm">${ppm?NF.format(ppm)+' ₽':'—'}</div></div>
       <label class="f"><span>Договор с собственником от</span><input name="contractDate" type="date" value="${esc(x.contractDate)}"></label>
+      <label class="f"><span>В экспозиции с</span><input name="listedFrom" type="date" value="${esc(x.listedFrom||'')}"></label>
       <label class="f"><span>Действует до</span><input name="contractUntil" type="date" value="${esc(x.contractUntil)}"></label>
       <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" name="exclusive" ${x.exclusive?'checked':''}> Эксклюзив</label></label>
       <label class="f full"><span>Причина продажи</span><input name="saleReason" value="${esc(x.saleReason)}" placeholder="Переезд, расширение, разъезд, инвестиции…"></label>
@@ -971,7 +990,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <datalist id="walls">${OD.walls.map(s=>`<option value="${esc(s)}">`).join('')}</datalist><datalist id="slabs">${OD.slabs.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
     ${P('promo',`<h3>Советы по работе с объектом</h3><p class="note" style="margin:0 0 6px">Отмечайте сделанное или превращайте совет в задачу ответственному${o?'':' (после сохранения объекта)'}.</p>
       <div class="tips">${tipsHtml}</div>${can()?`<div class="r2" style="margin-top:6px"><input id="tip-new" placeholder="Свой совет: например, «сделать 3D-тур»"><button type="button" data-tip-add>+ Добавить</button></div>`:''}
-      <h3 style="margin-top:18px">Расходы по объекту</h3>${expHtml}<p class="note">Фотосъёмка, справки, реклама на ЦИАН и Авито и другое. ${finW()?'Кнопка «В финансы» создаёт операцию «Расход» в разделе «Финансы» (если объект привязан к сделке — с этой сделкой); такой расход потом правится уже в финансах.':'В финансы расходы вносит тот, у кого есть доступ к вводу финансов.'}</p>`)}
+      `)}
     ${P('inq',`<div id="inq-list">${inqList()}</div>`)}
     ${P('files',`<div id="files-box">${filesHtml()}</div>
       <label class="f" style="margin-top:14px"><span>Папка с исходниками на Яндекс Диске (RAW-фото, видео)</span><input name="diskLink" type="url" value="${esc(x.diskLink||'')}" placeholder="https://disk.yandex.ru/…"></label>
@@ -1390,12 +1409,13 @@ function vCalls(){
     <label class="f"><span>Показать</span><select id="cl-type">${opt([['all','Все звонки'],['objects','По объектам'],['services','По услугам'],['new','Только неразобранные']],F.type)}</select></label>
     <label class="f grow"><span>Поиск</span><input id="cl-q" value="${esc(F.q)}" placeholder="Телефон, клиент, объект"></label></div>`;
   if(!rows.length)h+='<div class="card empty">Под выбранные условия звонков нет.</div>';
-  else h+=`<div class="tbl-wrap comm-table"><table><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Объект / категория</th><th>Клиент</th><th class="r">Разговор</th><th>Сотрудник</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>${rows.map(c=>{const cat=callCategory(c),inq=callInquiry(c);return `<tr class="${c.status==='new'?'is-new':''}"><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted small">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted small">на ${esc(ph(c.vnumber))}${vOwner(c)?' · '+esc(vOwner(c)):''}</div>`:''}</td><td>${inq?`<a class="object-chip" data-inq-open="${esc(inq.id)}" title="Открыть обращение">${esc(cat.text)}</a>`:`<span class="category-chip ${cat.kind}">${esc(cat.text)}</span>`}</td><td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a>`:'<span class="muted">—</span>'}<div>${ST[c.status]||''}</div></td><td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.userId?uName(c.userId):(c.emp||'—'))}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:'<span class="muted">—</span>'}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`}).join('')}</tbody></table></div>`;
+  else h+=`<div class="tbl-wrap comm-table"><table><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Объект / категория</th><th>Клиент</th><th class="r">Разговор</th><th>Сотрудник</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>${rows.map(c=>{const cat=callCategory(c),inq=callInquiry(c);return `<tr class="${c.status==='new'?'is-new':''}"><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted small">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td><a href="#" class="call-open num" data-call-open="${esc(c.id)}" title="Открыть звонок: комментарий и обсуждение">${esc(ph(c.phone))}</a>${c.vnumber?`<div class="muted small">на ${esc(ph(c.vnumber))}${vOwner(c)?' · '+esc(vOwner(c)):''}</div>`:''}</td><td>${inq?`<a class="object-chip" data-inq-open="${esc(inq.id)}" title="Открыть обращение">${esc(cat.text)}</a>`:`<span class="category-chip ${cat.kind}">${esc(cat.text)}</span>`}</td><td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a>`:'<span class="muted">—</span>'}<div>${ST[c.status]||''}</div></td><td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.userId?uName(c.userId):(c.emp||'—'))}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:'<span class="muted">—</span>'}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`}).join('')}</tbody></table></div>`;
   h+=`<section class="inq-section"><div class="section-head"><div><h2>Обращения по объектам</h2><p>Результат разбора звонков: кто звонил, по какому объекту и что решили.</p></div>${can()?'<button class="primary" data-inq-new>+ Обращение</button>':''}</div>`;
   h+=inquiries.length?`<div class="inq-grid">${inquiries.map(i=>{const o=obj(i.objectId),st=(D.dict.obj.inqStages||{})[i.stage]||i.stage;return `<article class="inq-card" data-inq-open="${esc(i.id)}"><div class="inq-card-top"><span class="chip deal">${esc(i.channel||'Звонок')}</span><time>${dtFmt(i.at)}</time></div><b>${esc(i.name||i.phone||'Без имени')}</b><div class="num muted">${esc(ph(i.phone))}</div><div class="inq-object">${esc(o?objName(o):'Объект не найден')}</div><div class="inq-result">${esc(i.result||i.note||'Результат пока не заполнен')}</div><footer><span class="chip work">${esc(st)}</span><span>${esc(i.userName||'')}</span></footer></article>`}).join('')}</div>`:'<div class="card empty">Обращений по объектам пока нет. Разберите звонок кнопкой «По объекту».</div>';
   return h+'</section>'}
 
-app.addEventListener('click',async e=>{if(e.target.closest('[data-calls-retry]')){CALLS.error='';CALLS.list=null;render();callsLoad(true);return}if(e.target.closest('[data-inq-new]')){openInq(null);return}if(V.tab!=='calls')return;
+app.addEventListener('click',async e=>{if(e.target.closest('[data-calls-retry]')){CALLS.error='';CALLS.list=null;render();callsLoad(true);return}if(e.target.closest('[data-inq-new]')){openInq(null);return}
+  const co=e.target.closest('[data-call-open]');if(co){e.preventDefault();openCall(co.dataset.callOpen);return}if(V.tab!=='calls')return;
   const v=e.target.closest('[data-clv]');if(v){V.clf.view=v.dataset.clv;render();return}
   if(e.target.closest('[data-inq-open]'))return;
   const m=e.target.closest('[data-clm]');if(m){V.clf.mine=m.dataset.clm==='1';render();return}
@@ -1869,6 +1889,28 @@ document.addEventListener('click',async e=>{const menu=$('#memenu');if(!menu)ret
   else if(it.dataset.me==='logout'){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu');if(m)m.hidden=true}});
 
+
+
+/* ---------- карточка звонка: информация и обсуждение ---------- */
+function openCall(id){
+  const c=(CALLS.list||[]).find(x=>x.id===id); if(!c)return;
+  const cat=callCategory(c), iq=callInquiry(c);
+  const dir=c.dir==='in'?(c.lost?'пропущенный входящий':'входящий'):'исходящий';
+  openDlg({kind:'callinfo',o:{},wide:true,draw:()=>{
+    form.innerHTML=`<h2>Звонок ${esc(ph(c.phone))}</h2>
+      <p class="note" style="margin:0 0 12px">${esc(dtFmt(c.at))} · ${esc(dir)}${c.talk?' · '+mmss(c.talk):''}${c.emp?' · '+esc(c.emp):''}</p>
+      <div class="fg">
+        <label class="f"><span>Объект / категория</span><input value="${esc(cat.text)}" readonly></label>
+        <label class="f"><span>Клиент</span><input value="${esc(c.clientId&&cl(c.clientId)?clName(c.clientId):'—')}" readonly></label>
+        <label class="f"><span>Статус</span><input value="${esc({new:'не разобран',ignored:'не клиент',spam:'спам',lead:'заявка',linked:'связан'}[c.status]||c.status)}" readonly></label>
+        <label class="f"><span>Запись</span>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:'<span class="muted">нет</span>'}</label>
+      </div>
+      ${iq?`<p class="note" style="margin:12px 0 0">Обращение: <a class="lnk" href="#" data-inq-open="${esc(iq.id)}">открыть</a></p>`:''}
+      <h3 style="margin-top:18px">Обсуждение звонка</h3>
+      <div id="disc-wrap" data-ent="call" data-id="${esc(c.id)}"></div>
+      <div class="acts"><div></div><div><button type="button" data-close>Закрыть</button></div></div>`;
+  }});
+}
 
 /* ================= Обсуждения: комментарии, @упоминания, вложения ================= */
 const DISC = { ent: null, id: null, data: null, staged: [], ment: [], mentIdx: 0, mentQ: '' };

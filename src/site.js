@@ -45,19 +45,28 @@ def('siteSettings', 'owner', (db) => {
 });
 
 def('saveSiteSettings', 'owner', (db, u, x) => {
+  // Ссылки и реквизиты сохраняются независимо: незаполненные реквизиты
+  // (например, нет полного наименования) не должны блокировать сохранение ссылок.
   const cur = get(db);
-  const links = {}, req = {};
-  for (const l of LINKS) {
-    const v = str((x && x.links && x.links[l.key]) || '', 500).trim();
-    if (!httpOk(v)) throw new ApiError(`«${l.label}»: ссылка должна начинаться с https://`);
-    links[l.key] = v;
+  const links = Object.assign({}, cur.links);
+  const req = Object.assign({}, cur.requisites);
+  const bad = [];
+  if (x && x.links && typeof x.links === 'object') {
+    for (const l of LINKS) {
+      if (!(l.key in x.links)) continue;
+      const v = str(x.links[l.key], 500).trim();
+      if (!httpOk(v)) { bad.push(`«${l.label}»: ссылка должна начинаться с https://`); continue; }
+      links[l.key] = v;
+    }
   }
-  for (const [k, label] of REQ_FIELDS) req[k] = str((x && x.requisites && x.requisites[k]) || '', 300).trim();
-  if (!req.fullName) throw new ApiError('Заполните полное наименование организации.');
+  if (x && x.requisites && typeof x.requisites === 'object') {
+    for (const [k] of REQ_FIELDS) if (k in x.requisites) req[k] = str(x.requisites[k], 300).trim();
+  }
+  if (bad.length) throw new ApiError(bad.join('; ') + '. Остальные изменения не сохранены.');
   setMeta(db, 'site', J({ links, requisites: req }));
   audit(db, u, 'изменение', 'настройки сайта', 'site', J(cur), J({ links, requisites: req }));
   bump(db);
-  return true;
+  return { ok: true, requisitesIncomplete: !req.fullName };
 });
 
 // страница реквизитов: печатная HTML-версия; PDF собирается на сервере

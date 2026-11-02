@@ -259,7 +259,19 @@ def('changeOwnPassword', null, (db, u, oldPw, newPw) => {
   return { ok: true };
 });
 
-const userRow = r => ({ id: r.id, login: r.login, name: r.name, role: r.role, roleName: auth.ROLES[r.role] || r.role, finance: auth.finLevel(r), active: !!r.active, mustChange: !!r.must_change, createdAt: r.created_at });
+const userRow = r => {
+  let prefs = {};
+  try { prefs = JSON.parse(r.prefs || '{}'); } catch (_) { }
+  return {
+    id: r.id, login: r.login, name: r.name, role: r.role, roleName: auth.ROLES[r.role] || r.role,
+    finance: auth.finLevel(r), active: !!r.active, mustChange: !!r.must_change,
+    createdAt: r.created_at, lastSeen: r.last_seen || 0,
+    // связи сотрудника: телефония, финансы, мессенджер
+    novofonEmpId: prefs.novofonEmpId || '', novofonEmpName: prefs.novofonEmpName || '',
+    novofonPhones: prefs.novofonPhones || '', finAgentId: prefs.finAgentId || '',
+    maxUserId: prefs.maxUserId || '', maxName: prefs.maxName || ''
+  };
+};
 
 def('listUsers', 'owner', (db) => ({
   roles: auth.ROLES, finance: auth.FINANCE,
