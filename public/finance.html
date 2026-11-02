@@ -2,25 +2,26 @@
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Финансы · Дорогой Город</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
 :root{
-  --bg:#EEF1F0; --surface:#FFFFFF; --sunk:#F6F8F7; --ink:#15201C; --muted:#5B6863; --line:#D8DFDC;
-  --accent:#1F5A48; --accent-ink:#FFFFFF; --accent-soft:#DDEBE5;
-  --pos:#1D7A45; --neg:#B0302A; --warn:#9A6400; --pos-soft:#E0F1E6; --neg-soft:#F7E3E1; --warn-soft:#F5ECD8;
-  --font-ui:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --font-num:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --r:10px;
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#EEF2F7; --ink:#17243B; --muted:#65748B; --line:#E1E7EF;
+  --accent:#4E6EAF; --accent-ink:#FFFFFF; --accent-soft:#E8EDF7; --accent-2:#348E83; --accent-2-soft:#E1F1ED;
+  --pos:#27836F; --neg:#BD5965; --warn:#AA7B25; --pos-soft:#E1F1ED; --neg-soft:#F8E7EA; --warn-soft:#F7F0DF;
+  --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-num:"Inter",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:14px; --r-lg:18px; --r-sm:10px;
+  --sh-sm:0 1px 2px rgba(23,36,59,.04); --sh:0 8px 24px rgba(23,36,59,.07);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
-  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
-  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}}
+  --bg:#111827; --surface:#182235; --sunk:#141E30; --ink:#E5EAF3; --muted:#98A6BB; --line:#2A3850;
+  --accent:#9BB4E0; --accent-ink:#14213B; --accent-soft:#263754;
+  --pos:#72C4AE; --neg:#E59AA5; --warn:#D5B570; --pos-soft:#1E3936; --neg-soft:#412A34; --warn-soft:#3C3526; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
-  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
-  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}
+  --bg:#111827; --surface:#182235; --sunk:#141E30; --ink:#E5EAF3; --muted:#98A6BB; --line:#2A3850;
+  --accent:#9BB4E0; --accent-ink:#14213B; --accent-soft:#263754;
+  --pos:#72C4AE; --neg:#E59AA5; --warn:#D5B570; --pos-soft:#1E3936; --neg-soft:#412A34; --warn-soft:#3C3526; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font-ui);margin:0}
 .wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
@@ -140,16 +141,16 @@ dialog .tbl-wrap{max-height:none}
 .brand .sect-badge{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:3px}
 @media (max-width:700px){.tbl-wrap{max-height:calc(100dvh - 140px)}.report th:first-child,.report td:first-child{min-width:130px;max-width:150px}}
 
-:root{--accent:#2E4C93;--accent-ink:#FFFFFF;--accent-soft:#DFE5F4;--hdr:#E4E9F4}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent:#93ABEB;--accent-ink:#0D1424;--accent-soft:#1E2740;--hdr:#121A2B}}
-:root[data-theme="dark"]{--accent:#93ABEB;--accent-ink:#0D1424;--accent-soft:#1E2740;--hdr:#121A2B}
+:root{--accent:#4E6EAF;--accent-ink:#FFFFFF;--accent-soft:#E8EDF7;--hdr:#E8EDF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent:#9BB4E0;--accent-ink:#14213B;--accent-soft:#263754;--hdr:#1E2A3D}}
+:root[data-theme="dark"]{--accent:#9BB4E0;--accent-ink:#14213B;--accent-soft:#263754;--hdr:#1E2A3D}
 /* переключатель CRM / Финансы */
 .appsw{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .appsw a{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 18px;border-radius:9px;text-decoration:none;font-weight:600;font-size:15px;color:var(--muted);white-space:nowrap}
 .appsw a i{width:10px;height:10px;border-radius:50%;flex:none}
-.appsw .sw-crm i{background:#2E8A66}.appsw .sw-fin i{background:#3A78C4}
-.appsw a.sw-crm[aria-current="page"]{background:#1F5A48;color:#FFFFFF}
-.appsw a.sw-fin[aria-current="page"]{background:#1E4E8C;color:#FFFFFF}
+.appsw .sw-crm i{background:#4E6EAF}.appsw .sw-fin i{background:#348E83}
+.appsw a.sw-crm[aria-current="page"]{background:var(--accent);color:#FFFFFF}
+.appsw a.sw-fin[aria-current="page"]{background:var(--accent);color:#FFFFFF}
 .appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
 .appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
 @media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
@@ -176,6 +177,48 @@ dialog .tbl-wrap{max-height:none}
 .me-menu .mh{padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;font-size:12px;color:var(--muted)}.me-menu .mh b{display:block;color:var(--ink);font-size:14px}
 @media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
 .prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+
+/* DG UI · спокойная светлая тема */
+body{font:14px/1.55 var(--font-ui);letter-spacing:-.006em;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;padding-inline:24px}
+.brand b{font-size:20px;font-weight:750;letter-spacing:-.035em}
+.brand span{font-size:12px;color:var(--muted)}
+header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(14px);border-bottom-color:var(--line)}
+nav.tabs{gap:5px;padding-bottom:12px}
+nav.tabs a{font-size:13px;padding:8px 13px;border:1px solid transparent}
+nav.tabs a:hover{background:var(--surface);border-color:var(--line)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:650}
+.appsw{background:var(--surface);border-radius:11px;box-shadow:none}
+.appsw a{font-size:13px;padding:7px 13px}
+.appsw a.sw-crm[aria-current="page"],.appsw a.sw-fin[aria-current="page"]{background:var(--accent);color:#fff}
+button,input,select,textarea{border-radius:9px}
+button{box-shadow:none;font-weight:550;transition:background .15s,border-color .15s,color .15s}
+button:hover{transform:none;border-color:#AAB7C9;background:var(--sunk)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:none}
+button.primary:hover{background:#45639D;border-color:#45639D}
+input,select,textarea{padding:8px 11px;border-color:var(--line);background:var(--surface)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);outline-offset:0;border-color:var(--accent)}
+.card,.tile,.tbl-wrap{border-radius:var(--r);border-color:var(--line);box-shadow:var(--sh-sm)}
+.card{padding:18px}
+.tile{padding:16px 18px;gap:6px}
+.tile:hover{transform:none;box-shadow:var(--sh)}
+.tile .k{font-size:12px;font-weight:500}
+.tile .v{font-size:24px;letter-spacing:-.035em;font-weight:700}
+.tile.hero{background:var(--accent);border-color:var(--accent)}
+h2{font-size:18px;letter-spacing:-.02em;margin-top:26px}
+h3{font-size:11px;letter-spacing:.065em}
+th{font-size:11px;letter-spacing:.045em;color:var(--muted);font-weight:650;background:var(--sunk)}
+td{font-size:13px}
+tbody tr:hover{background:#F7F9FC}
+.chip{border-radius:7px;font-size:11px;padding:3px 8px}
+.seg,.grpseg{background:var(--sunk);border-radius:10px;padding:3px;gap:3px}
+.seg button,.grpseg button{border:0;background:transparent;box-shadow:none;border-radius:7px;padding:6px 11px}
+.seg button[aria-pressed="true"],.grpseg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);border-color:transparent;box-shadow:var(--sh-sm)}
+.toolbar{gap:10px}
+dialog,.dlg{border-radius:16px}
+.note,.muted{color:var(--muted)}
+@media (max-width:760px){.wrap{padding-inline:14px}.card{padding:14px}.tile{padding:14px}.brand b{font-size:18px}}
+
 </style>
 </head><body>
 

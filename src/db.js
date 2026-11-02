@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SCHEMA = 6;
+const SCHEMA = 7;
 
 function open(file) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -153,6 +153,30 @@ function migrate(db) {
         db.prepare('UPDATE inquiries SET data=? WHERE id=?').run(JSON.stringify(q), r.id);
       }
       setMeta(db, 'schema', '5');
+    });
+  }
+  if (Number(getMeta(db, 'schema') || 0) < 7) {
+    // Обсуждения: комментарии к задачам, сделкам, материалам справочника и объектам,
+    // вложения к комментариям и уведомления об упоминаниях.
+    safetyCopy(db, 'schema-7');
+    tx(db, () => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS comments (
+          id TEXT PRIMARY KEY, entity TEXT NOT NULL, entity_id TEXT NOT NULL,
+          user_id INTEGER, user_name TEXT, at INTEGER NOT NULL, text TEXT NOT NULL DEFAULT '',
+          mentions TEXT NOT NULL DEFAULT '[]', files TEXT NOT NULL DEFAULT '[]', edited_at INTEGER);
+        CREATE INDEX IF NOT EXISTS comments_entity ON comments(entity, entity_id, at);
+        CREATE INDEX IF NOT EXISTS comments_at ON comments(at);
+        CREATE TABLE IF NOT EXISTS comment_files (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, mime TEXT, size INTEGER,
+          user_id INTEGER, at INTEGER NOT NULL, comment_id TEXT);
+        CREATE INDEX IF NOT EXISTS comment_files_comment ON comment_files(comment_id);
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, at INTEGER NOT NULL,
+          kind TEXT NOT NULL, entity TEXT, entity_id TEXT, comment_id TEXT, text TEXT, read INTEGER NOT NULL DEFAULT 0);
+        CREATE INDEX IF NOT EXISTS notif_user ON notifications(user_id, read, at);
+      `);
+      setMeta(db, 'schema', '7');
     });
   }
   if (Number(getMeta(db, 'schema') || 0) < 6) {

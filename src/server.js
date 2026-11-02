@@ -14,6 +14,7 @@ require('./inquiries');
 const KB = require('./kb');
 require('./prefs');
 const MAX = require('./max');
+const COMMENTS = require('./comments');
 require('./team');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -24,6 +25,7 @@ const COOKIE = 'dg_s';
 
 const db = open(DB_FILE);
 setInterval(() => { try { auth.purgeSessions(db); } catch (_) {} }, 3600e3).unref();
+setInterval(() => { try { COMMENTS.sweep(db); } catch (_) {} }, 6 * 3600e3).unref();
 KB.seed(db);
 NOVOFON.start(db);
 MAX.start(db);
@@ -175,6 +177,23 @@ async function handle(req, res) {
     const body = await readBody(req, 3e6, true);
     return json(res, 200, { result: require('./prefs').saveAvatar(db, u, body) });
   }
+  // вложения комментариев: доступны только вошедшим, права наследуются от обсуждения
+  mm = p.match(/^\/cfiles\/([\w-]+)$/);
+  if (mm && req.method === 'GET') {
+    if (!currentUser(req)) return send(res, 401, 'Войдите в систему');
+    if (!COMMENTS.serve(db, res, mm[1], SEC_HEADERS)) send(res, 404, 'Файл не найден');
+    return;
+  }
+  if (p === '/cupload' && req.method === 'POST') {
+    const u = currentUser(req);
+    if (!u) return json(res, 401, { error: 'Сессия закончилась. Войдите заново.' });
+    if (!sameOrigin(req)) return json(res, 403, { error: 'Запрос отклонён.' });
+    const body = await new Promise((resolve, reject) => { const ch = []; let n = 0;
+      req.on('data', c => { n += c.length; if (n > 26e6) { reject(new ApiError('Файл больше 25 МБ.', 413)); req.destroy(); } else ch.push(c); });
+      req.on('end', () => resolve(Buffer.concat(ch))); req.on('error', reject); });
+    return json(res, 200, { result: COMMENTS.upload(db, u, url.searchParams, body) });
+  }
+
   if (p === '/upload' && req.method === 'POST') {
     const u = currentUser(req);
     if (!u) return json(res, 401, { error: 'Сессия закончилась. Войдите заново.' });

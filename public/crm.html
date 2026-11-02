@@ -7,22 +7,22 @@
 
 /* Layout: sticky ledger header with period + tabs; summary tiles over detail tables; wide tables scroll inside their own box */
 :root{
-  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#EDF1F6; --ink:#14213D; --muted:#5C6B84; --line:#E3E8F0;
-  --accent:#3B5BC7; --accent-ink:#FFFFFF; --accent-soft:#E9EDF9; --accent-2:#0E9F8C; --accent-2-soft:#DCF3EE;
-  --pos:#0E9F8C; --neg:#D1495B; --warn:#C98A04; --pos-soft:#DCF3EE; --neg-soft:#FBE4E8; --warn-soft:#FCF0D9;
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#EEF2F7; --ink:#17243B; --muted:#65748B; --line:#E1E7EF;
+  --accent:#4E6EAF; --accent-ink:#FFFFFF; --accent-soft:#E8EDF7; --accent-2:#348E83; --accent-2-soft:#E1F1ED;
+  --pos:#27836F; --neg:#BD5965; --warn:#AA7B25; --pos-soft:#E1F1ED; --neg-soft:#F8E7EA; --warn-soft:#F7F0DF;
   --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --font-num:"Inter",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --r:14px; --r-lg:18px; --r-sm:10px;
-  --sh-sm:0 1px 2px rgba(20,33,61,.06); --sh:0 6px 16px rgba(20,33,61,.08);
+  --sh-sm:0 1px 2px rgba(23,36,59,.04); --sh:0 8px 24px rgba(23,36,59,.07);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
-  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
-  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}}
+  --bg:#111827; --surface:#182235; --sunk:#141E30; --ink:#E5EAF3; --muted:#98A6BB; --line:#2A3850;
+  --accent:#9BB4E0; --accent-ink:#14213B; --accent-soft:#263754;
+  --pos:#72C4AE; --neg:#E59AA5; --warn:#D5B570; --pos-soft:#1E3936; --neg-soft:#412A34; --warn-soft:#3C3526; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0E1412; --surface:#161E1B; --sunk:#121916; --ink:#E4EBE8; --muted:#95A39D; --line:#28332F;
-  --accent:#7CC7AC; --accent-ink:#0C1A15; --accent-soft:#1D3029;
-  --pos:#62CC8F; --neg:#F08A80; --warn:#E2B458; --pos-soft:#18301F; --neg-soft:#3A1D1B; --warn-soft:#352A14; color-scheme:dark}
+  --bg:#111827; --surface:#182235; --sunk:#141E30; --ink:#E5EAF3; --muted:#98A6BB; --line:#2A3850;
+  --accent:#9BB4E0; --accent-ink:#14213B; --accent-soft:#263754;
+  --pos:#72C4AE; --neg:#E59AA5; --warn:#D5B570; --pos-soft:#1E3936; --neg-soft:#412A34; --warn-soft:#3C3526; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font-ui);margin:0}
 .wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
@@ -248,7 +248,7 @@ dialog .tbl-wrap{max-height:none}
 .brand .sect-badge{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:3px}
 @media (max-width:700px){.tbl-wrap{max-height:calc(100dvh - 140px)}.report th:first-child,.report td:first-child{min-width:130px;max-width:150px}}
 
-:root{--hdr:#E3EFE8}
+:root{--hdr:#E8EDF7}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hdr:#122019}}
 :root[data-theme="dark"]{--hdr:#122019}
 .grpseg{margin:0 0 12px;flex-wrap:wrap}
@@ -285,9 +285,9 @@ dialog .tbl-wrap{max-height:none}
 .appsw{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .appsw a{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 18px;border-radius:9px;text-decoration:none;font-weight:600;font-size:15px;color:var(--muted);white-space:nowrap}
 .appsw a i{width:10px;height:10px;border-radius:50%;flex:none}
-.appsw .sw-crm i{background:#2E8A66}.appsw .sw-fin i{background:#3A78C4}
-.appsw a.sw-crm[aria-current="page"]{background:#1F5A48;color:#FFFFFF}
-.appsw a.sw-fin[aria-current="page"]{background:#1E4E8C;color:#FFFFFF}
+.appsw .sw-crm i{background:#4E6EAF}.appsw .sw-fin i{background:#348E83}
+.appsw a.sw-crm[aria-current="page"]{background:var(--accent);color:#FFFFFF}
+.appsw a.sw-fin[aria-current="page"]{background:var(--accent);color:#FFFFFF}
 .appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
 .appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
 @media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
@@ -305,54 +305,131 @@ dialog .tbl-wrap{max-height:none}
 @media (max-width:700px){.me-chip .nm,.me-chip .car{display:none}.who .me-chip{padding:3px}}
 .prof-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 
-/* ===== Современный светлый стиль ===== */
-body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-ui);margin:0;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:0 48px}
-header.top{position:sticky;top:0;z-index:20;background:rgba(238,241,240,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding-block:16px 12px}
-.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
-.brand b{font-size:19px;letter-spacing:-.02em;font-weight:700}
-.brand span{color:var(--muted);font-size:12px}
-.brand .sect-badge{display:inline-block;margin-left:9px;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);vertical-align:2px}
-.right{display:flex;align-items:center;gap:10px}
-.appsw{display:inline-flex;gap:3px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.appsw a{display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 16px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap;transition:.15s}
-.appsw a:hover{background:var(--sunk);color:var(--ink)}
-.appsw .sw-crm i{width:8px;height:8px;border-radius:50%;background:#2E8A66}
-.appsw .sw-fin i{width:8px;height:8px;border-radius:50%;background:#3A78C4}
-.appsw a[aria-current="page"]{background:var(--accent);color:#fff}
-.appsw a[aria-current="page"] i{background:#fff}
-nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none;margin-top:4px}
-nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs a{padding:8px 15px;border-radius:999px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:500;font-size:14px;transition:.15s}
-nav.tabs a:hover{color:var(--ink);background:var(--surface)}
-nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg);font-weight:600}
-.who{display:flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;color:var(--muted)}
-.who b{color:var(--ink);font-weight:600}
-@media (max-width:700px){.who span{display:none}}
-/* карточки и плитки — легкие тени и скругления */
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:0 1px 2px rgba(0,0,0,.03);transition:box-shadow .2s}
-.tile:hover{box-shadow:0 4px 12px rgba(0,0,0,.07)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-button{white-space:nowrap;cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 14px;font-weight:500;transition:.15s}
-button:hover{border-color:var(--muted)}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
-button.primary:hover{filter:brightness(1.08)}
+/* DG UI · спокойная светлая тема */
+body{font:14px/1.55 var(--font-ui);letter-spacing:-.006em;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;padding-inline:24px}
+.brand b{font-size:20px;font-weight:750;letter-spacing:-.035em}
+.brand span{font-size:12px;color:var(--muted)}
+header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(14px);border-bottom-color:var(--line)}
+nav.tabs{gap:5px;padding-bottom:12px}
+nav.tabs a{font-size:13px;padding:8px 13px;border:1px solid transparent}
+nav.tabs a:hover{background:var(--surface);border-color:var(--line)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:650}
+.appsw{background:var(--surface);border-radius:11px;box-shadow:none}
+.appsw a{font-size:13px;padding:7px 13px}
+.appsw a.sw-crm[aria-current="page"],.appsw a.sw-fin[aria-current="page"]{background:var(--accent);color:#fff}
+button,input,select,textarea{border-radius:9px}
+button{box-shadow:none;font-weight:550;transition:background .15s,border-color .15s,color .15s}
+button:hover{transform:none;border-color:#AAB7C9;background:var(--sunk)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:none}
+button.primary:hover{background:#45639D;border-color:#45639D}
+input,select,textarea{padding:8px 11px;border-color:var(--line);background:var(--surface)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent-soft);outline-offset:0;border-color:var(--accent)}
+.card,.tile,.tbl-wrap{border-radius:var(--r);border-color:var(--line);box-shadow:var(--sh-sm)}
+.card{padding:18px}
+.tile{padding:16px 18px;gap:6px}
+.tile:hover{transform:none;box-shadow:var(--sh)}
+.tile .k{font-size:12px;font-weight:500}
+.tile .v{font-size:24px;letter-spacing:-.035em;font-weight:700}
+.tile.hero{background:var(--accent);border-color:var(--accent)}
+h2{font-size:18px;letter-spacing:-.02em;margin-top:26px}
+h3{font-size:11px;letter-spacing:.065em}
+th{font-size:11px;letter-spacing:.045em;color:var(--muted);font-weight:650;background:var(--sunk)}
+td{font-size:13px}
+tbody tr:hover{background:#F7F9FC}
+.chip{border-radius:7px;font-size:11px;padding:3px 8px}
+.seg,.grpseg{background:var(--sunk);border-radius:10px;padding:3px;gap:3px}
+.seg button,.grpseg button{border:0;background:transparent;box-shadow:none;border-radius:7px;padding:6px 11px}
+.seg button[aria-pressed="true"],.grpseg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);border-color:transparent;box-shadow:var(--sh-sm)}
+.toolbar{gap:10px}
+dialog,.dlg{border-radius:16px}
+.note,.muted{color:var(--muted)}
+@media (max-width:760px){.wrap{padding-inline:14px}.card{padding:14px}.tile{padding:14px}.brand b{font-size:18px}}
 
-/* ==== Современный редизайн ==== */
-body{font:15px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
-button{border-radius:var(--r-sm);font-weight:500;box-shadow:var(--sh-sm);transition:.18s}
-button:hover{transform:translateY(-1px);box-shadow:var(--sh)}
-button.primary{background:linear-gradient(135deg,#3B5BC7,#3148A8);border:none;color:#fff;box-shadow:0 6px 16px rgba(59,91,199,.32)}
-input,select,textarea{border-radius:var(--r-sm);padding:9px 12px}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm);transition:.2s}
-.tile:hover{box-shadow:var(--sh);transform:translateY(-2px)}
-.tile.hero{background:linear-gradient(135deg,#3B5BC7,#3148A8);border:none;color:#fff}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
-nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff;font-weight:600}
-header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(10px)}
+
+/* Задачи: рабочая область и канбан */
+.task-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 14px}
+.task-stats>div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 15px;display:flex;flex-direction:column}
+.task-stats b{font-size:22px;line-height:1.2;letter-spacing:-.03em}.task-stats span{font-size:12px;color:var(--muted);margin-top:3px}.task-stats .danger b{color:var(--neg)}
+.task-toolbar{align-items:end}.task-toolbar .grow{min-width:190px}
+.task-board{display:grid;grid-template-columns:repeat(6,minmax(220px,1fr));gap:10px;overflow-x:auto;padding:2px 2px 14px;align-items:start}
+.task-col{background:var(--sunk);border:1px solid var(--line);border-radius:13px;min-width:220px;transition:border-color .15s,background .15s}
+.task-col>header{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;font-size:12px;font-weight:650;color:var(--muted)}
+.task-col>header b{min-width:23px;text-align:center;background:var(--surface);border-radius:6px;padding:2px 5px;color:var(--ink)}
+.task-col-body{padding:0 8px 8px;min-height:80px}.task-empty{text-align:center;color:var(--muted);font-size:12px;padding:26px 4px}
+.task-col.is-overdue>header{color:var(--neg)}.task-col.dragover{background:var(--accent-soft);border-color:var(--accent)}
+.task-card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:8px;cursor:pointer;box-shadow:var(--sh-sm)}
+.task-card:hover{border-color:#B4C0D1}.task-card.dragging{opacity:.45}.task-card-top{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.4}.task-card-top input{flex:none;width:15px;margin-top:2px}
+.task-link{font-size:11px;color:var(--accent);margin-top:8px;line-height:1.4}.task-note{font-size:11px;color:var(--muted);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.task-card footer{display:flex;justify-content:space-between;gap:8px;margin-top:11px;font-size:10px;color:var(--muted)}.task-card .late{color:var(--neg);font-weight:650}.task-card .today{color:var(--warn);font-weight:650}
+/* Звонки и обращения */
+.comm-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 14px}.comm-summary>div{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;gap:4px}.comm-summary span{font-size:12px;color:var(--muted)}.comm-summary b{font-size:23px;letter-spacing:-.03em}.comm-summary .needs-action{border-color:#D9C797;background:var(--warn-soft)}
+.comm-toolbar .grow{min-width:180px}.comm-table td{vertical-align:top}.comm-table tr.is-new{background:#F5F8FC}.small{font-size:11px;margin-top:3px}
+.object-chip{display:inline-block;max-width:210px;color:var(--accent);font-weight:600;font-size:12px;line-height:1.4;cursor:pointer}.category-chip{display:inline-block;padding:4px 8px;border-radius:7px;background:var(--sunk);font-size:11px;color:var(--muted)}.category-chip.lead{background:var(--accent-soft);color:var(--accent)}.category-chip.spam{background:var(--neg-soft);color:var(--neg)}.category-chip.new{background:var(--warn-soft);color:var(--warn)}
+.inq-section{margin-top:26px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}.section-head h2{margin:0}.section-head p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.inq-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.inq-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px;cursor:pointer;box-shadow:var(--sh-sm)}.inq-card:hover{border-color:#B4C0D1;box-shadow:var(--sh)}
+.inq-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}.inq-card time{font-size:11px;color:var(--muted)}.inq-card>b{display:block;font-size:14px}.inq-object{margin-top:11px;font-size:12px;color:var(--accent);font-weight:600;line-height:1.45}.inq-result{font-size:12px;color:var(--muted);margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.inq-card footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:13px;font-size:11px;color:var(--muted)}
+@media(max-width:1000px){.inq-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.comm-table{overflow-x:auto}.task-toolbar{flex-wrap:wrap}}
+@media(max-width:680px){.task-stats,.comm-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.inq-grid{grid-template-columns:1fr}.task-board{grid-template-columns:repeat(6,240px)}.section-head{align-items:flex-start;flex-direction:column}.task-stats b,.comm-summary b{font-size:20px}}
+
+.task-quick>div{display:flex;gap:6px;flex-wrap:wrap}.task-quick button{font-size:11px;padding:5px 9px}
+
+/* ===== Обсуждения и общий поиск ===== */
+.hsearch{position:relative;flex:1 1 240px;max-width:420px;min-width:160px}
+.hsearch input{width:100%;padding:8px 12px 8px 34px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:13px}
+.hsearch input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.hsearch .ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+.hsearch .kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px;background:var(--sunk)}
+.bell{position:relative}
+.bell .n{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;border-radius:9px;background:var(--neg);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.srch{position:fixed;inset:0;z-index:60;background:rgba(20,30,50,.34);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;padding:8vh 16px 16px}
+.srch.on{display:flex}
+.srch-box{width:100%;max-width:720px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px rgba(16,26,45,.24);overflow:hidden;display:flex;flex-direction:column;max-height:76vh}
+.srch-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.srch-top input{flex:1;border:0;background:transparent;font-size:15px;padding:4px 0}
+.srch-top input:focus{outline:none;box-shadow:none}
+.srch-body{overflow-y:auto;padding:8px 8px 12px}
+.srch-group{margin:6px 0 2px;padding:6px 10px 4px;font-size:11px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.srch-item{display:flex;gap:11px;padding:9px 11px;border-radius:10px;cursor:pointer;align-items:flex-start}
+.srch-item:hover,.srch-item.on{background:var(--sunk)}
+.srch-ic{width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.srch-tx{flex:1;min-width:0}
+.srch-tx b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch-tx .m{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch-tx .hit{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45}
+.srch-empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13px}
+.srch-foot{padding:8px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+/* обсуждение */
+.disc-card h3{margin-bottom:10px}
+.disc-list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.disc-item{display:flex;gap:10px}
+.disc-av{width:28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.disc-b{flex:1;min-width:0}
+.disc-h{display:flex;align-items:baseline;gap:8px;font-size:12px}
+.disc-h b{font-size:13px}
+.disc-h time{color:var(--muted);font-size:11px;margin-left:auto}
+.disc-h .del{color:var(--muted);cursor:pointer;text-decoration:none;font-size:11px}
+.disc-tx{font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:3px}
+.disc-tx .mn{color:var(--accent);font-weight:600;background:var(--accent-soft);border-radius:5px;padding:0 3px}
+.disc-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.disc-file{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 9px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--ink);text-decoration:none;max-width:240px}
+.disc-file:hover{border-color:var(--muted)}
+.disc-file span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.disc-editor{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:8px}
+.disc-editor textarea{width:100%;border:0;resize:vertical;min-height:56px;font-size:13px;padding:4px;background:transparent}
+.disc-editor textarea:focus{outline:none;box-shadow:none}
+.disc-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.disc-bar .grow{flex:1}
+.disc-att{font-size:12px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;display:inline-flex;gap:5px;align-items:center}
+.disc-att:hover{border-color:var(--muted)}
+.disc-staged{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.disc-staged .f{display:inline-flex;align-items:center;gap:6px;font-size:11px;background:var(--accent-soft);color:var(--accent);border-radius:7px;padding:3px 8px}
+.disc-staged .f b{cursor:pointer;font-weight:700}
+.ment{position:absolute;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(16,26,45,.18);padding:4px;min-width:200px;max-height:220px;overflow-y:auto;display:none}
+.ment.on{display:block}
+.ment button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:7px 10px;border-radius:7px;font-size:13px;box-shadow:none}
+.ment button:hover,.ment button.on{background:var(--sunk)}
+.disc-empty{font-size:12px;color:var(--muted);padding:4px 0 10px}
 </style></head>
 <body>
 <header class="top">
@@ -361,6 +438,8 @@ header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(10px)}
       <div class="brand"><b>Дорогой Город<span class="sect-badge">CRM</span></b><span>Клиенты, заявки, задачи, объекты</span></div>
       <nav class="appsw" id="appsw" aria-label="Раздел системы"><a href="/" class="sw-crm" aria-current="page"><i></i>CRM</a><a href="/finance" class="sw-fin"><i></i>Финансы</a></nav>
       <div class="right">
+        <div class="hsearch"><span class="ic">🔍</span><input id="gsearch" placeholder="Поиск по CRM: клиент, сделка, объект, wiki…" autocomplete="off" aria-label="Общий поиск"><span class="kbd">Ctrl K</span></div>
+        <button class="bell" id="bell" type="button" title="Уведомления" aria-label="Уведомления">🔔<span class="n" id="bell-n" hidden>0</span></button>
         <button class="primary" id="addbtn" data-need-w>+ Заявка</button>
         <div class="who" id="who"></div>
       </div>
@@ -369,6 +448,13 @@ header.top{background:rgba(243,245,248,.92);backdrop-filter:blur(10px)}
   </div>
 </header>
 <main class="wrap" id="app"></main>
+<div class="srch" id="srch" role="dialog" aria-modal="true" aria-label="Поиск по CRM">
+  <div class="srch-box">
+    <div class="srch-top"><span style="color:var(--muted)">🔍</span><input id="srch-q" placeholder="Клиент, телефон, объект, сделка, задача, материал wiki…" autocomplete="off"><button type="button" class="ghost" id="srch-close">Закрыть</button></div>
+    <div class="srch-body" id="srch-body"><div class="srch-empty">Начните вводить запрос — ищем по всей CRM, звонкам и справочнику.</div></div>
+    <div class="srch-foot"><span>↑ ↓ — выбрать · Enter — открыть · Esc — закрыть</span><span id="srch-count"></span></div>
+  </div>
+</div>
 <dialog id="dlg"><form class="dlg" id="dlgform" method="dialog"></form></dialog>
 <datalist id="sources"></datalist>
 <div class="toast" id="toast" hidden></div>
@@ -397,7 +483,8 @@ const SOURCES=['Рекомендация','Повторный клиент','А�
 const OPEN_STAGES=['new','work','show','talks'];
 
 let D=null, ME=null, version=null, saving=0, dlgCtx=null;
-const V={tab:(location.hash||'').slice(1)||'calls', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false}, df:{q:'',st:'open'}};
+const V={tab:(location.hash||'').slice(1)||'calls', lf:{owner:'',q:'',kind:'',lost:false}, cf:{q:'',type:'',quiet:30,open:true,grp:'clients'}, of:{q:'',kind:'',offer:'',status:'work',resp:''}, tf:{who:'me',done:false,view:'list',q:'',link:''}, df:{q:'',st:'open'}, clf:{view:'todo',mine:false,type:'all',q:''}};
+try{const tv=localStorage.getItem('dg_task_view');if(tv==='board'||tv==='list')V.tf.view=tv}catch(_){}
 const can=()=>!!ME&&(ME.role==='owner'||ME.role==='staff');
 const fin=()=>!!ME&&(ME.finance==='view'||ME.finance==='edit');
 const finW=()=>!!ME&&ME.finance==='edit';
@@ -444,12 +531,13 @@ function renderHead(){
 function render(){
   if(!TABS().some(t=>t[0]===V.tab))V.tab='calls';
   $('#tabs').innerHTML=TABS().map(([k,l])=>`<a href="#${k}" data-tab="${k}" ${V.tab===k?'aria-current="page"':''}>${l}</a>`).join('');
-  $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',calls:'+ Звонок'}[V.tab]||'+ Заявка';
+  $('#addbtn').textContent={leads:'+ Заявка',tasks:'+ Задача',clients:'+ Клиент',objects:'+ Объект',deals:'+ Сделка',inqs:'+ Обращение'}[V.tab]||'+ Заявка';
   $('#addbtn').hidden=!can()||['admin','calls','kb'].includes(V.tab);
   if(!D){$('#app').innerHTML='<div class="card empty" style="margin-top:18px">Загружаю…</div>';return}
   const keep=document.activeElement&&document.activeElement.id,pos=keep&&document.activeElement.selectionStart;
   $('#app').innerHTML=({today:vToday,leads:vLeads,tasks:vTasks,clients:vClients,objects:vObjects,deals:vDeals,calls:vCalls,admin:vAdmin,kb:vKb}[V.tab])();
   if(keep){const el=document.getElementById(keep);if(el&&el.tagName==='INPUT'){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}
+  discMount();
 }
 
 /* ---------- Сегодня ---------- */
@@ -518,16 +606,35 @@ function leadCard(l){
 /* ---------- Задачи ---------- */
 function vTasks(){
   const f=V.tf,td=today(),who=t=>f.who==='all'||isMine(t);
-  let h=can()?`<div class="qadd"><input id="qt-title" placeholder="Новая задача: позвонить, отправить подборку…" aria-label="Новая задача"><input id="qt-due" type="date" value="${td}" aria-label="Срок"><select id="qt-who" aria-label="Исполнитель">${usersOpt(ME.id)}</select><button class="primary" data-qadd data-need-w>Добавить</button></div>`:'';
-  h+=`<div class="toolbar" style="margin-top:6px"><div class="seg" role="group"><button data-tw="me" aria-pressed="${f.who==='me'}">Мои</button><button data-tw="all" aria-pressed="${f.who==='all'}">Все</button></div>
-    <label class="checks" style="align-self:center"><label><input type="checkbox" id="tf-done" ${f.done?'checked':''}> Показать выполненные</label></label></div>`;
-  const open=openTasks(who);
-  const groups=[['Просрочено',t=>t.due&&t.due<td],['Сегодня',t=>t.due===td],['Завтра',t=>t.due===addDays(td,1)],['На неделе',t=>t.due>addDays(td,1)&&t.due<=addDays(td,7)],['Позже',t=>t.due>addDays(td,7)],['Без срока',t=>!t.due]];
-  let any=false;
-  for(const [g,fn] of groups){const it=open.filter(fn);if(!it.length)continue;any=true;h+=`<div class="grp ${g==='Просрочено'?'neg':''}">${g} · ${it.length}</div><div class="box tlist">${it.map(taskRow).join('')}</div>`}
-  if(!any)h+=`<div class="card empty">Открытых задач нет.</div>`;
-  if(f.done){const dn=D.tasks.filter(t=>t.done&&who(t)).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));h+=`<div class="grp">Выполнено за 45 дней · ${dn.length}</div>${dn.length?`<div class="box tlist">${dn.map(taskRow).join('')}</div>`:''}`}
+  f.view=f.view||'list';f.q=f.q||'';f.link=f.link||'';f.due=f.due||'';
+  const q=f.q.trim().toLowerCase();
+  const match=t=>who(t)&&(!f.link||(f.link==='lead'?t.leadId:f.link==='deal'?t.dealId:f.link==='object'?t.objectId:f.link==='client'?t.clientId:!t.leadId&&!t.dealId&&!t.objectId&&!t.clientId))&&(!q||[t.title,t.note,taskWho(t),taskLink(t)].join(' ').toLowerCase().includes(q));
+  const open=D.tasks.filter(t=>!t.done&&match(t)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')||(a.time||'').localeCompare(b.time||''));
+  const done=D.tasks.filter(t=>t.done&&match(t)).sort((a,b)=>(b.doneAt||b.updatedAt||0)-(a.doneAt||a.updatedAt||0));
+  const late=open.filter(t=>t.due&&t.due<td).length,todayN=open.filter(t=>t.due===td).length,week=open.filter(t=>t.due&&t.due<=addDays(td,7)).length;
+  let h=`<div class="task-stats"><div><b>${open.length}</b><span>в работе</span></div><div class="${late?'danger':''}"><b>${late}</b><span>просрочено</span></div><div><b>${todayN}</b><span>на сегодня</span></div><div><b>${week}</b><span>на 7 дней</span></div></div>`;
+  h+=can()?`<div class="qadd"><input id="qt-title" placeholder="Новая задача: позвонить, отправить подборку…" aria-label="Новая задача"><input id="qt-due" type="date" value="${td}" aria-label="Срок"><select id="qt-who" aria-label="Исполнитель">${usersOpt(ME.id)}</select><button class="primary" data-qadd data-need-w>Добавить</button></div>`:'';
+  h+=`<div class="toolbar task-toolbar"><div class="seg" role="group"><button data-tw="me" aria-pressed="${f.who==='me'}">Мои</button><button data-tw="all" aria-pressed="${f.who==='all'}">Все</button></div>
+    <div class="seg" role="group" aria-label="Вид задач"><button data-task-view="list" aria-pressed="${f.view==='list'}">Список</button><button data-task-view="board" aria-pressed="${f.view==='board'}">Канбан</button></div>
+    <label class="f grow"><span>Поиск</span><input id="tf-q" value="${esc(f.q)}" placeholder="Название, клиент, объект"></label>
+    <label class="f"><span>Связь</span><select id="tf-link">${opt([['','Все задачи'],['lead','По заявкам'],['deal','По сделкам'],['object','По объектам'],['client','По клиентам'],['none','Без связи']],f.link)}</select></label>
+    <label class="checks" style="align-self:center"><label><input type="checkbox" id="tf-done" ${f.done?'checked':''}> Выполненные</label></label></div>`;
+  if(f.view==='board'){
+    const buckets=[['overdue','Просрочено',t=>t.due&&t.due<td],['today','Сегодня',t=>t.due===td],['tomorrow','Завтра',t=>t.due===addDays(td,1)],['week','На неделе',t=>t.due>addDays(td,1)&&t.due<=addDays(td,7)],['later','Позже',t=>t.due>addDays(td,7)],['none','Без срока',t=>!t.due]];
+    h+='<div class="task-board">'+buckets.map(([key,label,fn])=>{const items=open.filter(fn);return `<section class="task-col ${key==='overdue'&&items.length?'is-overdue':''}" data-task-drop="${key}"><header><span>${label}</span><b>${items.length}</b></header><div class="task-col-body">${items.length?items.map(taskCard).join(''):'<div class="task-empty">Нет задач</div>'}</div></section>`}).join('')+'</div>';
+    h+='<p class="note">Перетаскивайте карточки между колонками — срок изменится автоматически. Нажмите на карточку, чтобы изменить задачу, исполнителя или связь.</p>';
+  }else{
+    const groups=[['Просрочено',t=>t.due&&t.due<td],['Сегодня',t=>t.due===td],['Завтра',t=>t.due===addDays(td,1)],['На неделе',t=>t.due>addDays(td,1)&&t.due<=addDays(td,7)],['Позже',t=>t.due>addDays(td,7)],['Без срока',t=>!t.due]];
+    let any=false;for(const [g,fn] of groups){const it=open.filter(fn);if(!it.length)continue;any=true;h+=`<div class="grp ${g==='Просрочено'?'neg':''}">${g} · ${it.length}</div><div class="box tlist">${it.map(taskRow).join('')}</div>`}
+    if(!any)h+='<div class="card empty">Открытых задач нет.</div>';
+  }
+  if(f.done)h+=`<div class="grp">Выполненные · ${done.length}</div><div class="box tlist">${done.length?done.map(taskRow).join(''):'<div class="empty">Нет выполненных задач.</div>'}</div>`;
   return h}
+function taskLink(t){return t.leadId&&lead(t.leadId)?'Заявка: '+lead(t.leadId).title:t.dealId&&deal(t.dealId)?'Сделка: '+dealName(deal(t.dealId)):t.objectId&&obj(t.objectId)?'Объект: '+objName(obj(t.objectId)):t.clientId&&cl(t.clientId)?'Клиент: '+clName(t.clientId):''}
+function taskCard(t){const late=t.due&&t.due<today(),link=taskLink(t);return `<article class="task-card" draggable="${can()?'true':'false'}" data-task-id="${esc(t.id)}" data-open-task="${esc(t.id)}"><div class="task-card-top">${can()?`<input type="checkbox" data-done="${esc(t.id)}" aria-label="Выполнить">`:''}<b>${esc(t.title)}</b></div>${link?`<div class="task-link">${esc(link)}</div>`:''}${t.note?`<div class="task-note">${esc(t.note.slice(0,120))}</div>`:''}<footer><span class="task-date ${late?'late':t.due===today()?'today':''}">${t.due?esc(dFmt(t.due)):'Без срока'}${t.time?' · '+esc(t.time):''}</span><span>${esc(uName(t.assigneeId)||'—')}</span></footer></article>`}
+async function moveTask(id,bucket){const t=D.tasks.find(x=>x.id===id);if(!t||!can())return;const td=today(),due={overdue:addDays(td,-1),today:td,tomorrow:addDays(td,1),week:addDays(td,4),later:addDays(td,14),none:''}[bucket];if(due==null||t.due===due)return;
+  try{await run('saveTask',Object.assign({},t,{due}));toast('Срок задачи обновлён')}catch(_){render()}}
+
 
 /* ---------- Клиенты ---------- */
 const TEAM=['agent','founder','employee'];
@@ -579,7 +686,7 @@ function vObjects(){
   const cnt={};D.objects.forEach(o=>cnt[o.status]=(cnt[o.status]||0)+1);
   h+=`<div class="stbar">${Object.entries(OD.status).map(([k,l])=>`<button class="ost os-${k}" data-ost="${k}" aria-pressed="${f.status===k}">${esc(l)} <b>${cnt[k]||0}</b></button>`).join('')}</div>`;
   if(!list.length)return h+`<div class="card empty">${D.objects.length?'По фильтру ничего нет.':'Объектов пока нет. Добавьте первый кнопкой «+ Объект».'}</div>`;
-  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Объект / категория</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Объект</th><th>Статус</th><th>Ответственный</th><th class="r">Цена</th><th class="r">Площадь</th><th class="r">В экспозиции</th><th class="r">Обращения</th><th class="r">Расходы</th><th>Готовность</th></tr></thead><tbody>
     ${list.map(o=>{const r=readiness(o),days=o.activeSince&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-o.activeSince)/864e5):null,iq=(D.inq||{})[o.id],exp=(o.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0),ppm=o.price&&o.area?Math.round(o.price/o.area):0,cw=contractWarn(o);
       return `<tr class="click" data-open-object="${esc(o.id)}"><td><b>${esc(o.title||o.address)}</b><div class="muted" style="font-size:12px">${esc([OD.kinds[o.kind],o.offer==='rent'?'аренда':'продажа',o.title?o.address:'',o.metro?'м. '+o.metro:''].filter(Boolean).join(' · '))}</div>${cw?`<div class="neg" style="font-size:12px">${esc(cw)}</div>`:''}<div style="font-size:11px;margin-top:2px">${((D.files||{})[o.id]||{}).photo?`<span class="muted">📷 ${D.files[o.id].photo}</span> `:''}${o.cian&&o.cian.state==='on'?'<span class="chip closed">ЦИАН</span>':o.cian&&o.cian.state==='ready'?'<span class="chip work">ЦИАН: ждёт решения</span>':''}</div></td>
       <td><span class="ochip os-${o.status}">${esc(OD.status[o.status]||o.status)}</span></td><td>${esc(uName(o.responsibleId)||'—')}</td>
@@ -615,7 +722,9 @@ function vDeals(){
 
 /* ---------- диалоги ---------- */
 const dlg=$('#dlg'),form=$('#dlgform');
-function openDlg(ctx){dlgCtx=ctx;dlg.classList.toggle('wide',!!ctx.wide);dlg.classList.toggle('xwide',!!ctx.xwide);ctx.draw();if(!dlg.open)dlg.showModal();if(ctx.feed)loadFeed()}
+function openDlg(ctx){dlgCtx=ctx;dlg.classList.toggle('wide',!!ctx.wide);dlg.classList.toggle('xwide',!!ctx.xwide);ctx.draw();if(!dlg.open)dlg.showModal();if(ctx.feed)loadFeed();discMount()}
+// Обсуждение внутри карточки: контейнер <div id="disc-wrap" data-ent data-id>.
+function discMount(){const w=document.getElementById('disc-wrap');if(!w)return;const ent=w.dataset.ent,id=w.dataset.id;if(!ent||!id||w.dataset.mounted==='1')return;w.dataset.mounted='1';discAttachHost(w,ent,id)}
 dlg.addEventListener('close',()=>{dlgCtx=null});
 function readForm(){const o=dlgCtx.o;form.querySelectorAll('[name]').forEach(el=>{if(el.type==='checkbox'){if(el.dataset.multi!=null){o[el.name]=o[el.name]||[];}else o[el.name]=el.checked}else o[el.name]=el.value});
   const multi={};form.querySelectorAll('input[type=checkbox][data-multi]').forEach(el=>{(multi[el.name]=multi[el.name]||[]);if(el.checked)multi[el.name].push(el.value)});Object.assign(o,multi)}
@@ -860,7 +969,7 @@ function drawDeal(){const x=dlgCtx.o,d=dlgCtx.orig,ag=agentsList(),agOpt=v=>opt(
     ${fin()?`<label class="f"><span>Комиссия агентства, ₽</span><input name="commission" type="number" value="${esc(x.commission)}" ${finW()?'':'disabled'}></label>`:''}
     <label class="f full"><span>Заметка</span><textarea name="note" rows="2">${esc(x.note)}</textarea></label></div>
     <div class="links">${ld?`<a data-open-lead="${esc(ld.id)}">Заявка: ${esc(ld.title)}</a>`:''}${x.clientId&&d?`<a data-open-client="${esc(x.clientId)}">Карточка клиента</a>`:''}${x.objectId&&d&&obj(x.objectId)?`<a data-open-object="${esc(x.objectId)}">Карточка объекта</a>`:''}${fin()?'<a href="/finance#deals">Доли агентов и платежи — в разделе «Финансы»</a>':'<span class="muted" style="font-size:12px">Платежи по сделке вносит бухгалтерия в разделе «Финансы».</span>'}</div>`;
-  form.innerHTML=d?`<h2>${esc(dealName(d))}</h2><div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({dealId:d.id})}</div>${acts(false)}`
+  form.innerHTML=d?`<h2>${esc(dealName(d))}</h2><div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div><div class="side"><div class="card disc-card"><h3>Обсуждение сделки</h3><div id="disc-wrap" data-ent="deal" data-id="${esc(d.id)}"></div></div>${sidePanel({dealId:d.id})}</div></div>${acts(false)}`
     :`<h2>Новая сделка</h2>${fields}${acts(false)}`}
 
 /* задача */
@@ -873,6 +982,7 @@ function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
     <label class="f full"><span>Что сделать</span><input name="title" value="${esc(x.title)}" required></label>
     <label class="f"><span>Срок</span><input name="due" type="date" value="${esc(x.due)}"></label>
     <label class="f"><span>Время</span><input name="time" type="time" value="${esc(x.time)}"></label>
+    <div class="f full task-quick"><span>Быстро перенести</span><div><button type="button" data-task-due="today">Сегодня</button><button type="button" data-task-due="tomorrow">Завтра</button><button type="button" data-task-due="week">+7 дней</button><button type="button" data-task-due="none">Без срока</button></div></div>
     <label class="f full"><span>Исполнитель</span><select name="assigneeId">${usersOpt(x.assigneeId)}</select></label>
     <div class="f full"><span style="font-size:12px;color:var(--muted)">Соисполнители <span style="opacity:.8">— видят задачу у себя в «Сегодня» и «Задачах»</span></span><div class="checks">${D.users.filter(u=>(u.active||(x.coIds||[]).map(Number).includes(u.id))&&u.id!==Number(x.assigneeId)).map(u=>`<label><input type="checkbox" name="coIds" data-multi value="${u.id}" ${(x.coIds||[]).map(Number).includes(u.id)?'checked':''}> ${esc(u.name)}</label>`).join('')||'<span class="muted">Других пользователей нет</span>'}</div></div>
     <label class="f"><span>Клиент</span><select name="clientId">${clientsOpt(x.clientId)}</select></label>
@@ -881,6 +991,7 @@ function drawTask(){const x=dlgCtx.o,t=dlgCtx.orig;
     <label class="f"><span>Объект</span><select name="objectId">${objectsOpt(x.objectId)}</select></label>
     <label class="f full"><span>Подробности</span><textarea name="note" rows="3">${esc(x.note)}</textarea></label>
     ${t?`<label class="checks full"><label><input type="checkbox" name="done" ${x.done?'checked':''}> Выполнено</label></label>`:''}</div>
+    ${t?`<h3 style="margin-top:18px">Обсуждение</h3><div id="disc-wrap" data-ent="task" data-id="${esc(t.id)}"></div>`:''}
     ${acts(!!t)}`}
 
 /* оформление сделки из заявки */
@@ -951,6 +1062,7 @@ form.addEventListener('click',e=>{const t=e.target.closest('[data-open-task]');i
 
 const isMine=t=>t.assigneeId===ME.id||(t.coIds||[]).map(Number).includes(ME.id);
 const taskWho=t=>uName(t.assigneeId)+((t.coIds||[]).length?' + '+t.coIds.map(id=>uName(Number(id))).filter(Boolean).join(', '):'');
+form.addEventListener('click',e=>{const b=e.target.closest('[data-task-due]');if(!b||!dlgCtx||dlgCtx.kind!=='task')return;e.preventDefault();const d={today:today(),tomorrow:addDays(today(),1),week:addDays(today(),7),none:''}[b.dataset.taskDue];dlgCtx.o.due=d;const input=form.querySelector('[name=due]');if(input)input.value=d});
 form.addEventListener('change',e=>{if(dlgCtx&&dlgCtx.kind==='task'&&e.target.name==='assigneeId'){readForm();dlgCtx.draw()}});
 async function toggleDone(id,val){const t=D.tasks.find(x=>x.id===id);if(!t)return;try{await run('saveTask',Object.assign({},t,{done:val}));toast(val?'Готово':'Задача снова открыта')}catch(_){render()}}
 
@@ -962,6 +1074,7 @@ const app=$('#app');
 app.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');if(g){V.tab=g.dataset.go;history.replaceState(null,'','#'+V.tab);render();return}
   const tw=e.target.closest('[data-tw]');if(tw){V.tf.who=tw.dataset.tw;render();return}
+  const tv=e.target.closest('[data-task-view]');if(tv){V.tf.view=tv.dataset.taskView;try{localStorage.setItem('dg_task_view',V.tf.view)}catch(_){}render();return}
   const ds=e.target.closest('[data-dst]');if(ds){V.df.st=ds.dataset.dst;render();return}
   const cg=e.target.closest('[data-cgrp]');if(cg){V.cf.grp=cg.dataset.cgrp;render();return}
   const os=e.target.closest('[data-ost]');if(os){V.of.status=V.of.status===os.dataset.ost?'work':os.dataset.ost;render();return}
@@ -979,12 +1092,12 @@ app.addEventListener('click',e=>{
 app.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.retype&&t.value){const c=cl(t.dataset.retype);if(c)run('crmSaveClient',Object.assign({},c,{types:[t.value]})).then(()=>toast(c.name+' → '+(CP_TYPES.find(x=>x[0]===t.value)||[])[1])).catch(()=>{});return}
   if(t.dataset.done!=null){toggleDone(t.dataset.done,t.checked);return}
-  const map={'lf-owner':['lf','owner'],'lf-kind':['lf','kind'],'cf-type':['cf','type'],'cf-quiet':['cf','quiet'],'of-kind':['of','kind'],'of-offer':['of','offer'],'of-status':['of','status'],'of-resp':['of','resp']};
+  const map={'lf-owner':['lf','owner'],'lf-kind':['lf','kind'],'cf-type':['cf','type'],'cf-quiet':['cf','quiet'],'of-kind':['of','kind'],'of-offer':['of','offer'],'of-status':['of','status'],'of-resp':['of','resp'],'tf-link':['tf','link'],'cl-type':['clf','type']};
   if(map[t.id]){V[map[t.id][0]][map[t.id][1]]=t.value;render();return}
   if(t.id==='lf-lost'){V.lf.lost=t.checked;render();return}
   if(t.id==='tf-done'){V.tf.done=t.checked;render();return}
 });
-app.addEventListener('input',e=>{const t=e.target,map={'lf-q':'lf','cf-q':'cf','of-q':'of','df-q':'df'};if(map[t.id]){V[map[t.id]].q=t.value;render()}});
+app.addEventListener('input',e=>{const t=e.target,map={'lf-q':'lf','cf-q':'cf','of-q':'of','df-q':'df','tf-q':'tf','cl-q':'clf'};if(map[t.id]){V[map[t.id]].q=t.value;render()}});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='qt-title'){e.preventDefault();qadd()}});
 async function qadd(){const title=$('#qt-title').value.trim();if(!title)return toast('Напишите задачу.');
   try{await run('saveTask',{title,due:$('#qt-due').value,assigneeId:Number($('#qt-who').value)});toast('Задача добавлена')}catch(_){}}
@@ -1142,40 +1255,51 @@ function cianHtml(){const c=dlgCtx;if(!c.orig)return '<p class="muted">Снач�
     <p class="note">Другие площадки (Авито, Яндекс Недвижимость, Домклик) подключим так же, когда понадобится.</p>`}
 
 /* ---------- Звонки (Novofon) ---------- */
-const CALLS={list:null,t:0,loading:false};
-async function callsLoad(){if(CALLS.loading)return;CALLS.loading=true;try{CALLS.list=await api('listCalls',7);CALLS.t=Date.now();if(!IQ.list)iqLoad()}catch(e){toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
 const ph=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);d=d.slice(-10);return d.length===10?`+7 ${d.slice(0,3)} ${d.slice(3,6)}-${d.slice(6,8)}-${d.slice(8)}`:String(s||'')};
+const CALLS={list:null,t:0,loading:false,error:''};
+async function callsLoad(force){if(CALLS.loading)return;CALLS.loading=true;CALLS.error='';try{const [calls,inquiries]=await Promise.all([api('listCalls',60),IQ.list?Promise.resolve(IQ.list):api('listAllInquiries')]);CALLS.list=Array.isArray(calls)?calls:[];CALLS.t=Date.now();if(!IQ.list)IQ.list=Array.isArray(inquiries)?inquiries:[]}catch(e){CALLS.error=e.message;toast(e.message)}CALLS.loading=false;if(V.tab==='calls')render()}
+function callInquiry(c){return (IQ.list||[]).find(q=>(q.callIds||[]).map(String).includes(String(c.id)))}
+function callCategory(c){const q=callInquiry(c),o=q&&obj(q.objectId);
+  if(o)return {text:objName(o),kind:'object'};
+  if(c.status==='lead')return {text:'Заявка на услуги',kind:'lead'};
+  if(c.status==='spam')return {text:'Спам',kind:'spam'};
+  if(c.status==='ignored')return {text:'Не клиент',kind:'other'};
+  if(c.status==='new')return {text:'Не разобран',kind:'new'};
+  return {text:c.clientId?'Связь с клиентом':'Без объекта',kind:'other'}}
 function vCalls(){
-  if(!CALLS.list){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки…</div>'}
-  if(Date.now()-CALLS.t>30000)setTimeout(callsLoad,0);
-  const F=V.clf||(V.clf={view:'todo',mine:false}),mine=c=>!F.mine||c.userId===ME.id;
+  if(!CALLS.list&&!CALLS.error){callsLoad();return '<div class="card empty" style="margin-top:18px">Загружаю звонки и обращения…</div>'}
+  if(CALLS.error&&!CALLS.list)return `<div class="card empty" style="margin-top:18px"><b>Не удалось загрузить звонки</b><p class="muted">${esc(CALLS.error)}</p><button data-calls-retry>Повторить</button></div>`;
+  if(Date.now()-CALLS.t>60000&&!CALLS.loading)setTimeout(()=>callsLoad(true),0);
+  const F=V.clf||(V.clf={view:'todo',mine:false,type:'all',q:''}),mine=c=>!F.mine||c.userId===ME.id;
   const base=CALLS.list.filter(mine),todoAll=base.filter(c=>c.status==='new'),spamAll=base.filter(c=>c.status==='spam');
-  // в «Не разобранных» — один номер одной строкой (последний звонок), в остальных — каждый звонок
   const byPhone={};todoAll.forEach(c=>{const g=byPhone[c.phone]||(byPhone[c.phone]={n:0,lost:0,last:c});g.n++;if(c.lost)g.lost++;if(c.at>g.last.at)g.last=c});
-  const rows=F.view==='todo'?Object.values(byPhone).map(g=>Object.assign({},g.last,{_n:g.n,_lost:g.lost})):F.view==='spam'?spamAll:base.filter(c=>c.status!=='spam');
+  let rows=F.view==='todo'?Object.values(byPhone).map(g=>Object.assign({},g.last,{_n:g.n,_lost:g.lost})):F.view==='spam'?spamAll:base.filter(c=>c.status!=='spam');
   rows.sort((a,b)=>b.at-a.at);
-  const nTodo=Object.keys(byPhone).length;
-  const ST={new:'<span class="chip work">не разобран</span>',ignored:'<span class="chip">не клиент</span>',spam:'<span class="chip out">спам</span>',lead:'<span class="chip deal">заявка</span>',linked:''};
+  const q=F.q.trim().toLowerCase();
+  if(F.type==='objects')rows=rows.filter(c=>callCategory(c).kind==='object');
+  if(F.type==='services')rows=rows.filter(c=>callCategory(c).kind==='lead');
+  if(F.type==='new')rows=rows.filter(c=>c.status==='new');
+  if(q)rows=rows.filter(c=>[c.phone,c.vnumber,clName(c.clientId),callCategory(c).text,c.emp].join(' ').toLowerCase().includes(q));
+  const nTodo=Object.keys(byPhone).length,withObj=base.filter(c=>callCategory(c).kind==='object').length;
   const dirChip=c=>c.dir==='in'?(c.lost?'<span class="chip out">пропущен</span>':'<span class="chip in">входящий</span>'):'<span class="chip">исходящий</span>';
+  const ST={new:'<span class="chip work">не разобран</span>',ignored:'<span class="chip">не клиент</span>',spam:'<span class="chip out">спам</span>',lead:'<span class="chip deal">заявка</span>',linked:''};
   const vOwner=c=>{let d=String(c.vnumber||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);const id=(D.vnums||{})[d];return id?uName(id):''};
-  const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`
-    :c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`
-    :c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
-  let h=`<div class="toolbar" style="align-items:center">
-    <div class="seg" role="group"><button type="button" data-clv="todo" aria-pressed="${F.view==='todo'}">Не разобранные <b>${nTodo}</b></button><button type="button" data-clv="all" aria-pressed="${F.view==='all'}">Все звонки</button><button type="button" data-clv="spam" aria-pressed="${F.view==='spam'}">Спам <b>${spamAll.length}</b></button></div>
-    <div class="seg" role="group"><button type="button" data-clm="0" aria-pressed="${!F.mine}">Все сотрудники</button><button type="button" data-clm="1" aria-pressed="${F.mine}">Мои</button></div></div>
-  ${F.view==='todo'?'<p class="note" style="margin:-4px 0 10px">Номера, которых нет в CRM. По каждому выберите: «По объекту» — звонил по объявлению; «Заявка» — хочет наши услуги; «Это клиент…» — номер знакомого клиента; «Не клиент» — курьер, сервис; «Спам» — реклама и роботы: такие номера больше не попадут в разбор.</p>':F.view==='spam'?'<p class="note" style="margin:-4px 0 10px">Звонки с этих номеров сразу уходят в спам: без задач и уведомлений.</p>':''}`;
-  if(!rows.length)return h+`<div class="card empty">${F.view==='todo'?'Неразобранных звонков нет.':F.view==='spam'?'Спама нет.':'Звонков за неделю нет. Если телефония подключена недавно, звонки появятся в течение 3 минут после разговора.'}</div>`;
-  h+=`<div class="tbl-wrap"><table class="calls-tbl"><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Клиент / статус</th><th class="r">Разговор</th><th>Принял</th><th>Кому в CRM</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>
-    ${rows.map(c=>`<tr><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted" style="font-size:11px">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td>${callObjInfo(c)}</td><td>${callObjInfo(c)}</td>
-      <td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted" style="font-size:11px">на ${esc(ph(c.vnumber))}${vOwner(c)?' · номер '+esc(vOwner(c)):''}</div>`:''}</td>
-      <td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a> `:''}${ST[c.status]||''}</td>
-      <td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.emp||'')}</td><td>${c.userId?esc(uName(c.userId)):'<span class="muted">—</span>'}</td>
-      <td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:''}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`).join('')}</tbody></table></div>
-    <p class="note">Показаны звонки за 7 дней и все неразобранные.</p>`;
-  return h}
-app.addEventListener('click',async e=>{if(V.tab!=='calls')return;
+  const acts=c=>!can()?'':c.status==='new'?`<div class="call-acts"><button type="button" class="primary" data-call-obj="${esc(c.id)}">По объекту</button><button type="button" data-call-lead="${esc(c.id)}">Заявка</button><button type="button" data-call-link="${esc(c.id)}">Это клиент…</button><button type="button" class="ghost" data-call-ignore="${esc(c.id)}">Не клиент</button><button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button></div>`:c.status==='spam'?`<div class="call-acts"><button type="button" class="ghost" data-call-unspam="${esc(c.id)}">Не спам</button></div>`:c.dir==='in'?`<div class="call-acts"><button type="button" class="ghost" data-call-obj="${esc(c.id)}">→ объект</button>${c.status==='ignored'?`<button type="button" class="ghost neg" data-call-spam="${esc(c.id)}">Спам</button>`:''}</div>`:'';
+  const inquiries=(IQ.list||[]).filter(i=>{if(F.mine&&i.userId!==ME.id)return false;if(F.type==='objects')return true;if(F.type==='services'||F.type==='new')return false;if(!q)return true;return [i.name,i.phone,i.channel,i.result,objName(obj(i.objectId))].join(' ').toLowerCase().includes(q)}).sort((a,b)=>b.at-a.at).slice(0,60);
+  let h=`<div class="comm-summary"><div><span>Звонков за 60 дней</span><b>${base.length}</b></div><div><span>По объектам</span><b>${withObj}</b></div><div class="${nTodo?'needs-action':''}"><span>Ждут разбора</span><b>${nTodo}</b></div><div><span>Обращений</span><b>${(IQ.list||[]).length}</b></div></div>
+  <div class="toolbar comm-toolbar"><div class="seg"><button data-clv="todo" aria-pressed="${F.view==='todo'}">Неразобранные <b>${nTodo}</b></button><button data-clv="all" aria-pressed="${F.view==='all'}">Все</button><button data-clv="spam" aria-pressed="${F.view==='spam'}">Спам</button></div>
+    <div class="seg"><button data-clm="0" aria-pressed="${!F.mine}">Все сотрудники</button><button data-clm="1" aria-pressed="${F.mine}">Мои</button></div>
+    <label class="f"><span>Показать</span><select id="cl-type">${opt([['all','Все звонки'],['objects','По объектам'],['services','По услугам'],['new','Только неразобранные']],F.type)}</select></label>
+    <label class="f grow"><span>Поиск</span><input id="cl-q" value="${esc(F.q)}" placeholder="Телефон, клиент, объект"></label></div>`;
+  if(!rows.length)h+='<div class="card empty">Под выбранные условия звонков нет.</div>';
+  else h+=`<div class="tbl-wrap comm-table"><table><thead><tr><th>Когда</th><th>Звонок</th><th>Номер</th><th>Объект / категория</th><th>Клиент</th><th class="r">Разговор</th><th>Сотрудник</th><th>Запись</th>${can()?'<th>Действия</th>':''}</tr></thead><tbody>${rows.map(c=>{const cat=callCategory(c),inq=callInquiry(c);return `<tr class="${c.status==='new'?'is-new':''}"><td class="num">${dtFmt(c.at)}</td><td>${dirChip(c)}${c._n>1?`<div class="muted small">звонков: ${c._n}${c._lost?', пропущено: '+c._lost:''}</div>`:''}</td><td><span class="num">${esc(ph(c.phone))}</span>${c.vnumber?`<div class="muted small">на ${esc(ph(c.vnumber))}${vOwner(c)?' · '+esc(vOwner(c)):''}</div>`:''}</td><td>${inq?`<a class="object-chip" data-inq-open="${esc(inq.id)}" title="Открыть обращение">${esc(cat.text)}</a>`:`<span class="category-chip ${cat.kind}">${esc(cat.text)}</span>`}</td><td>${c.clientId&&cl(c.clientId)?`<a class="lnk" data-open-client="${esc(c.clientId)}">${esc(clName(c.clientId))}</a>`:'<span class="muted">—</span>'}<div>${ST[c.status]||''}</div></td><td class="r num">${c.lost?'':mmss(c.talk)}</td><td>${esc(c.userId?uName(c.userId):(c.emp||'—'))}</td><td>${c.rec?`<a class="lnk" href="${esc(c.rec)}" target="_blank" rel="noopener">▶ слушать</a>`:'<span class="muted">—</span>'}</td>${can()?`<td>${acts(c)}</td>`:''}</tr>`}).join('')}</tbody></table></div>`;
+  h+=`<section class="inq-section"><div class="section-head"><div><h2>Обращения по объектам</h2><p>Результат разбора звонков: кто звонил, по какому объекту и что решили.</p></div>${can()?'<button class="primary" data-inq-new>+ Обращение</button>':''}</div>`;
+  h+=inquiries.length?`<div class="inq-grid">${inquiries.map(i=>{const o=obj(i.objectId),st=(D.dict.obj.inqStages||{})[i.stage]||i.stage;return `<article class="inq-card" data-inq-open="${esc(i.id)}"><div class="inq-card-top"><span class="chip deal">${esc(i.channel||'Звонок')}</span><time>${dtFmt(i.at)}</time></div><b>${esc(i.name||i.phone||'Без имени')}</b><div class="num muted">${esc(ph(i.phone))}</div><div class="inq-object">${esc(o?objName(o):'Объект не найден')}</div><div class="inq-result">${esc(i.result||i.note||'Результат пока не заполнен')}</div><footer><span class="chip work">${esc(st)}</span><span>${esc(i.userName||'')}</span></footer></article>`}).join('')}</div>`:'<div class="card empty">Обращений по объектам пока нет. Разберите звонок кнопкой «По объекту».</div>';
+  return h+'</section>'}
+
+app.addEventListener('click',async e=>{if(e.target.closest('[data-calls-retry]')){CALLS.error='';CALLS.list=null;render();callsLoad(true);return}if(e.target.closest('[data-inq-new]')){openInq(null);return}if(V.tab!=='calls')return;
   const v=e.target.closest('[data-clv]');if(v){V.clf.view=v.dataset.clv;render();return}
+  if(e.target.closest('[data-inq-open]'))return;
   const m=e.target.closest('[data-clm]');if(m){V.clf.mine=m.dataset.clm==='1';render();return}
   const s=e.target.closest('[data-call-spam],[data-call-unspam]');if(s){const sp=!!s.dataset.callSpam,id=s.dataset.callSpam||s.dataset.callUnspam;
     if(sp&&!confirm('Отметить номер как спам? Все звонки с него уйдут в «Спам», задачи «Перезвонить» по ним закроются.'))return;
@@ -1227,7 +1351,7 @@ app.addEventListener('click',async e=>{const b=e.target.closest('[data-nf-save],
 
 /* ---------- Обращения по объектам ---------- */
 const IQ={list:null,t:0,loading:false};
-async function iqLoad(){if(IQ.loading)return;IQ.loading=true;try{IQ.list=await api('listAllInquiries');IQ.t=Date.now()}catch(e){toast(e.message)}IQ.loading=false;if(V.tab==='calls'||V.tab==='inqs')render()}
+async function iqLoad(){if(IQ.loading)return;IQ.loading=true;try{IQ.list=await api('listAllInquiries');IQ.t=Date.now()}catch(e){toast(e.message)}IQ.loading=false;if(V.tab==='inqs')render()}
 const key10=s=>{let d=String(s||'').replace(/\D/g,'');if(d.length===11&&d[0]==='8')d='7'+d.slice(1);return d.length>=10?d.slice(-10):''};
 const toLocal=ms=>{if(!ms)return '';const d=new Date(ms);return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
 const ST_CHIP={new:'',show_set:'work',shown:'deal',thinking:'work',talks:'work',deposit:'deal',deal:'closed',declined:'out',noreply:'out'};
@@ -1350,7 +1474,7 @@ function vInqs(){
   </tbody></table></div><p class="note">Один человек — одна строка, даже если звонил по нескольким объектам. Нажмите на объект, чтобы поменять этап: показ назначен, проведён, итог.</p>`;
   return h}
 app.addEventListener('click',async e=>{
-  const o=e.target.closest('[data-iq-open]');if(o){const q=(IQ.list||[]).find(x=>x.id===o.dataset.iqOpen);if(q)openInq(JSON.parse(JSON.stringify(q)));return}
+  const o=e.target.closest('[data-inq-open],[data-iq-open]');if(o){const id=o.dataset.inqOpen||o.dataset.iqOpen,q=(IQ.list||[]).find(x=>x.id===id);if(q)openInq(JSON.parse(JSON.stringify(q)));return}
   const st=e.target.closest('[data-qst]');if(st){V.qf.stage=V.qf.stage===st.dataset.qst?'':st.dataset.qst;render();return}
   if(e.target.closest('[data-qcand]')){V.qf.cand=!V.qf.cand;render();return}
   const l=e.target.closest('[data-iq-lead]');if(l){try{await run('inquiryToLead',l.dataset.iqLead);IQ.list=null;render();toast('Заявка на подбор создана — она во вкладке «Заявки»')}catch(_){}return}
@@ -1376,7 +1500,7 @@ function md(src){const inl=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').repla
     if((m=l.match(/^\d+[.)]\s+(.*)/))){fp();if(!list||list.t!=='ol'){fl();list={t:'ol',items:[]}}list.items.push(m[1]);return}
     fl();para.push(l)});
   fp();fl();return out.join('')}
-const kbCtl=(x,ed)=>ed?`<span class="kb-ctl"><button type="button" class="ghost" data-kb-move="${esc(x.id)}" data-d="-1" title="Выше">↑</button><button type="button" class="ghost" data-kb-move="${esc(x.id)}" data-d="1" title="Ниже">↓</button><button type="button" class="ghost" data-kb-edit="${esc(x.id)}" title="Изменить">✎</button></span>`:'';
+const kbCtl=(x,ed)=>`<span class="kb-ctl"><button type="button" class="ghost" data-kb-disc="${esc(x.id)}" title="Обсуждение материала">💬<span class="muted" style="font-size:11px;margin-left:4px">Обсуждение</span></button>${ed?`<button type="button" class="ghost" data-kb-move="${esc(x.id)}" data-d="-1" title="Выше">↑</button><button type="button" class="ghost" data-kb-move="${esc(x.id)}" data-d="1" title="Ниже">↓</button><button type="button" class="ghost" data-kb-edit="${esc(x.id)}" title="Изменить">✎</button>`:''}</span>`;
 function vKb(){
   if(!KB.d){kbLoad();return '<div class="card empty" style="margin-top:18px">Загружаю справочник…</div>'}
   const d=KB.d,ed=d.canEdit,f=V.kb,q=f.q.trim().toLowerCase(),m=s=>!q||String(s||'').toLowerCase().includes(q);
@@ -1400,7 +1524,8 @@ function vKb(){
     const a=f.art&&d.items.find(x=>x.id===f.art);
     if(a){h+=`<div class="card kb-art" style="margin-top:16px"><div class="r2" style="justify-content:space-between;flex-wrap:wrap"><button type="button" class="ghost" data-kb-art="">← Все инструкции</button>${ed?`<button type="button" data-kb-edit="${esc(a.id)}">Изменить</button>`:''}</div>
         <div class="muted" style="font-size:12px;margin-top:10px">${esc(a.cat)}</div><h2 style="margin:4px 0 10px">${esc(a.title)}</h2>${md(a.body)}
-        <p class="note">Обновлено ${dtFmt(a.updatedAt)}${a.by?' · '+esc(a.by):''}</p></div>`}
+        <p class="note">Обновлено ${dtFmt(a.updatedAt)}${a.by?' · '+esc(a.by):''}</p>
+        <h3 style="margin-top:22px">Обсуждение материала</h3><div id="disc-wrap" data-ent="kb" data-id="${esc(a.id)}"></div></div>`}
     else{h+=`<div class="r2" style="justify-content:flex-end;margin:16px 0 8px">${ed?'<button type="button" class="primary" data-kb-new="article">+ Инструкция</button>':''}</div>`;
       h+=arts.length?grp(arts,'cat').map(g=>`<h2 style="margin-top:14px">${esc(g.k)}</h2><div class="kb-grid">${g.items.map(x=>`<div class="card kb-card" data-kb-art="${esc(x.id)}"><div class="r2" style="justify-content:space-between;align-items:flex-start"><b>${esc(x.title)}</b>${kbCtl(x,ed)}</div><div class="muted kb-prev">${esc(String(x.body||'').replace(/[#*\-]/g,'').replace(/\s+/g,' ').trim().slice(0,160))}…</div></div>`).join('')}</div>`).join(''):'<div class="card empty">Ничего не найдено.</div>'}
   }else{
@@ -1446,6 +1571,8 @@ form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='kbitem')
   try{KB.d=await api('kbDelete',c.orig.id);dlg.close();if(V.kb.art===c.orig.id)V.kb.art='';render();toast('Удалено')}catch(err){toast(err.message)}});
 app.addEventListener('click',async e=>{
   const s=e.target.closest('[data-kb-sec]');if(s){V.kb.sec=s.dataset.kbSec;V.kb.art='';render();return}
+  const kd=e.target.closest('[data-kb-disc]');if(kd){e.preventDefault();const it=KB.d.items.find(x=>x.id===kd.dataset.kbDisc);const ttl=it?(it.title||it.name||'Материал'):'Материал';
+    openDlg({kind:'kbdisc',o:{},wide:true,draw:()=>{form.innerHTML=`<h2>${esc(ttl)}</h2><p class="note" style="margin:0 0 14px">Обсуждение материала справочника</p><div id="disc-wrap" data-ent="kb" data-id="${esc(kd.dataset.kbDisc)}"></div><div class="acts"><div></div><div><button type="button" data-close>Закрыть</button></div></div>`}});return}
   const ctl=e.target.closest('.kb-ctl button');
   const mv=e.target.closest('[data-kb-move]');if(mv){e.stopPropagation();try{KB.d=await api('kbMove',mv.dataset.kbMove,+mv.dataset.d);render()}catch(err){toast(err.message)}return}
   const ed=e.target.closest('[data-kb-edit]');if(ed){const x=KB.d.items.find(i=>i.id===ed.dataset.kbEdit);if(x)openKbItem(x.kind,x);return}
@@ -1639,12 +1766,295 @@ document.addEventListener('click',async e=>{const menu=$('#memenu');if(!menu)ret
   else if(it.dataset.me==='logout'){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#memenu');if(m)m.hidden=true}});
 
+
+/* ================= Обсуждения: комментарии, @упоминания, вложения ================= */
+const DISC = { ent: null, id: null, data: null, staged: [], ment: [], mentIdx: 0, mentQ: '' };
+
+function discAttachHost(host, entity, entityId) {
+  host.innerHTML = '<div class="disc-list" id="disc-list"><p class="muted" style="font-size:12px">Загружаю обсуждение…</p></div>'
+    + '<div class="disc-editor"><textarea id="disc-text" placeholder="Комментарий… @ — упомянуть сотрудника"></textarea>'
+    + '<div class="ment" id="disc-ment"></div>'
+    + '<div class="disc-staged" id="disc-staged"></div>'
+    + '<div class="disc-bar"><label class="disc-att">📎 Файл<input type="file" id="disc-file" multiple hidden></label>'
+    + '<span class="grow"></span><button type="button" class="primary" id="disc-send">Отправить</button></div></div>';
+  DISC.ent = entity; DISC.id = entityId; DISC.data = null; DISC.staged = []; DISC.ment = [];
+  const send = () => discSend();
+  host.querySelector('#disc-send').addEventListener('click', send);
+  host.querySelector('#disc-text').addEventListener('input', discInput);
+  host.querySelector('#disc-text').addEventListener('keydown', discKeys);
+  host.querySelector('#disc-text').addEventListener('blur', () => setTimeout(() => { const m = host.querySelector('#disc-ment'); if (m) m.classList.remove('on'); }, 180));
+  host.querySelector('#disc-file').addEventListener('change', discUpload);
+  loadDisc();
+}
+async function loadDisc() {
+  const host = document.getElementById('disc-list');
+  if (!host || !DISC.ent) return;
+  try {
+    DISC.data = await api('listComments', DISC.ent, DISC.id);
+    renderDisc();
+  } catch (e) { host.innerHTML = '<p class="neg" style="font-size:12px">' + esc(e.message) + '</p>'; }
+}
+function discText(t, people) {
+  // Подсветка упоминаний: имена из списка сотрудников.
+  let out = esc(t);
+  const names = (people || []).map(p => p.name).filter(Boolean).sort((a, b) => b.length - a.length);
+  for (const n of names) {
+    const safe = esc(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp('@' + safe, 'g'), '<span class="mn">@' + safe + '</span>');
+  }
+  return out;
+}
+function renderDisc() {
+  const host = document.getElementById('disc-list');
+  if (!host || !DISC.data) return;
+  const d = DISC.data;
+  host.innerHTML = d.items.length ? d.items.map(c => {
+    const mine = ME && (c.userId === ME.id || owner());
+    const f = (c.files || []).map(x => `<a class="disc-file" href="/cfiles/${esc(x.id)}" target="_blank" rel="noopener">📎<span>${esc(x.name)}</span></a>`).join('');
+    return `<div class="disc-item"><div class="disc-av">${esc((c.userName || '?').slice(0, 2).toUpperCase())}</div>`
+      + `<div class="disc-b"><div class="disc-h"><b>${esc(c.userName || 'Сотрудник')}</b><time>${dtFmt(c.at)}</time>`
+      + (mine ? `<a href="#" class="del" data-disc-del="${esc(c.id)}" title="Удалить">✕</a>` : '') + `</div>`
+      + `<div class="disc-tx">${discText(c.text, d.people)}</div>${f ? '<div class="disc-files">' + f + '</div>' : ''}</div></div>`;
+  }).join('') : '<div class="disc-empty">Обсуждения пока нет. Напишите первый комментарий.</div>';
+  const ed = document.getElementById('disc-text');
+  if (ed) {
+    ed.disabled = !d.canWrite;
+    ed.placeholder = d.canWrite ? 'Комментарий… @ — упомянуть сотрудника' : 'Только просмотр';
+    const sb = document.getElementById('disc-send'); if (sb) sb.hidden = !d.canWrite;
+    const fl = document.querySelector('.disc-att'); if (fl) fl.hidden = !d.canWrite;
+  }
+  renderStaged();
+}
+function renderStaged() {
+  const box = document.getElementById('disc-staged');
+  if (!box) return;
+  box.innerHTML = DISC.staged.map(f => `<span class="f">📎 ${esc(f.name)} <b data-unstage="${esc(f.id)}">✕</b></span>`).join('');
+}
+async function discUpload(e) {
+  const files = [...(e.target.files || [])];
+  e.target.value = '';
+  if (!files.length) return;
+  for (const f of files) {
+    if (f.size > 25e6) { toast(f.name + ': файл больше 25 МБ'); continue; }
+    try {
+      const url = '/cupload?name=' + encodeURIComponent(f.name) + '&mime=' + encodeURIComponent(f.type || 'application/octet-stream');
+      const r = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Не удалось загрузить файл');
+      DISC.staged.push(d.result);
+    } catch (err) { toast(err.message); }
+  }
+  renderStaged();
+}
+function discInput(e) {
+  const ta = e.target, val = ta.value, pos = ta.selectionStart;
+  const before = val.slice(0, pos);
+  const m = before.match(/@([\wА-Яа-яЁё\s-]{0,30})$/);
+  const box = document.getElementById('disc-ment');
+  if (!m || !DISC.data || !DISC.data.canWrite) { if (box) box.classList.remove('on'); return; }
+  DISC.mentQ = m[1].trim().toLowerCase();
+  const people = DISC.data.people.filter(p => !DISC.mentQ || p.name.toLowerCase().includes(DISC.mentQ)).slice(0, 6);
+  if (!people.length) { box.classList.remove('on'); return; }
+  DISC.mentList = people; DISC.mentIdx = 0;
+  box.innerHTML = people.map((p, i) => `<button type="button" data-ment="${p.id}" class="${i === 0 ? 'on' : ''}">${esc(p.name)}</button>`).join('');
+  box.classList.add('on');
+}
+function discKeys(e) {
+  const box = document.getElementById('disc-ment');
+  const open = box && box.classList.contains('on');
+  if (open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    e.preventDefault();
+    const n = DISC.mentList.length;
+    DISC.mentIdx = (DISC.mentIdx + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+    [...box.querySelectorAll('button')].forEach((b, i) => b.classList.toggle('on', i === DISC.mentIdx));
+    return;
+  }
+  if (open && e.key === 'Enter') { e.preventDefault(); const p = DISC.mentList[DISC.mentIdx]; if (p) insertMention(p); return; }
+  if (open && e.key === 'Escape') { box.classList.remove('on'); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); discSend(); }
+}
+function insertMention(p) {
+  const ta = document.getElementById('disc-text');
+  const pos = ta.selectionStart, val = ta.value, before = val.slice(0, pos);
+  const m = before.match(/@([\wА-Яа-яЁё\s-]{0,30})$/);
+  const start = m ? pos - m[0].length : pos;
+  ta.value = val.slice(0, start) + '@' + p.name + ' ' + val.slice(pos);
+  ta.focus();
+  const np = start + p.name.length + 2;
+  ta.setSelectionRange(np, np);
+  if (!DISC.ment.some(x => x.id === p.id)) DISC.ment.push({ id: p.id, name: p.name });
+  const box = document.getElementById('disc-ment'); if (box) box.classList.remove('on');
+}
+async function discSend() {
+  const ta = document.getElementById('disc-text');
+  if (!ta || !DISC.data || !DISC.data.canWrite) return;
+  const text = ta.value.trim();
+  if (!text && !DISC.staged.length) { toast('Напишите комментарий или приложите файл.'); return; }
+  // Упоминания берём и из текста: имена, совпавшие с сотрудниками.
+  const byName = {};
+  (DISC.data.people || []).forEach(p => byName[p.name.toLowerCase()] = p);
+  const found = {};
+  DISC.ment.forEach(m => found[m.id] = m);
+  for (const p of (DISC.data.people || [])) if (text.toLowerCase().includes('@' + p.name.toLowerCase())) found[p.id] = p;
+  const btn = document.getElementById('disc-send');
+  if (btn) btn.disabled = true;
+  try {
+    DISC.data = await api('addComment', { entity: DISC.ent, entityId: DISC.id, text, mentions: Object.values(found).map(p => ({ id: p.id })), files: DISC.staged.map(f => ({ id: f.id })) });
+    DISC.staged = []; DISC.ment = []; ta.value = '';
+    renderDisc();
+    toast('Комментарий добавлен');
+  } catch (e) { toast(e.message); }
+  if (btn) btn.disabled = false;
+}
+
+/* ================= Общий поиск ================= */
+const SRCH = { t: 0, items: [], idx: -1, data: null };
+function srchOpen(prefill) {
+  const el = document.getElementById('srch');
+  if (!el) return;
+  el.classList.add('on');
+  const q = document.getElementById('srch-q');
+  if (prefill != null) q.value = prefill;
+  q.focus(); q.select();
+  if (q.value.trim().length >= 2) srchRun();
+}
+function srchClose() {
+  const el = document.getElementById('srch');
+  if (el) el.classList.remove('on');
+}
+function srchRun() {
+  clearTimeout(SRCH.t);
+  SRCH.t = setTimeout(srchFetch, 220);
+}
+const SRCH_IC = { client: 'К', lead: 'З', deal: 'С', object: 'О', task: 'З', call: '☎', inquiry: 'О', kb: 'W', comment: '💬' };
+async function srchFetch() {
+  const q = (document.getElementById('srch-q').value || '').trim();
+  const body = document.getElementById('srch-body'), cnt = document.getElementById('srch-count');
+  if (q.length < 2) { body.innerHTML = '<div class="srch-empty">Введите хотя бы два символа.</div>'; if (cnt) cnt.textContent = ''; SRCH.items = []; return; }
+  try {
+    const r = await api('search', q);
+    SRCH.data = r;
+    SRCH.items = [];
+    SRCH.idx = -1;
+    if (!r.total) { body.innerHTML = '<div class="srch-empty">Ничего не найдено по запросу «' + esc(q) + '».</div>'; if (cnt) cnt.textContent = ''; return; }
+    body.innerHTML = r.groups.map(g => '<div class="srch-group">' + esc(g.title) + ' · ' + g.items.length + '</div>'
+      + g.items.map(it => {
+        const i = SRCH.items.push(it) - 1;
+        return `<div class="srch-item" data-si="${i}"><div class="srch-ic">${SRCH_IC[it.type] || '·'}</div><div class="srch-tx"><b>${esc(it.title)}</b>`
+          + (it.sub ? '<div class="m">' + esc(it.sub) + '</div>' : '')
+          + (it.hit ? '<div class="hit">' + esc(it.hit) + '</div>' : '') + '</div></div>';
+      }).join('')).join('');
+    if (cnt) cnt.textContent = 'Найдено: ' + r.total;
+  } catch (e) {
+    body.innerHTML = '<div class="srch-empty">' + esc(e.message) + '</div>';
+  }
+}
+function srchMove(d) {
+  const n = SRCH.items.length;
+  if (!n) return;
+  SRCH.idx = (SRCH.idx + d + n) % n;
+  [...document.querySelectorAll('.srch-item')].forEach((el, i) => el.classList.toggle('on', i === SRCH.idx));
+  const cur = document.querySelector('.srch-item.on');
+  if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+}
+function srchGo(it) {
+  if (!it) return;
+  srchClose();
+  const go = (tab) => { V.tab = tab; try { history.replaceState(null, '', '#' + tab); } catch (_) { } render(); };
+  if (it.type === 'client') { const c = D.clients.find(x => x.id === it.id); if (c) { go('clients'); openClient(c); return; } }
+  if (it.type === 'lead') { const l = D.leads.find(x => x.id === it.id); if (l) { go('leads'); openLead(l); return; } }
+  if (it.type === 'deal') { const d = D.deals.find(x => x.id === it.id); if (d) { go('deals'); openDeal(d); return; } }
+  if (it.type === 'object') { const o = D.objects.find(x => x.id === it.id); if (o) { go('objects'); openObject(o); return; } }
+  if (it.type === 'task') { const t = D.tasks.find(x => x.id === it.id); if (t) { go('tasks'); openTask(t); return; } }
+  if (it.type === 'call') { go('calls'); return; }
+  if (it.type === 'inquiry') { go('calls'); return; }
+  if (it.type === 'kb') { V.kb = V.kb || {}; V.kb.sec = 'article'; V.kb.art = it.id; go('kb'); return; }
+  if (it.type === 'comment') {
+    const map = { task: 'tasks', deal: 'deals', kb: 'kb', object: 'objects', client: 'clients', lead: 'leads' };
+    go(map[it.entity] || 'calls');
+    if (it.entity === 'kb') { V.kb.art = it.entityId; render(); }
+    return;
+  }
+}
+
+/* ================= Уведомления ================= */
+async function bellLoad() {
+  try {
+    const r = await api('notifications');
+    const n = document.getElementById('bell-n');
+    if (n) { n.textContent = r.unread; n.hidden = !r.unread; }
+    const btn = document.getElementById('bell');
+    if (btn) btn.title = r.unread ? r.unread + ' новых уведомлений' : 'Уведомления';
+    return r;
+  } catch (_) { return null; }
+}
+async function bellOpen() {
+  const r = await bellLoad();
+  if (!r) return;
+  openDlg({
+    kind: 'notif', o: {}, wide: true,
+    draw: () => {
+      const items = r.items || [];
+      form.innerHTML = `<h2>Уведомления</h2>${items.length ? '<div class="disc-list">' + items.map(x => {
+        const who = x.by || 'Сотрудник';
+        return `<div class="disc-item"><div class="disc-av">${esc(who.slice(0, 2).toUpperCase())}</div><div class="disc-b"><div class="disc-h"><b>${esc(who)}</b><time>${dtFmt(x.at)}</time></div><div class="disc-tx">упомянул вас${x.title ? ' в «' + esc(x.title) + '»' : ''}: ${esc(x.text || '')}</div></div></div>`;
+      }).join('') + '</div>' : '<p class="muted">Уведомлений пока нет.</p>'}<div class="acts"><div></div><div><button type="button" data-close>Закрыть</button></div></div>`;
+    }
+  });
+  try { await api('readNotifications'); } catch (_) { }
+  bellLoad();
+}
+
+
+/* ---------- поиск, уведомления, обсуждения: обработчики ---------- */
+(function(){
+  const g=document.getElementById('gsearch');
+  if(g){g.addEventListener('focus',()=>srchOpen(g.value));g.addEventListener('input',()=>{if(!document.getElementById('srch').classList.contains('on'))srchOpen(g.value);const q=document.getElementById('srch-q');q.value=g.value;srchRun()});}
+  const sq=document.getElementById('srch-q');
+  if(sq){sq.addEventListener('input',srchRun);sq.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();srchMove(1)}
+    else if(e.key==='ArrowUp'){e.preventDefault();srchMove(-1)}
+    else if(e.key==='Enter'){e.preventDefault();srchGo(SRCH.items[SRCH.idx>=0?SRCH.idx:0])}
+    else if(e.key==='Escape'){srchClose()}
+  });}
+  const sc=document.getElementById('srch-close');if(sc)sc.addEventListener('click',srchClose);
+  const box=document.getElementById('srch');
+  if(box)box.addEventListener('click',e=>{
+    if(e.target===box){srchClose();return}
+    const it=e.target.closest('[data-si]');
+    if(it){srchGo(SRCH.items[+it.dataset.si])}
+  });
+  document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();srchOpen('');return}
+    if(e.key==='Escape'){const b=document.getElementById('srch');if(b&&b.classList.contains('on'))srchClose()}
+  });
+  const bell=document.getElementById('bell');if(bell)bell.addEventListener('click',bellOpen);
+  // удаление комментария и снятие вложения
+  document.addEventListener('click',async e=>{
+    const d=e.target.closest('[data-disc-del]');
+    if(d){e.preventDefault();if(!confirm('Удалить комментарий?'))return;try{await api('deleteComment',d.dataset.discDel);loadDisc()}catch(err){toast(err.message)}return}
+    const u=e.target.closest('[data-unstage]');
+    if(u){e.preventDefault();DISC.staged=DISC.staged.filter(f=>f.id!==u.dataset.unstage);renderStaged();return}
+    const m=e.target.closest('[data-ment]');
+    if(m){e.preventDefault();const p=(DISC.mentList||[]).find(x=>String(x.id)===m.dataset.ment);if(p)insertMention(p);return}
+  });
+  const bl=()=>{bellLoad();setInterval(bellLoad,60000)};
+  if(document.getElementById('bell'))bl();
+})();
+
 /* ---------- запуск ---------- */
 async function init(){$('#sources').innerHTML=SOURCES.map(x=>`<option value="${esc(x)}">`).join('');render();
   try{apply(await api('crmLoad'))}catch(e){$('#app').innerHTML=`<div class="banner">Не удалось загрузить данные: ${esc(e.message)}. Обновите страницу.</div>`;return}
-  if(location.hash==='#profile'){V.tab='calls';history.replaceState(null,'','#leads');render();openProfile()}
+  if(location.hash==='#profile'){V.tab='leads';history.replaceState(null,'','#leads');render();openProfile()}
   setInterval(async()=>{if(document.hidden||saving>0||dlgCtx||dragId)return;
     try{const v=await api('getVersion');if(v!==version)apply(await api('crmLoad'))}catch(_){}},20000)}
+let draggedTask=null;
+app.addEventListener('dragstart',e=>{const c=e.target.closest('[data-task-id]');if(!c||!can())return;draggedTask=c.dataset.taskId;c.classList.add('dragging');if(e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggedTask)}});
+app.addEventListener('dragend',e=>{const c=e.target.closest('[data-task-id]');if(c)c.classList.remove('dragging');document.querySelectorAll('.task-col.dragover').forEach(x=>x.classList.remove('dragover'));draggedTask=null});
+app.addEventListener('dragover',e=>{const col=e.target.closest('[data-task-drop]');if(!col||!draggedTask)return;e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect='move';col.classList.add('dragover')});
+app.addEventListener('dragleave',e=>{const col=e.target.closest('[data-task-drop]');if(col&&!col.contains(e.relatedTarget))col.classList.remove('dragover')});
+app.addEventListener('drop',e=>{const col=e.target.closest('[data-task-drop]');if(!col||!draggedTask)return;e.preventDefault();const id=draggedTask,bucket=col.dataset.taskDrop;col.classList.remove('dragover');draggedTask=null;moveTask(id,bucket)});
+
 init();
 })();
 

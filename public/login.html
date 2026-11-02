@@ -1,40 +1,38 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Вход · Дорогой Город</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
-:root{--bg:#EEF1F0;--surface:#fff;--ink:#15201C;--muted:#5B6863;--line:#D8DFDC;--accent:#1F5A48;--neg:#B0302A;--neg-soft:#F7E3E1}
-@media (prefers-color-scheme:dark){:root{--bg:#121816;--surface:#1A2320;--ink:#E7EEEB;--muted:#9AA8A2;--line:#2C3934;--accent:#5FB394;--neg:#E57A73;--neg-soft:#3A2321}}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:15px/1.45 "Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px}
-.card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 24px}
-h1{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
-p{margin:0 0 20px;color:var(--muted);font-size:13px}
-label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);margin-bottom:12px}
-input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-input:focus{outline:2px solid var(--accent);outline-offset:-1px}
-button{width:100%;font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px;background:var(--accent);color:#fff;cursor:pointer;margin-top:4px}
-button:disabled{opacity:.6;cursor:default}
-.err{background:var(--neg-soft);color:var(--neg);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:12px}
+:root{--bg:#F3F5F8;--surface:#fff;--ink:#17243B;--muted:#65748B;--line:#E1E7EF;--accent:#4E6EAF;--accent-soft:#E8EDF7;--neg:#BD5965;--neg-soft:#F8E7EA}
+@media (prefers-color-scheme:dark){:root{--bg:#111827;--surface:#182235;--ink:#E5EAF3;--muted:#98A6BB;--line:#2A3850;--accent:#9BB4E0;--accent-soft:#263754;--neg:#E59AA5;--neg-soft:#412A34}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,sans-serif;padding:20px;-webkit-font-smoothing:antialiased}
+.card{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:34px 30px;box-shadow:0 12px 32px rgba(23,36,59,.06)}
+.logo{display:flex;align-items:center;gap:11px;margin-bottom:24px}.mark{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--accent);color:#fff;font-weight:750;font-size:13px;letter-spacing:-.03em}.brand b{display:block;font-size:17px;letter-spacing:-.025em}.brand span{font-size:11px;color:var(--muted)}
+h1{font-size:22px;margin:0 0 5px;letter-spacing:-.035em}p{margin:0 0 24px;color:var(--muted);font-size:13px}
+label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:550;color:var(--muted);margin-bottom:15px}
+input{font:14px Inter,sans-serif;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+button{width:100%;font:600 14px Inter,sans-serif;border:1px solid var(--accent);border-radius:10px;padding:11px;background:var(--accent);color:#fff;cursor:pointer;margin-top:5px}button:hover{filter:brightness(.96)}button:disabled{opacity:.6;cursor:default}
+.err{background:var(--neg-soft);color:var(--neg);border-radius:9px;padding:9px 11px;font-size:12px;margin-bottom:15px}
+.foot{text-align:center;margin-top:20px;font-size:11px;color:var(--muted)}
 </style></head>
 <body>
 <form class="card" id="f" autocomplete="on">
-  <h1>Дорогой Город</h1>
-  <p>Управленческий учёт. Войдите под своим логином.</p>
+  <div class="logo"><span class="mark">ДГ</span><div class="brand"><b>Дорогой Город</b><span>CRM и управленческий учёт</span></div></div>
+  <h1>Вход в систему</h1><p>Укажите логин и пароль сотрудника.</p>
   <div class="err" id="err" hidden></div>
   <label>Логин<input name="login" autocomplete="username" autocapitalize="off" spellcheck="false" required autofocus></label>
   <label>Пароль<input name="password" type="password" autocomplete="current-password" required></label>
   <button type="submit" id="b">Войти</button>
+  <div class="foot">Доступ только для сотрудников агентства</div>
 </form>
 <script>
 const f=document.getElementById('f'),err=document.getElementById('err'),b=document.getElementById('b');
 f.addEventListener('submit',async e=>{e.preventDefault();err.hidden=true;b.disabled=true;
-  try{const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
-      body:JSON.stringify({login:f.login.value,password:f.password.value})});
-    const d=await r.json().catch(()=>({}));
-    if(r.ok){location.href='/';return}
+  try{const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({login:f.login.value,password:f.password.value})});
+    const d=await r.json().catch(()=>({}));if(r.ok){location.href='/';return}
     err.textContent=d.error||'Не удалось войти.';err.hidden=false}
-  catch(_){err.textContent='Нет связи с сервером.';err.hidden=false}
-  b.disabled=false});
+  catch(_){err.textContent='Нет связи с сервером.';err.hidden=false}b.disabled=false});
 </script>
 </body></html>
