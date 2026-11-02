@@ -445,6 +445,29 @@ dialog,.dlg{border-radius:12px}
 .ment button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:7px 10px;border-radius:5px;font-size:13px;box-shadow:none}
 .ment button:hover,.ment button.on{background:var(--sunk)}
 .disc-empty{font-size:12px;color:var(--muted);padding:4px 0 10px}
+
+/* ---- шапка на узких экранах ---- */
+@media (max-width:900px){
+  .bar{gap:10px;flex-wrap:wrap;padding-block:9px 8px}
+  .brand{order:1}
+  .right{order:2;margin-left:auto;gap:6px}
+  .bar .hsearch{order:3;flex:1 1 100%;max-width:none;min-width:0}
+  .navbar{order:4}
+  nav.tabs a{font-size:12px;padding:6px 10px}
+  .appsw{margin-bottom:6px}
+}
+@media (max-width:560px){
+  .brand-tx b{font-size:14px}
+  .brand-tx span{display:none}
+  .brand-mark{width:28px;height:28px;font-size:11px}
+  .hsearch .kbd{display:none}
+  .bar .hsearch{order:3}
+  #addbtn{padding:7px 10px;font-size:13px}
+  .who .me-chip .nm{display:none}
+  .who .me-chip{padding:3px}
+  .navbar{gap:8px}
+  .appsw a{font-size:11px;padding:5px 9px}
+}
 </style></head>
 <body>
 <header class="top">
