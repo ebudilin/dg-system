@@ -15,6 +15,7 @@ const KB = require('./kb');
 require('./prefs');
 const MAX = require('./max');
 const COMMENTS = require('./comments');
+const SITE = require('./site');
 require('./team');
 
 const PORT = Number(process.env.PORT || 3000);
@@ -144,6 +145,29 @@ async function handle(req, res) {
   }
 
   if (p === '/favicon.ico') return send(res, 204, '');
+
+  // реквизиты: страница для просмотра и PDF — доступны только вошедшим сотрудникам
+  if (p === '/requisites' && req.method === 'GET') {
+    if (!currentUser(req)) return send(res, 302, '', null, { Location: '/login' });
+    return send(res, 200, page('requisites.html'), 'text/html; charset=utf-8');
+  }
+  if (p === '/requisites.pdf' && req.method === 'GET') {
+    if (!currentUser(req)) return send(res, 401, 'Войдите в систему');
+    const { execFile } = require('node:child_process');
+    const rows = SITE.requisitesRows(db);
+    if (!rows.length) return send(res, 404, 'Реквизиты ещё не заполнены в настройках');
+    const payload = JSON.stringify({ title: 'Реквизиты ООО «Дорогой Город»', rows,
+      footer: 'Документ сформирован из CRM ' + new Date().toLocaleDateString('ru-RU') + '.' });
+    const script = path.join(__dirname, '..', 'deploy', 'requisites_pdf.py');
+    const pdf = await new Promise((resolve, reject) => {
+      const child = execFile('python3', [script], { encoding: 'buffer', maxBuffer: 5e6, timeout: 20000 }, (err, out) => err ? reject(err) : resolve(out));
+      child.stdin.end(payload);
+    }).catch(() => null);
+    if (!pdf) return send(res, 500, 'Не удалось создать PDF');
+    res.writeHead(200, Object.assign({}, SEC_HEADERS, { 'Content-Type': 'application/pdf', 'Content-Length': pdf.length,
+      'Content-Disposition': "attachment; filename*=UTF-8''requisites-dorogoy-gorod.pdf" }));
+    return res.end(pdf);
+  }
 
   // фид ЦИАН и открытые фото объявлений — без входа, по секретной ссылке
   let mm = p.match(/^\/feeds\/cian\/([0-9a-f]{32})\.xml$/);

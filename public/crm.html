@@ -468,6 +468,25 @@ dialog,.dlg{border-radius:12px}
   .navbar{gap:8px}
   .appsw a{font-size:11px;padding:5px 9px}
 }
+
+/* ===== футер и реквизиты ===== */
+.site-foot{margin-top:40px;border-top:1px solid var(--line);background:var(--surface)}
+.site-foot .in{max-width:1320px;margin:0 auto;padding:18px 24px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;justify-content:space-between}
+.site-foot nav{display:flex;flex-wrap:wrap;gap:4px 16px}
+.site-foot a{font-size:13px;color:var(--muted);text-decoration:none}
+.site-foot a:hover{color:var(--accent)}
+.site-foot .req{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);padding:7px 12px;border-radius:6px;text-decoration:none}
+.site-foot .req:hover{filter:brightness(.97)}
+.site-foot .copy{font-size:12px;color:var(--muted);width:100%}
+@media (max-width:760px){.site-foot .in{padding:16px 14px}}
+/* карточка доступа к объекту */
+.access-card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px;margin-top:12px}
+.access-card h3{margin-bottom:10px}
+.keycheck{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 11px;border-radius:7px;font-size:13px}
+.keycheck.ok{background:var(--pos-soft);color:var(--pos)}
+.keycheck.warn{background:var(--warn-soft);color:var(--warn)}
+.keycheck.none{background:var(--sunk);color:var(--muted)}
+.keycheck .grow{flex:1}
 </style></head>
 <body>
 <header class="top">
@@ -831,7 +850,7 @@ function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
   form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
 
 /* объект */
-const OBJ_PANES=[['main','Основное'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение и расходы'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
+const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение и расходы'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
 function openObject(o,pane){
   const OD=D.dict.obj;
   const x=o?JSON.parse(JSON.stringify(o)):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'draft',responsibleId:ME.id,source:'',price:'',area:'',owners:[],tips:[],expenses:[],windows:[],yard:[],parking:[]};
@@ -846,6 +865,28 @@ function openObject(o,pane){
 async function loadInq(){const c=dlgCtx;if(!c||c.kind!=='object'||!c.orig)return;
   try{c.inq=await api('listInquiries',c.orig.id);if(dlgCtx===c){const el=$('#inq-list');if(el)el.innerHTML=inqList()}}catch(e){toast(e.message)}}
 function chk(name,dict,vals){return `<div class="checks">${Object.entries(dict).map(([k,l])=>`<label><input type="checkbox" name="${name}" data-multi value="${k}" ${(vals||[]).includes(k)?'checked':''}> ${esc(l)}</label>`).join('')}</div>`}
+
+const ACC_WHO=[['keys','Ключи у нас'],['tenant','Арендатор'],['owner','Собственник приезжает сам'],['proxy','Доверенное лицо собственника']];
+function accessPane(x,o){
+  const a=x.access||{};const who=a.who||'';const moves=(a.keysMoves||[]).slice().reverse();
+  const cc=a.keysCheck;
+  const ck=cc&&cc.confirmed?`<div class="keycheck ok"><span class="grow">✓ Ключи перепроверены: ${esc(dtFmt(cc.at))} · ${esc(cc.by||'')}${cc.note?' · '+esc(cc.note):''}</span></div>`
+    :who==='keys'?`<div class="keycheck warn"><span class="grow">Ключи ещё не перепроверены. Перед показом проверьте, что они на месте.</span></div>`
+    :`<div class="keycheck none"><span class="grow">Двойная проверка нужна только когда ключи у нас.</span></div>`;
+  return `<div class="access-card"><h3>Кто даёт доступ</h3>
+    <div class="fg"><label class="f full"><span>Кто даёт доступ</span><select name="acc_who" ${can()?'':'disabled'}><option value="">— не выбрано —</option>${ACC_WHO.map(([k,l])=>`<option value="${k}" ${who===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+    ${who==='proxy'?`<label class="f"><span>Доверенное лицо</span><input name="acc_proxyName" value="${esc(a.proxyName||'')}" ${can()?'':'disabled'}></label><label class="f"><span>Телефон доверенного</span><input name="acc_proxyPhone" value="${esc(a.proxyPhone||'')}" inputmode="tel" ${can()?'':'disabled'}></label>`:''}
+    <label class="f full"><span>Комментарий по доступу</span><input name="acc_note" value="${esc(a.accessNote||'')}" placeholder="Например: звонить за час, код домофона — у арендатора" ${can()?'':'disabled'}></label></div></div>
+  ${who==='keys'||(a.keysAt||moves.length)?`<div class="access-card"><h3>Ключи</h3>
+    <div class="fg"><label class="f full"><span>Где ключи сейчас</span><input name="acc_keysAt" value="${esc(a.keysAt||'')}" placeholder="Например: ящик — Анна Соколова, офис" ${can()?'':'disabled'}></label></div>
+    ${ck}
+    <div style="margin-top:12px"><b style="font-size:12.5px;color:var(--muted)">Движение ключей</b>
+      ${moves.length?`<div class="tbl-wrap" style="margin-top:6px"><table><tbody>${moves.map(m=>`<tr><td class="num">${dtFmt(m.at)}</td><td>${m.from?esc(m.from)+' → ':''}<b>${esc(m.to)}</b>${m.note?'<div class="muted" style="font-size:11px">'+esc(m.note)+'</div>':''}</td><td class="muted" style="font-size:12px">${esc(m.by||'')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted" style="font-size:12px;margin:6px 0 0">Переходов ещё не было.</p>'}
+      ${can()?`<div class="r2" style="margin-top:8px;flex-wrap:wrap"><input id="km-to" placeholder="Кому передали, например: Иван" style="flex:1;min-width:160px"><input id="km-note" placeholder="Комментарий" style="flex:1;min-width:160px"><button type="button" data-key-move>Записать передачу</button></div>`:''}
+    </div>
+    ${can()&&who==='keys'?`<div class="r2" style="margin-top:12px;flex-wrap:wrap"><button type="button" class="primary" data-keys-check ${o?'':'disabled title="Сначала сохраните объект"'}>✓ Ключи перепроверены — точно есть</button><span class="muted" style="font-size:12px">Ответственный получит сообщение в CRM и в Max.</span></div>`:''}
+  </div>`:''}`;
+}
 function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','house'].includes(x.kind),pane=c.pane;
   const srcs=[...new Set([...OD.sources,...D.objects.map(y=>y.source).filter(Boolean)])];
   const r=readiness(x),ppm=x.price&&x.area?Math.round(x.price/x.area):0,cw=contractWarn(x);
@@ -878,6 +919,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <div class="ready" title="Не хватает: ${esc(r.miss.join(', ')||'ничего')}"><div class="meter"><i style="width:${r.p}%"></i></div><span>Готовность ${r.p}%</span></div></div></div>
     ${cw?`<div class="banner" style="margin:0">${esc(cw)}</div>`:''}
     <div class="otabs" role="tablist">${OBJ_PANES.map(([k,l])=>`<button type="button" role="tab" data-pane-btn="${k}" aria-selected="${pane===k}" ${!o&&['inq','hist','files','ads'].includes(k)?'disabled title="Сначала сохраните объект"':''}>${l}</button>`).join('')}</div>
+    ${P('access',accessPane(x,o))}
     ${P('main',`<div class="fg3">
       <label class="f span2"><span>Название</span><input name="title" value="${esc(x.title)}" placeholder="2-к квартира, 64 м², ЖК …"></label>
       <label class="f"><span>Ответственный</span><select name="responsibleId">${opt([['','— не назначен —'],...D.users.filter(u=>u.active||u.id===x.responsibleId).map(u=>[u.id,u.name])],x.responsibleId)}</select></label>
@@ -967,10 +1009,21 @@ function openExpFin(c,i){let d=$('#expdlg');if(!d){d=document.createElement('dia
     await saveObjectDlg(false);if(dlgCtx!==c)return;const saved=c.orig.expenses||[],e2=saved[i];if(!e2)return toast('Не удалось найти расход после сохранения.');
     try{await run('expenseToFinance',c.orig.id,e2.id,acc,cat);c.orig=obj(c.orig.id);c.o=JSON.parse(JSON.stringify(c.orig));if(!c.o.priceHistory)c.o.priceHistory=[];c.draw();toast('Расход внесён в финансы')}catch(_){}};
   d.showModal()}
-function readObjForm(){readForm();const c=dlgCtx;if(c.o.liftsNone===true)c.o.lifts='none';else if(c.o.liftsNone===false&&c.o.lifts==='none')c.o.lifts='';delete c.o.liftsNone;
+function readObjForm(){readForm();const c=dlgCtx;
+  if(c.o){const a=Object.assign({},c.o.access||{});let touched=false;
+    ['acc_who','acc_proxyName','acc_proxyPhone','acc_note','acc_keysAt'].forEach(k=>{if(k in c.o){touched=true;const key={acc_who:'who',acc_proxyName:'proxyName',acc_proxyPhone:'proxyPhone',acc_note:'accessNote',acc_keysAt:'keysAt'}[k];a[key]=c.o[k];delete c.o[k]}});
+    if(touched||c.o.access)c.o.access=a}if(c.o.liftsNone===true)c.o.lifts='none';else if(c.o.liftsNone===false&&c.o.lifts==='none')c.o.lifts='';delete c.o.liftsNone;
   form.querySelectorAll('[data-nown]').forEach(el=>{const n=c.newOwners[+el.dataset.nown];if(n)n[el.dataset.k]=el.value});
   form.querySelectorAll('[data-exp]').forEach(el=>{const e=c.o.expenses[+el.dataset.exp];if(e)e[el.dataset.k]=el.dataset.k==='amount'?(el.value===''?'':+el.value):el.value})}
 form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='object')return;const b=e.target.closest('button,a');if(!b)return;const x=c.o;
+  if(b.hasAttribute('data-key-move')){readObjForm();const to=(document.getElementById('km-to')||{}).value||'',note=(document.getElementById('km-note')||{}).value||'';
+    if(!to.trim())return toast('Укажите, кому передали ключи.');
+    const a=Object.assign({},c.o.access||{});const from=a.keysAt||'';
+    a.keysAt=to.trim();a.keysMoves=[...(a.keysMoves||[]),{id:'km_'+Date.now().toString(36),from,to:to.trim(),note:note.trim(),by:ME.name}];
+    c.o.access=a;c.draw();toast('Передача записана — не забудьте сохранить объект');return}
+  if(b.hasAttribute('data-keys-check')){if(!c.orig)return toast('Сначала сохраните объект.');
+    const where=(c.o.access&&c.o.access.keysAt)||'';
+    try{const r=await api('keysVerified',c.orig.id,where);apply(r);c.orig=obj(c.orig.id);c.o=JSON.parse(JSON.stringify(c.orig));c.draw();toast('Ключи отмечены как проверенные. Ответственный уведомлён.')}catch(err){toast(err.message)}return}
   if(b.dataset.paneBtn){readObjForm();c.pane=b.dataset.paneBtn;c.draw();if(c.pane==='hist')loadFeed();if(c.pane==='inq'&&c.orig)loadInq();if(c.pane==='files'&&c.orig&&!c.files)loadFiles();if(c.pane==='ads'&&c.orig)loadCian();return}
   if(b.hasAttribute('data-nown-add')){readObjForm();c.newOwners.push({name:'',birth:'',phone:'',email:''});c.draw();return}
   if(b.dataset.nownDel!=null){readObjForm();c.newOwners.splice(+b.dataset.nownDel,1);c.draw();return}
@@ -2121,5 +2174,18 @@ app.addEventListener('drop',e=>{const col=e.target.closest('[data-task-drop]');i
 init();
 })();
 
+</script>
+<script>
+/* ================= футер: публичные ссылки компании ================= */
+(async function siteFooter(){
+  try{
+    const r=await fetch('/api/siteLinks',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'[]'});
+    const d=await r.json(); const links=(d.result||[]);
+    const box=document.createElement('footer'); box.className='site-foot';
+    box.innerHTML='<div class="in"><nav>'+links.map(l=>`<a href="${l.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">${l.label.replace(/</g,'&lt;')}</a>`).join('')+'</nav>'
+      +'<a class="req" href="/requisites">Реквизиты ООО «Дорогой Город»</a><div class="copy">© Дорогой Город · '+new Date().getFullYear()+'</div></div>';
+    document.body.appendChild(box);
+  }catch(_){}
+})();
 </script>
 </body></html>

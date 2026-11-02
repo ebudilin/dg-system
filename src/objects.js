@@ -59,6 +59,38 @@ function cleanHistory(h, createdAt) {
   }).filter(Boolean).sort((a, b) => a.at - b.at).slice(-100);
 }
 
+
+// Доступ к объекту: кто даёт, где ключи, движение ключей, двойная проверка.
+const ACCESS_WHO = { keys: 'Ключи у нас', tenant: 'Арендатор', owner: 'Собственник приезжает сам', proxy: 'Доверенное лицо собственника' };
+const KEY_HOLDER_MAX = 120;
+function cleanAccess(db, a, prev) {
+  if (!a || typeof a !== 'object') return (prev && prev.access) || { who: '', keysAt: '', keysMoves: [], keysCheck: null, proxyName: '', proxyPhone: '', note: '' };
+  const who = Object.prototype.hasOwnProperty.call(ACCESS_WHO, a.who) ? a.who : '';
+  const old = (prev && prev.access) || { keysMoves: [], keysCheck: null };
+  // журнал движения ключей: только добавляем, историю не переписываем
+  const moves = (Array.isArray(old.keysMoves) ? old.keysMoves : []).slice(-200);
+  if (Array.isArray(a.keysMoves)) {
+    const knownIds = new Set(moves.map(m => m.id));
+    for (const m of a.keysMoves.slice(0, 50)) {
+      if (!m || knownIds.has(m.id)) continue;   // уже записанные переходы не меняем
+      const to = str(m.to, KEY_HOLDER_MAX).trim();
+      if (!to) continue;
+      moves.push({ id: str(m.id || uid('kmv'), 40), at: now(), from: str(m.from, KEY_HOLDER_MAX).trim(), to, note: str(m.note, 200).trim(), by: str(m.by, 100) });
+    }
+  }
+  const check = a.keysCheck && a.keysCheck.confirmed === true
+    ? { confirmed: true, at: now(), by: str(a.keysCheck.by, 100), note: str(a.keysCheck.note, 300) }
+    : (a.keysCheck === null ? null : old.keysCheck);
+  return {
+    who,
+    keysAt: str(a.keysAt, KEY_HOLDER_MAX).trim(),          // где ключи сейчас (например, «ящик — Анна»)
+    keysMoves: moves,
+    keysCheck: check,
+    proxyName: str(a.proxyName, 200).trim(),
+    proxyPhone: str(a.proxyPhone, 40).trim(),
+    accessNote: str(a.accessNote, 1000)
+  };
+}
 function cleanObject(db, o, prev) {
   const p = prev || {};
   const x = {
@@ -86,6 +118,7 @@ function cleanObject(db, o, prev) {
     // продвижение и расходы
     tips: (Array.isArray(o.tips) ? o.tips : []).slice(0, 40).map(t => ({ key: str(t.key || uid('tip'), 40), title: str(t.title, 200).trim(), done: !!t.done, taskId: str(t.taskId, 64) })).filter(t => t.title),
     expenses: (Array.isArray(o.expenses) ? o.expenses : []).slice(0, 200).map(e => ({ id: str(e.id || uid('exp'), 40), date: isDate(e.date) ? e.date : '', kind: str(e.kind, 60), amount: Number(e.amount) || 0, note: str(e.note, 300), opId: str(e.opId, 64) })).filter(e => e.amount > 0),
+    access: cleanAccess(db, o.access, p.access),
     createdAt: p.createdAt || now(), updatedAt: now(),
     cian: p.cian || null, saleType: o.saleType === 'alternative' ? 'alternative' : 'free',
     activeSince: p.activeSince || null, priceHistory: cleanHistory(o.priceHistory !== undefined ? o.priceHistory : p.priceHistory, p.createdAt)
@@ -218,3 +251,30 @@ def('expenseToFinance', 'fin_w', (db, u, objectId, expId, acc, cat) => {
 });
 
 module.exports = { D, STATUS_ORDER };
+
+// Двойная проверка ключей: отметка «точно есть» + сообщение ответственному.
+def('keysVerified', 'crm_w', (db, u, objectId, where) => {
+  const id = str(objectId, 64);
+  const row = db.prepare('SELECT data FROM objects WHERE id=?').get(id);
+  if (!row) throw new ApiError('Объект не найден.');
+  const o = P(row.data);
+  const a = o.access || {};
+  const place = str(where, KEY_HOLDER_MAX).trim() || a.keysAt || '';
+  o.access = Object.assign({}, a, { keysCheck: { confirmed: true, at: now(), by: u.name, note: place } });
+  db.prepare('UPDATE objects SET data=?, updated_at=? WHERE id=?').run(J(o), now(), id);
+  audit(db, u, 'ключи перепроверены', 'объект', id, null, { где: place });
+  bump(db);
+  // сообщение ответственному (если он не сам проверял)
+  const resp = o.responsibleId && Number(o.responsibleId);
+  if (resp && resp !== u.id) {
+    const title = o.title || o.address || 'объект';
+    const text = `Ключи перепроверены: ${title}. Подтверждено, что ключи на месте${place ? ' (' + place + ')' : ''}. Проверил(а): ${u.name}.`;
+    db.prepare('INSERT INTO notifications(user_id,at,kind,entity,entity_id,comment_id,text,read) VALUES(?,?,?,?,?,?,?,0)')
+      .run(resp, now(), 'keys', 'object', id, null, text.slice(0, 500));
+    try {
+      const prefs = require('./prefs').get(db, resp) || {};
+      if (prefs.maxUserId) require('./max').send(db, prefs.maxUserId, text.slice(0, 3900), { text: 'Открыть объект', url: 'https://crm.fedset.ru/#objects' });
+    } catch (_) { /* уведомление в CRM уже создано */ }
+  }
+  return require('./crm').crmLoad(db, u);
+});

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Реквизиты · Дорогой Город</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#F3F5F8;--surface:#fff;--ink:#17243B;--muted:#65748B;--line:#E1E7EF;--accent:#4E6EAF;--accent-soft:#E8EDF7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.top{max-width:760px;margin:0 auto;padding:22px 18px 0;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.top a{color:var(--muted);text-decoration:none;font-size:13px}
+.top a:hover{color:var(--ink)}
+.wrap{max-width:760px;margin:16px auto 40px;padding:0 18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 28px}
+h1{font-size:21px;margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+dl{margin:0}
+.row{display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+dt{color:var(--muted);font-size:12.5px;padding-top:1px}
+dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:6px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;font-size:14px;border:0;cursor:pointer}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:hover{filter:brightness(.96)}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+@media (max-width:560px){.row{grid-template-columns:1fr;gap:3px}.card{padding:20px}}
+</style></head>
+<body>
+<div class="top"><a href="/">← В CRM</a><a href="/finance#settings" id="editlink" hidden>Изменить в настройках</a></div>
+<div class="wrap">
+  <div class="card">
+    <h1>Реквизиты ООО «Дорогой Город»</h1>
+    <p class="sub">Для договоров, актов и оплаты. Скачайте PDF — он всегда актуален.</p>
+    <div id="body"><p class="empty">Загружаю…</p></div>
+    <div class="bar" id="bar" hidden>
+      <a class="btn" href="/requisites.pdf" download>Скачать PDF</a>
+      <button class="btn ghost" id="copy" type="button">Скопировать реквизиты</button>
+    </div>
+  </div>
+</div>
+<script>
+(async()=>{
+  const body=document.getElementById('body');
+  try{
+    const r=await fetch('/api/siteRequisites',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'[]'});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Ошибка');
+    const rows=d.result.rows;
+    if(!rows.length){body.innerHTML='<p class="empty">Реквизиты ещё не заполнены. Учредитель заполняет их в разделе «Финансы → Настройки».</p>';return}
+    body.innerHTML='<dl>'+rows.map(([k,v])=>`<div class="row"><dt>${k.replace(/</g,'&lt;')}</dt><dd>${v.replace(/</g,'&lt;')}</dd></div>`).join('')+'</dl>';
+    document.getElementById('bar').hidden=false;
+    document.getElementById('copy').addEventListener('click',async()=>{
+      const txt=rows.map(([k,v])=>k+': '+v).join('\n');
+      try{await navigator.clipboard.writeText(txt);document.getElementById('copy').textContent='Скопировано ✓'}catch(_){}
+    });
+    if(d.result.canEdit) document.getElementById('editlink').hidden=false;
+  }catch(e){body.innerHTML='<p class="empty">'+e.message+'</p>'}
+})();
+</script>
+</body></html>
