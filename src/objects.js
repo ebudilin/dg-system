@@ -91,6 +91,24 @@ function cleanAccess(db, a, prev) {
     accessNote: str(a.accessNote, 1000)
   };
 }
+
+// Ссылки на объявления по объекту: Циан, Авито, ДомКлик, Яндекс.Недвижимость + свободное поле.
+const AD_PLACES = ['cian', 'avito', 'domclick', 'yandex'];
+function normUrl(v) {
+  let t = str(v, 1000).trim();
+  if (!t) return '';
+  if (/^https?:\/\//i.test(t)) return t;
+  // если вставили адрес без схемы — добавим https, чтобы ссылка открывалась
+  if (/^[\w-]+(\.[\w-]+)+([/?#]|$)/i.test(t)) return 'https://' + t;
+  return t;  // иначе оставляем как есть: это может быть пояснение
+}
+function cleanAds(a, prev) {
+  const p = prev || {}, src = a || {};
+  const out = {};
+  for (const k of AD_PLACES) out[k] = normUrl(k in src ? src[k] : (p[k] || ''));
+  out.other = str('other' in src ? src.other : (p.other || ''), 3000).trim();
+  return out;
+}
 function cleanObject(db, o, prev) {
   const p = prev || {};
   const x = {
@@ -119,6 +137,7 @@ function cleanObject(db, o, prev) {
     tips: (Array.isArray(o.tips) ? o.tips : []).slice(0, 40).map(t => ({ key: str(t.key || uid('tip'), 40), title: str(t.title, 200).trim(), done: !!t.done, taskId: str(t.taskId, 64) })).filter(t => t.title),
     expenses: (Array.isArray(o.expenses) ? o.expenses : []).slice(0, 200).map(e => ({ id: str(e.id || uid('exp'), 40), date: isDate(e.date) ? e.date : '', kind: str(e.kind, 60), amount: Number(e.amount) || 0, note: str(e.note, 300), opId: str(e.opId, 64) })).filter(e => e.amount > 0),
     access: cleanAccess(db, o.access, p.access),
+    ads: cleanAds(o.ads, p.ads),
     createdAt: p.createdAt || now(), updatedAt: now(),
     cian: p.cian || null, saleType: o.saleType === 'alternative' ? 'alternative' : 'free',
     listedFrom: isDate(o.listedFrom) ? o.listedFrom : (isDate(p.listedFrom) ? p.listedFrom : (p.listedFrom || '')),

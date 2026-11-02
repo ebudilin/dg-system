@@ -502,6 +502,15 @@ dialog,.dlg{border-radius:12px}
 .disc-box{margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:14px 15px;background:var(--surface)}
 .disc-box h3{margin:0 0 10px}
 #disc-wrap .disc-editor textarea{min-height:64px}
+
+/* ссылки на объявления */
+.adlinks .fg{gap:10px 16px}
+.adrow{display:flex;gap:8px;align-items:center}
+.adrow input{flex:1;min-width:0}
+.adopen{flex:none;font-size:12px;font-weight:600;padding:7px 11px;border-radius:6px;border:1px solid var(--accent-soft);background:var(--accent-soft);color:var(--accent);text-decoration:none;white-space:nowrap}
+.adopen:hover{filter:brightness(.97)}
+.adopen.off{border-color:var(--line);background:var(--sunk);color:var(--muted);font-weight:500;cursor:default}
+@media (max-width:600px){.adrow{flex-wrap:wrap}.adopen{width:100%;text-align:center}}
 </style></head>
 <body>
 <header class="top">
@@ -890,7 +899,7 @@ function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
   form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
 
 /* объект */
-const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение'],['ads','Площадки'],['inq','Обращения'],['hist','Задачи и история']];
+const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение'],['adlinks','Ссылки на объявления'],['ads','Выгрузка на ЦИАН'],['inq','Обращения'],['hist','Задачи и история']];
 function openObject(o,pane){
   const OD=D.dict.obj;
   const x=o?JSON.parse(JSON.stringify(o)):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'draft',responsibleId:ME.id,source:'',price:'',area:'',owners:[],tips:[],expenses:[],windows:[],yard:[],parking:[]};
@@ -927,6 +936,36 @@ function accessPane(x,o){
     ${can()&&who==='keys'?`<div class="r2" style="margin-top:12px;flex-wrap:wrap"><button type="button" class="primary" data-keys-check ${o?'':'disabled title="Сначала сохраните объект"'}>✓ Ключи перепроверены — точно есть</button><span class="muted" style="font-size:12px">Ответственный получит сообщение в CRM и в Max.</span></div>`:''}
   </div>`:''}`;
 }
+
+function adsLinksPane(x, o){
+  const a = x.ads || {};
+  const PLACES = [
+    ['cian', 'Циан', 'https://www.cian.ru', 'Код объявления — в конце ссылки'],
+    ['avito', 'Авито', 'https://www.avito.ru', 'Ссылка на объявление или на профиль'],
+    ['domclick', 'ДомКлик', 'https://domclick.ru', ''],
+    ['yandex', 'Яндекс.Недвижимость', 'https://realty.ya.ru', '']
+  ];
+  const filled = PLACES.filter(([k]) => (a[k] || '').trim()).length;
+  const ro = can() ? '' : ' readonly';
+  return `<div class="adlinks">
+    <p class="note" style="margin:0 0 14px">Где размещено объявление по этому объекту. Ссылку можно открыть и проверить, что объявление живо и актуально.</p>
+    <div class="fg">
+      ${PLACES.map(([k, label, site, ph]) => `
+        <label class="f full"><span>${label}</span>
+          <div class="adrow">
+            <input name="ads_${k}" type="text" inputmode="url" value="${esc(a[k] || '')}" placeholder="${esc(ph || site)}"${ro}>
+            ${a[k] ? `<a class="adopen" href="${esc(a[k])}" target="_blank" rel="noopener" title="Открыть объявление">Открыть ↗</a>`
+                   : `<span class="adopen off">не заполнено</span>`}
+          </div>
+        </label>`).join('')}
+    </div>
+    <label class="f full" style="margin-top:6px"><span>Дополнительно — где ещё размещали</span>
+      <textarea name="ads_other" rows="3" placeholder="Например: чаты риелторов в Telegram, Instagram, рассылка по своей базе, партнёрские агентства, доски объявлений"${ro}>${esc(a.other || '')}</textarea>
+    </label>
+    <p class="note" style="margin:12px 0 0">Заполнено площадок: <b>${filled} из ${PLACES.length}</b>${o ? '' : ' · сохраните объект, чтобы ссылки применились'}</p>
+  </div>`;
+}
+
 function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','house'].includes(x.kind),pane=c.pane;
   const srcs=[...new Set([...OD.sources,...D.objects.map(y=>y.source).filter(Boolean)])];
   const r=readiness(x),ppm=x.price&&x.area?Math.round(x.price/x.area):0,cw=contractWarn(x);
@@ -969,7 +1008,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <label class="f"><span>Действует до</span><input name="contractUntil" type="date" value="${esc(x.contractUntil)}"></label>
       <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" name="exclusive" ${x.exclusive?'checked':''}> Эксклюзив</label></label>
       <label class="f full"><span>Причина продажи</span><input name="saleReason" value="${esc(x.saleReason)}" placeholder="Переезд, расширение, разъезд, инвестиции…"></label>
-      <label class="f full"><span>Ссылка (объявление, папка с фото, презентация)</span><input name="link" type="url" value="${esc(x.link)}"></label>
+      <label class="f full"><span>Ссылка на папку с фото или презентацию</span><input name="link" type="url" value="${esc(x.link)}"></label>
       <label class="f full"><span>Внутренний комментарий (для команды)</span><textarea name="note" rows="2">${esc(x.note)}</textarea></label></div>
       ${x.link?`<div class="links"><a href="${esc(x.link)}" target="_blank" rel="noopener">Открыть ссылку ↗</a></div>`:''}
       ${priceHistHtml(x)}
@@ -1010,6 +1049,7 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
     ${P('files',`<div id="files-box">${filesHtml()}</div>
       <label class="f" style="margin-top:14px"><span>Папка с исходниками на Яндекс Диске (RAW-фото, видео)</span><input name="diskLink" type="url" value="${esc(x.diskLink||'')}" placeholder="https://disk.yandex.ru/…"></label>
       ${x.diskLink?`<div class="links"><a href="${esc(x.diskLink)}" target="_blank" rel="noopener">Открыть папку ↗</a></div>`:''}`)}
+    ${P('adlinks',adsLinksPane(x,o))}
     ${P('ads',`<label class="f" style="max-width:320px;margin-bottom:10px"><span>Тип продажи (для объявления)</span><select name="saleType">${opt([['free','Свободная продажа'],['alternative','Альтернатива']],x.saleType||'free')}</select></label><div id="cian-box">${cianHtml()}</div>`)}
     ${P('hist',o?sidePanel({objectId:o.id}):'<p class="muted">Сохраните объект, чтобы вести задачи и историю.</p>')}
     <div class="acts" style="margin-top:4px"><div>${o&&can()?`<button type="button" class="danger" data-del>${c.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
@@ -1046,7 +1086,11 @@ function openExpFin(c,i){let d=$('#expdlg');if(!d){d=document.createElement('dia
 function readObjForm(){readForm();const c=dlgCtx;
   if(c.o){const a=Object.assign({},c.o.access||{});let touched=false;
     ['acc_who','acc_proxyName','acc_proxyPhone','acc_note','acc_keysAt'].forEach(k=>{if(k in c.o){touched=true;const key={acc_who:'who',acc_proxyName:'proxyName',acc_proxyPhone:'proxyPhone',acc_note:'accessNote',acc_keysAt:'keysAt'}[k];a[key]=c.o[k];delete c.o[k]}});
-    if(touched||c.o.access)c.o.access=a}if(c.o.liftsNone===true)c.o.lifts='none';else if(c.o.liftsNone===false&&c.o.lifts==='none')c.o.lifts='';delete c.o.liftsNone;
+    if(touched||c.o.access)c.o.access=a
+    const ad=Object.assign({},c.o.ads||{});let adT=false;
+    ['cian','avito','domclick','yandex'].forEach(k=>{const key='ads_'+k;if(key in c.o){adT=true;ad[k]=c.o[key];delete c.o[key]}});
+    if('ads_other' in c.o){adT=true;ad.other=c.o.ads_other;delete c.o.ads_other};
+    if(adT||c.o.ads)c.o.ads=ad}if(c.o.liftsNone===true)c.o.lifts='none';else if(c.o.liftsNone===false&&c.o.lifts==='none')c.o.lifts='';delete c.o.liftsNone;
   form.querySelectorAll('[data-nown]').forEach(el=>{const n=c.newOwners[+el.dataset.nown];if(n)n[el.dataset.k]=el.value});
   form.querySelectorAll('[data-exp]').forEach(el=>{const e=c.o.expenses[+el.dataset.exp];if(e)e[el.dataset.k]=el.dataset.k==='amount'?(el.value===''?'':+el.value):el.value})}
 form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='object')return;const b=e.target.closest('button,a');if(!b)return;const x=c.o;
