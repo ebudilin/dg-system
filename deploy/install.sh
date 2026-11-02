@@ -53,7 +53,14 @@ systemctl enable --now dg.service dg-update.timer dg-backup.timer >/dev/null
 systemctl restart dg.service
 
 echo "== Веб-сервер"
-sed "s/__DOMAIN__/$DOMAIN/g" "$APP/deploy/nginx.conf" > /etc/nginx/sites-available/dg
+# Если сертификат уже выпущен, конфиг с HTTPS не перезаписываем:
+# шаблон из репозитория — только для первой установки, до certbot.
+if [ -d "/etc/letsencrypt/live/$DOMAIN" ] && [ -f /etc/nginx/sites-available/dg ] && grep -q "ssl_certificate" /etc/nginx/sites-available/dg; then
+  echo "   HTTPS уже настроен — конфиг nginx сохраняем как есть"
+else
+  sed "s/__DOMAIN__/$DOMAIN/g" "$APP/deploy/nginx.conf" > /etc/nginx/sites-available/dg
+  echo "   конфиг nginx обновлён (без HTTPS, сертификат выпустит https.sh)"
+fi
 ln -sf /etc/nginx/sites-available/dg /etc/nginx/sites-enabled/dg
 rm -f /etc/nginx/sites-enabled/default
 # если сертификат уже выпущен — certbot сам допишет HTTPS при следующем запуске

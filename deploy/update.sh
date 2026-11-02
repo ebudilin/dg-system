@@ -9,7 +9,10 @@ NEW=$(sudo -H -u dg git rev-parse '@{u}')
 if [ "$OLD" != "$NEW" ]; then
   sudo -H -u dg git reset -q --hard "$NEW"
   echo "Обновление $OLD → $NEW"
-  if sudo -H -u dg git diff --name-only "$OLD" "$NEW" | grep -q '^deploy/'; then
+  # install.sh переустанавливает systemd-юниты и перегенерирует nginx —
+  # запускаем только когда менялись именно файлы инфраструктуры.
+  # Остальные изменения в deploy/ (например, вспомогательные скрипты) требуют лишь перезапуска.
+  if sudo -H -u dg git diff --name-only "$OLD" "$NEW" | grep -qE '^deploy/(dg\.service|dg-update\.(service|timer)|dg-backup\.(service|timer)|nginx\.conf|install\.sh)$'; then
     bash "$APP/deploy/install.sh"
   else
     systemctl restart dg.service
