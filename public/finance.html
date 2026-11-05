@@ -843,6 +843,18 @@ function siteSettingsHtml(){
     <div class="fg">${SITEST.requisites.map(r=>`<label class="f ${['fullName','legalAddress','postAddress'].includes(r.key)?'full':''}"><span>${esc(r.label)}</span><input data-site-req="${esc(r.key)}" value="${esc(r.value)}"></label>`).join('')}</div>
     <div class="r2" style="margin-top:12px;flex-wrap:wrap"><button type="button" class="primary" data-site-save>Сохранить сайт и реквизиты</button><a href="/requisites" target="_blank" rel="noopener">Открыть страницу реквизитов →</a></div></div>`;
 }
+
+document.addEventListener('click', e => {
+  if (e.target.id === 'menu-toggle') {
+    const nav = document.getElementById('tabs');
+    nav.classList.toggle('open');
+    return;
+  }
+  if (e.target.closest('nav#tabs a')) {
+    const nav = document.getElementById('tabs');
+    if (nav.classList.contains('open')) nav.classList.remove('open');
+  }
+});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-site-save]');if(!b)return;
   const links={},requisites={};
   document.querySelectorAll('[data-site-link]').forEach(i=>links[i.dataset.siteLink]=i.value.trim());

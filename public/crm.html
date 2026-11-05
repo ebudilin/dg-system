@@ -1318,6 +1318,18 @@ app.addEventListener('drop',async e=>{const col=e.target.closest('.col');if(!col
 app.addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.col.over').forEach(x=>x.classList.remove('over'))});
 
 /* ---------- пароль, выход ---------- */
+
+document.addEventListener('click', e => {
+  if (e.target.id === 'menu-toggle') {
+    const nav = document.getElementById('tabs');
+    nav.classList.toggle('open');
+    return;
+  }
+  if (e.target.closest('nav#tabs a')) {
+    const nav = document.getElementById('tabs');
+    if (nav.classList.contains('open')) nav.classList.remove('open');
+  }
+});
 document.addEventListener('click',async e=>{
   if(e.target.closest('#logout')){try{await fetch('/auth/logout',{method:'POST',credentials:'same-origin'})}catch(_){}location.href='/login'}
 });
