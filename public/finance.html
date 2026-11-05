@@ -153,7 +153,6 @@ dialog .tbl-wrap{max-height:none}
 .appsw a.sw-fin[aria-current="page"]{background:var(--accent);color:#FFFFFF}
 .appsw a[aria-current="page"] i{background:#FFFFFF;opacity:.85}
 .appsw a:not([aria-current]):hover{background:var(--sunk);color:var(--ink)}
-@media (max-width:700px){.appsw{display:flex;width:100%;order:-1}.appsw a{flex:1;padding:11px 8px;font-size:16px}}
 .team-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
 .team-kpi div{display:flex;flex-direction:column;gap:2px;background:var(--sunk);border-radius:8px;padding:8px 10px}
 .team-kpi span{font-size:12px;color:var(--muted)}.team-kpi b{font-family:var(--font-num);font-size:16px}
@@ -307,6 +306,38 @@ button,input,select,textarea{border-radius:6px}
 @media (max-width:640px){
   .navbar nav.tabs{flex-wrap:wrap;overflow-x:visible;padding-bottom:8px;row-gap:2px}
   nav.tabs a{flex:0 0 auto}
+}
+/* ---- шапка на узких экранах: компактно, меню в одну строку ---- */
+@media (max-width:900px){
+  .bar{flex-wrap:wrap;gap:8px;padding-block:8px 6px}
+  .brand{order:1;flex:none}
+  .period{order:3;flex:1 1 100%;justify-content:flex-start;margin-top:2px}
+  .period .lbl{min-width:0;flex:1;text-align:left}
+  .bar .right{order:2;margin-left:auto;gap:6px}
+  .navbar{order:4;flex-wrap:wrap;gap:8px;margin-top:0}
+
+  /* переключатель CRM / Финансы — заметная кнопка во всю ширину */
+  .navbar .appsw{order:1;flex:0 0 100%;width:100%;box-sizing:border-box;margin-bottom:0;justify-content:stretch;
+    background:var(--surface);border-color:var(--line);padding:3px}
+  .navbar .appsw a{flex:1;text-align:center;padding:9px 10px;font-size:13.5px;font-weight:650;color:var(--muted)}
+  .navbar .appsw a[aria-current="page"]{background:var(--accent);color:#fff;box-shadow:none}
+
+  /* меню разделов — одна строка с прокруткой */
+  .navbar nav.tabs{order:2;flex:0 0 100%;width:100%;box-sizing:border-box;min-width:0;flex-wrap:nowrap;
+    overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .navbar nav.tabs a{flex:0 0 auto;white-space:nowrap;scroll-snap-align:start;
+    font-size:12.5px;padding:7px 11px}
+  .navbar{position:relative}
+  .navbar::after{content:"";position:absolute;right:0;bottom:4px;width:22px;height:32px;
+    background:linear-gradient(to right,rgba(243,245,248,0),rgba(243,245,248,.96));pointer-events:none}
+}
+@media (max-width:560px){
+  .brand-tx b{font-size:14px}
+  .brand-tx span{display:none}
+  .brand-mark{width:28px;height:28px;font-size:11px}
+  .navbar .appsw a{font-size:12.5px;padding:8px}
+  #addop{padding:7px 10px;font-size:13px}
 }
 </style>
 </head><body>

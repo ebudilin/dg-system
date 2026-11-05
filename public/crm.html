@@ -446,20 +446,32 @@ dialog,.dlg{border-radius:12px}
 .ment button:hover,.ment button.on{background:var(--sunk)}
 .disc-empty{font-size:12px;color:var(--muted);padding:4px 0 10px}
 
-/* ---- шапка на узких экранах ---- */
+/* ---- шапка на узких экранах: компактно, меню в одну строку ---- */
 @media (max-width:900px){
-  .bar{gap:10px;flex-wrap:wrap;padding-block:9px 8px}
+  .bar{gap:8px;flex-wrap:wrap;padding-block:8px 6px}
   .brand{order:1}
   .right{order:2;margin-left:auto;gap:6px}
-  .bar .hsearch{order:3;flex:1 1 100%;max-width:none;min-width:0}
-  .navbar{order:4;flex-wrap:wrap;gap:8px}
-  /* переключатель разделов — отдельной строкой во всю ширину */
-  .navbar .appsw{order:1;flex:1 1 100%;width:100%;margin-bottom:0;justify-content:stretch}
-  .navbar .appsw a{flex:1;text-align:center;padding:8px 10px;font-size:13px}
-  /* меню разделов — своей строкой, прокручивается вбок */
-  .navbar nav.tabs{order:2;flex:1 1 100%;min-width:0;padding-bottom:8px}
-  nav.tabs a{font-size:12px;padding:6px 10px}
+  .bar .hsearch{order:3;flex:1 1 100%;max-width:none;min-width:0;margin-bottom:2px}
+  .navbar{order:4;flex-wrap:wrap;gap:8px;margin-top:0}
+
+  /* переключатель CRM / Финансы — заметная кнопка во всю ширину */
+  .navbar .appsw{order:1;flex:0 0 100%;width:100%;box-sizing:border-box;margin-bottom:0;justify-content:stretch;
+    background:var(--surface);border-color:var(--line);padding:3px}
+  .navbar .appsw a{flex:1;text-align:center;padding:9px 10px;font-size:13.5px;font-weight:650;color:var(--muted)}
+  .navbar .appsw a[aria-current="page"]{background:var(--accent);color:#fff;box-shadow:none}
+
+  /* меню разделов — одна строка с горизонтальной прокруткой, без переносов */
+  .navbar nav.tabs{order:2;flex:0 0 100%;width:100%;box-sizing:border-box;min-width:0;flex-wrap:nowrap;
+    overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+  .navbar nav.tabs a{flex:0 0 auto;white-space:nowrap;scroll-snap-align:start;
+    font-size:12.5px;padding:7px 11px}
+  /* мягкое затухание справа — видно, что строку можно прокрутить */
+  .navbar{position:relative}
+  .navbar::after{content:"";position:absolute;right:0;bottom:4px;width:22px;height:32px;
+    background:linear-gradient(to right,rgba(243,245,248,0),rgba(243,245,248,.96));pointer-events:none}
 }
+
 @media (max-width:560px){
   .brand-tx b{font-size:14px}
   .brand-tx span{display:none}
@@ -469,69 +481,7 @@ dialog,.dlg{border-radius:12px}
   #addbtn{padding:7px 10px;font-size:13px}
   .who .me-chip .nm{display:none}
   .who .me-chip{padding:3px}
-  .navbar{gap:8px}
-  .appsw a{font-size:11px;padding:5px 9px}
-}
-
-/* ===== футер и реквизиты ===== */
-.site-foot{margin-top:40px;border-top:1px solid var(--line);background:var(--surface)}
-.site-foot .in{max-width:1320px;margin:0 auto;padding:18px 24px;display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;justify-content:space-between}
-.site-foot nav{display:flex;flex-wrap:wrap;gap:4px 16px}
-.site-foot a{font-size:13px;color:var(--muted);text-decoration:none}
-.site-foot a:hover{color:var(--accent)}
-.site-foot .req{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);padding:7px 12px;border-radius:6px;text-decoration:none}
-.site-foot .req:hover{filter:brightness(.97)}
-.site-foot .copy{font-size:12px;color:var(--muted);width:100%}
-@media (max-width:760px){.site-foot .in{padding:16px 14px}}
-/* карточка доступа к объекту */
-.access-card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px;margin-top:12px}
-.access-card h3{margin-bottom:10px}
-.keycheck{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 11px;border-radius:7px;font-size:13px}
-.keycheck.ok{background:var(--pos-soft);color:var(--pos)}
-.keycheck.warn{background:var(--warn-soft);color:var(--warn)}
-.keycheck.none{background:var(--sunk);color:var(--muted)}
-.keycheck .grow{flex:1}
-
-/* карточка звонка: выбор типа */
-.ck-kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.ck-kind{display:flex;flex-direction:column;gap:3px;text-align:left;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;white-space:normal;min-width:0;overflow-wrap:anywhere;height:auto;align-items:flex-start}
-.ck-kind:hover{border-color:#AAB7C9}
-.ck-kind.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
-.ck-kind b{font-size:13px;font-weight:600;white-space:normal}
-.ck-kind span{font-size:11px;color:var(--muted);line-height:1.35;white-space:normal;display:block}
-@media (max-width:900px){.ck-kinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:560px){.ck-kinds{grid-template-columns:1fr}}
-/* обсуждение в карточке звонка не должно «схлопываться» */
-#disc-wrap{min-height:1px}
-.disc-box{margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:14px 15px;background:var(--surface)}
-.disc-box h3{margin:0 0 10px}
-#disc-wrap .disc-editor textarea{min-height:64px}
-
-/* ссылки на объявления */
-.adlinks .fg{gap:10px 16px}
-.adrow{display:flex;gap:8px;align-items:center}
-.adrow input{flex:1;min-width:0}
-.adopen{flex:none;font-size:12px;font-weight:600;padding:7px 11px;border-radius:6px;border:1px solid var(--accent-soft);background:var(--accent-soft);color:var(--accent);text-decoration:none;white-space:nowrap}
-.adopen:hover{filter:brightness(.97)}
-.adopen.off{border-color:var(--line);background:var(--sunk);color:var(--muted);font-weight:500;cursor:default}
-@media (max-width:600px){.adrow{flex-wrap:wrap}.adopen{width:100%;text-align:center}}
-
-/* список объектов: одинаковая сетка колонок во всех разделах */
-.obj-tbl{table-layout:fixed;min-width:980px}
-.obj-tbl th,.obj-tbl td{overflow:hidden;text-overflow:ellipsis}
-.obj-tbl th:first-child,.obj-tbl td:first-child{width:auto;white-space:normal}
-.obj-tbl td{vertical-align:top}
-.obj-tbl .meter{min-width:60px}
-/* мини-ссылки на площадки под адресом */
-.ad-minis{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
-.ad-mini{font-size:10.5px;font-weight:600;line-height:1;padding:3px 6px;border-radius:4px;
-  border:1px solid var(--accent-soft);background:var(--accent-soft);color:var(--accent);text-decoration:none}
-.ad-mini:hover{filter:brightness(.95)}
-.ad-mini.off{border-color:var(--line);background:transparent;color:var(--muted);font-weight:500;opacity:.62}
-
-@media (max-width:640px){
-  .navbar nav.tabs{flex-wrap:wrap;overflow-x:visible;padding-bottom:8px;row-gap:2px}
-  nav.tabs a{flex:0 0 auto}
+  .navbar .appsw a{font-size:12.5px;padding:8px}
 }
 </style></head>
 <body>
