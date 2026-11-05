@@ -483,6 +483,20 @@ dialog,.dlg{border-radius:12px}
   .who .me-chip{padding:3px}
   .navbar .appsw a{font-size:12.5px;padding:8px}
 }
+
+/* ===== список объектов: ровная сетка колонок ===== */
+.obj-tbl{table-layout:fixed;min-width:980px}
+.obj-tbl th,.obj-tbl td{overflow:hidden;text-overflow:ellipsis}
+.obj-tbl td{vertical-align:top}
+.obj-tbl th:first-child,.obj-tbl td:first-child{width:auto;white-space:normal;overflow:visible}
+.obj-tbl .meter{min-width:56px}
+/* ===== мини-плашки ссылок на объявления ===== */
+.ad-minis{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
+.ad-mini{display:inline-flex;align-items:center;font-size:10.5px;font-weight:650;line-height:1;
+  padding:3.5px 7px;border-radius:4px;border:1px solid var(--accent-soft);
+  background:var(--accent-soft);color:var(--accent);text-decoration:none;white-space:nowrap;letter-spacing:.01em}
+a.ad-mini:hover{filter:brightness(.94);color:var(--accent)}
+.ad-mini.off{border-color:var(--line);background:var(--sunk);color:var(--muted);font-weight:500;opacity:.72}
 </style></head>
 <body>
 <header class="top">
