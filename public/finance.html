@@ -269,7 +269,12 @@ button,input,select,textarea{border-radius:6px}
 @media (max-width:900px){
   .bar{flex-wrap:wrap;gap:10px}
   .period{order:3;flex:1 1 100%;justify-content:flex-start}
-  .navbar{order:4}
+  .navbar{order:4;flex-wrap:wrap;gap:8px}
+  /* переключатель CRM/Финансы — отдельной строкой, не сжимает вкладки */
+  .navbar .appsw{order:1;flex:1 1 100%;width:100%;margin-bottom:0}
+  .navbar .appsw a{flex:1;text-align:center;padding:8px 10px;font-size:13px}
+  .navbar nav.tabs{order:2;flex:1 1 100%;min-width:0;padding-bottom:8px}
+  nav.tabs a{font-size:12px;padding:6px 10px}
 }
 @media (max-width:560px){
   .brand-tx b{font-size:14px}.brand-tx span{display:none}.brand-mark{width:28px;height:28px;font-size:11px}
@@ -298,6 +303,11 @@ button,input,select,textarea{border-radius:6px}
 .usr-last.never{color:var(--warn)}
 .link-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,1.4fr) minmax(0,1fr);gap:10px;align-items:end}
 @media (max-width:760px){.link-row{grid-template-columns:1fr}}
+
+@media (max-width:640px){
+  .navbar nav.tabs{flex-wrap:wrap;overflow-x:visible;padding-bottom:8px;row-gap:2px}
+  nav.tabs a{flex:0 0 auto}
+}
 </style>
 </head><body>
 
