@@ -339,6 +339,15 @@ button,input,select,textarea{border-radius:6px}
   .navbar .appsw a{font-size:12.5px;padding:8px}
   #addop{padding:7px 10px;font-size:13px}
 }
+
+/* заметная кнопка Яндекс.Диска в футере */
+.site-foot .foot-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.disk-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#1B1B1B;
+  background:#FFD84D;border:1px solid #F0C420;padding:8px 14px;border-radius:7px;text-decoration:none;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,.10)}
+.disk-btn:hover{background:#FFCE1F;color:#1B1B1B}
+.disk-btn .ico{font-size:15px;line-height:1}
+@media (max-width:560px){.site-foot .foot-actions{width:100%}.disk-btn,.site-foot .req{flex:1 1 auto;justify-content:center}}
 </style>
 </head><body>
 
@@ -445,6 +454,8 @@ function syncTabs(){TABS.length=0;ALL_TABS.forEach(t=>{if((t[0]==='settings'||t[
 const hashTab=(location.hash||'').slice(1);
 const V={tab:TABS.some(t=>t[0]===hashTab)?hashTab:'summary', month:curMonth(), year:curMonth().slice(0,4), f:{acc:'',cat:'',type:'',q:''}, dealF:'active', cq:'', cpType:''};
 let draft=null, draftDirty=false;
+let D=null;                 // черновик настроек, доступен блокам gen/acc/dbt/…
+let inp=null;               // хелпер полей настроек
 
 /* ---------- lookups & math ---------- */
 const catById=id=>cfg.categories.find(c=>c.id===id);
@@ -948,7 +959,7 @@ function vSettings(){
   if(SETSEC==='users')return back+'<div class="set-sec" id="sec-users"><h2>Пользователи и доступ</h2>'+accessHtml()+actBar()+'</div>';
   if(SETSEC==='links')return back+'<div class="set-sec" id="sec-links"><h2>Связи сотрудников</h2>'+linksHtml()+'</div>';
   if(SETSEC==='site')return back+'<div class="set-sec" id="sec-site">'+siteSettingsHtml()+'</div>';
-  const D=draft, inp=(list,i,f,v,type='text',extra='')=>`<input type="${type}" data-s="${list}" data-i="${i}" data-k="${f}" id="s-${list}-${i}-${f}" value="${esc(v)}" ${extra}>`;
+  D=draft; inp=(list,i,f,v,type='text',extra='')=>`<input type="${type}" data-s="${list}" data-i="${i}" data-k="${f}" id="s-${list}-${i}-${f}" value="${esc(v)}" ${extra}>`;
   const body = SETSEC==='general'?gen() : SETSEC==='accounts'?acc() : SETSEC==='debts'?dbt()
     : SETSEC==='agents'?agn() : SETSEC==='owners'?own() : SETSEC==='cats'?cat() : per();
   const title={general:'Общие',accounts:'Счета и касса',debts:'Долги на начало учёта',agents:'Агенты и сплиты',owners:'Доли учредителей',cats:'Статьи доходов и расходов',period:'Закрытие периода'}[SETSEC]||'Настройки';
@@ -1246,7 +1257,7 @@ async function closePeriodUI(){
   await queue(async()=>{draft=null;draftDirty=false;apply(await api('closePeriod',D,out));render();toast('Операции до '+dFmt(D)+' перенесены в архив')});
 }
 async function saveCfg(){
-  const D=draft;
+  D=draft;
   if(!/^\d{4}-\d{2}$/.test(D.startMonth||''))return toast('Укажите месяц начала учёта.');
   const own=D.owners.reduce((s,o)=>s+num(o.share),0);if(D.owners.length&&Math.abs(own-100)>0.01)return toast('Доли учредителей должны давать 100% (сейчас '+own+'%).');
   if(D.accounts.some(a=>!String(a.name).trim())||D.categories.some(c=>!String(c.name).trim()))return toast('У каждого счёта и статьи должно быть название.');
@@ -1480,8 +1491,9 @@ init();
     const r=await fetch('/api/siteLinks',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'[]'});
     const d=await r.json(); const links=(d.result||[]);
     const box=document.createElement('footer'); box.className='site-foot';
-    box.innerHTML='<div class="in"><nav>'+links.map(l=>`<a href="${l.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">${l.label.replace(/</g,'&lt;')}</a>`).join('')+'</nav>'
-      +'<a class="req" href="/requisites">Реквизиты ООО «Дорогой Город»</a><div class="copy">© Дорогой Город · '+new Date().getFullYear()+'</div></div>';
+    box.innerHTML='<div class="in"><nav>'+links.filter(l=>l.key!=='yandexdisk').map(l=>`<a href="${l.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">${l.label.replace(/</g,'&lt;')}</a>`).join('')+'</nav>'
+      +'<div class="foot-actions">'+(links.find(l=>l.key==='yandexdisk')?`<a class="disk-btn" href="${links.find(l=>l.key==='yandexdisk').url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener"><span class="ico">☁</span> Яндекс Диск</a>`:'')
+      +'<a class="req" href="/requisites">Реквизиты ООО «Дорогой Город»</a></div><div class="copy">© Дорогой Город · '+new Date().getFullYear()+'</div></div>';
     document.body.appendChild(box);
   }catch(_){}
 })();

@@ -12,7 +12,8 @@ const LINKS = [
   { key: 'telegram', label: 'Канал в Телеграм' },
   { key: 'dzen', label: 'Яндекс Дзен' },
   { key: 'vc', label: 'VC' },
-  { key: 'max', label: 'Канал в Max' }
+  { key: 'max', label: 'Канал в Max' },
+  { key: 'yandexdisk', label: 'Яндекс Диск (исходники и файлы)' }
 ];
 const REQ_FIELDS = [
   ['fullName', 'Полное наименование'], ['shortName', 'Сокращённое наименование'],

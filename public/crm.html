@@ -528,6 +528,27 @@ a.call-open{color:var(--accent);text-decoration:underline dotted;text-underline-
 .keycheck.warn{background:var(--warn-soft,#FBF1DC);color:var(--warn,#9A6B12)}
 .keycheck.none{background:var(--sunk);color:var(--muted)}
 .keycheck .grow{flex:1}
+
+/* ===== карточка объекта: полноэкранный режим и рекомендации ===== */
+dialog.fullscr{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0;margin:0}
+dialog.fullscr .dlg{padding:20px 28px}
+@media (max-width:900px){dialog.fullscr .dlg{padding:14px}}
+.rec-box{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:12px}
+.rec-box h3{margin:0 0 6px}
+.rec-box .tips{margin-top:4px}
+/* кнопки режима */
+.ohead-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ohead-r button{padding:6px 11px;font-size:13px}
+@media (max-width:700px){.ohead-r{width:100%}.ohead-r button{flex:1 1 auto}}
+
+/* заметная кнопка Яндекс.Диска в футере */
+.site-foot .foot-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.disk-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#1B1B1B;
+  background:#FFD84D;border:1px solid #F0C420;padding:8px 14px;border-radius:7px;text-decoration:none;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,.10)}
+.disk-btn:hover{background:#FFCE1F;color:#1B1B1B}
+.disk-btn .ico{font-size:15px;line-height:1}
+@media (max-width:560px){.site-foot .foot-actions{width:100%}.disk-btn,.site-foot .req{flex:1 1 auto;justify-content:center}}
 </style></head>
 <body>
 <header class="top">
@@ -932,7 +953,7 @@ function drawClient(){const x=dlgCtx.o,c=dlgCtx.orig;
   form.innerHTML=`<h2>${c?esc(c.name):'Новый клиент'}</h2>${c?`<div class="dlg2"><div style="display:flex;flex-direction:column;gap:12px">${fields}</div>${sidePanel({clientId:c.id})}</div>`:fields}${acts(!!c)}`}
 
 /* объект */
-const OBJ_PANES=[['main','Основное'],['access','Доступ к объекту'],['files','Фото и документы'],['own','Собственники и документы'],['par','Параметры'],['promo','Продвижение'],['adlinks','Ссылки на объявления'],['ads','Выгрузка на ЦИАН'],['inq','Обращения'],['hist','Задачи и история']];
+const OBJ_PANES=[['main','Объект'],['own','Собственники и документы'],['files','Фото'],['access','Доступ к объекту'],['adlinks','Ссылки на объявления'],['ads','Выгрузка на ЦИАН'],['inq','Обращения'],['hist','Задачи и рекомендации']];
 function openObject(o,pane){
   const OD=D.dict.obj;
   const x=o?JSON.parse(JSON.stringify(o)):{id:'',title:'',address:'',metro:'',kind:'flat',offer:'sale',status:'draft',responsibleId:ME.id,source:'',price:'',area:'',owners:[],tips:[],expenses:[],windows:[],yard:[],parking:[]};
@@ -940,7 +961,7 @@ function openObject(o,pane){
   Object.keys(OD.recurring||{}).forEach(k=>{if(!x.tips.some(t=>t.key===k)){const d=OD.tips.find(t=>t[0]===k);if(d)x.tips.push({key:k,title:d[1],done:false,taskId:''})}});
   if(!Array.isArray(x.priceHistory))x.priceHistory=[];
   ['owners','expenses','windows','yard','parking'].forEach(k=>{if(!Array.isArray(x[k]))x[k]=[]});
-  openDlg({kind:'object',orig:o||null,o:x,wide:true,xwide:true,pane:pane||'main',newOwners:[],inq:null,files:null,cian:null,feed:o?{objectId:o.id}:null,draw:drawObject,
+  openDlg({kind:'object',orig:o||null,o:x,wide:true,xwide:true,pane:pane||'main',mode:can()?'edit':'view',full:false,newOwners:[],inq:null,files:null,cian:null,feed:o?{objectId:o.id}:null,draw:drawObject,
     refresh:()=>{if(dlgCtx.orig){const n=obj(dlgCtx.orig.id);if(n)dlgCtx.orig=n}}});
   if(o){loadInq();loadFiles()}
 }
@@ -1000,6 +1021,8 @@ function adsLinksPane(x, o){
 }
 
 function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','house'].includes(x.kind),pane=c.pane;
+  const RO=(c.mode==='view'||!can())?' readonly':'';   // режим просмотра
+  const DS=(c.mode==='view'||!can())?' disabled':'';   // выпадающие списки
   const srcs=[...new Set([...OD.sources,...D.objects.map(y=>y.source).filter(Boolean)])];
   const r=readiness(x),ppm=x.price&&x.area?Math.round(x.price/x.area):0,cw=contractWarn(x);
   const days=o&&['active','deposit','paused'].includes(o.status)?Math.floor((Date.now()-(o.listedFrom?new Date(o.listedFrom+'T00:00:00').getTime():o.activeSince||Date.now()))/864e5):null;
@@ -1020,7 +1043,12 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
   const descLen=(x.description||'').length;
   form.innerHTML=`<div class="ohead"><div><h2>${o?esc(objName(o)):'Новый объект'}</h2>
       <div class="muted" style="font-size:12px">${esc([OD.kinds[x.kind],x.offer==='rent'?'аренда':'продажа',ppm?NF.format(ppm)+' ₽/м²':'',days!=null?'в экспозиции '+days+' дн.':'',(D.inq||{})[x.id]?'обращений: '+D.inq[x.id].n:''].filter(Boolean).join(' · '))}</div></div>
-    <div class="ohead-r"><select name="status" class="ostsel os-${x.status}" aria-label="Статус">${opt(Object.entries(OD.status),x.status)}</select>
+    <div class="ohead-r">
+      ${c.mode==='edit'
+        ? `<button type="button" data-mode-view title="Выйти из редактирования">👁 Просмотр</button>`
+        : `<button type="button" class="primary" data-mode-edit ${can()?'':'disabled'} title="Редактировать объект">✎ Редактировать</button>`}
+      <button type="button" class="ghost" data-fullscreen title="Развернуть на весь экран / свернуть">⤢</button>
+      <select name="status" class="ostsel os-${x.status}" aria-label="Статус" ${c.mode==='edit'?'':'disabled'}>${opt(Object.entries(OD.status),x.status)}</select>
       <div class="ready" title="Не хватает: ${esc(r.miss.join(', ')||'ничего')}"><div class="meter"><i style="width:${r.p}%"></i></div><span>Готовность ${r.p}%</span></div></div></div>
     ${cw?`<div class="banner" style="margin:0">${esc(cw)}</div>`:''}
     <div class="otabs" role="tablist">${OBJ_PANES.map(([k,l])=>`<button type="button" role="tab" data-pane-btn="${k}" aria-selected="${pane===k}" ${!o&&['inq','hist','files','ads'].includes(k)?'disabled title="Сначала сохраните объект"':''}>${l}</button>`).join('')}</div>
@@ -1040,23 +1068,11 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <label class="f"><span>В экспозиции с</span><input name="listedFrom" type="date" value="${esc(x.listedFrom||'')}"></label>
       <label class="f"><span>Действует до</span><input name="contractUntil" type="date" value="${esc(x.contractUntil)}"></label>
       <label class="checks" style="align-self:end;padding-bottom:8px"><label><input type="checkbox" name="exclusive" ${x.exclusive?'checked':''}> Эксклюзив</label></label>
-      <label class="f full"><span>Причина продажи</span><input name="saleReason" value="${esc(x.saleReason)}" placeholder="Переезд, расширение, разъезд, инвестиции…"></label>
-      <label class="f full"><span>Ссылка на папку с фото или презентацию</span><input name="link" type="url" value="${esc(x.link)}"></label>
       <label class="f full"><span>Внутренний комментарий (для команды)</span><textarea name="note" rows="2">${esc(x.note)}</textarea></label></div>
-      ${x.link?`<div class="links"><a href="${esc(x.link)}" target="_blank" rel="noopener">Открыть ссылку ↗</a></div>`:''}
       ${priceHistHtml(x)}
       ${o&&D.deals.some(d=>d.objectId===o.id)?`<h3 style="margin-top:14px">Сделки по объекту</h3><div class="links">${D.deals.filter(d=>d.objectId===o.id).map(d=>`<a data-open-deal="${esc(d.id)}">${esc(dealName(d))} — ${esc(DEAL_ST[d.status]||'')}</a>`).join('')}</div>`:''}
-      <datalist id="obj-src">${srcs.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
-    ${P('own',`<h3>Собственники</h3>${ownersHtml}<div class="fg3" style="margin-top:12px">
-      <label class="f"><span>Кадастровый номер</span><input name="cadastral" value="${esc(x.cadastral)}" placeholder="77:01:0001001:1234"></label>
-      <label class="f"><span>Право собственности с</span><input name="ownershipDate" type="date" value="${esc(x.ownershipDate)}"></label>
-      <label class="f"><span>Основание собственности</span><input name="ownershipBasis" list="own-basis" value="${esc(x.ownershipBasis)}"></label>
-      <label class="f full"><span>Обременения</span><textarea name="encumbrances" rows="2" placeholder="Ипотека в …, арест, зарегистрированные лица, несовершеннолетние…">${esc(x.encumbrances)}</textarea></label>
-      <label class="f"><span>Арендатор</span><select name="tenant">${opt([['','— не указано —'],...Object.entries(OD.tenant)],x.tenant)}</select></label>
-      <label class="f span2"><span>Об арендаторе</span><input name="tenantNote" value="${esc(x.tenantNote)}" placeholder="Срок договора, ставка, контакт"></label>
-      <label class="f full"><span>Дополнительные контакты по объекту</span><textarea name="extraContacts" rows="2" placeholder="Родственник собственника, управляющая компания, консьерж…">${esc(x.extraContacts)}</textarea></label></div>
-      <datalist id="own-basis">${OD.ownershipBasis.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
-    ${P('par',`<div class="fg3">
+      <h3 style="margin-top:20px">Параметры</h3>
+      <div class="fg3"><div class="fg3">
       ${res?`<label class="f"><span>Количество комнат</span><select name="rooms">${opt([['','—'],['studio','Студия'],...['1','2','3','4','5','6','7+'].map(n=>[n,n])],x.rooms)}</select></label>
       <label class="f"><span>Тип комнат</span><select name="roomsType">${opt([['','—'],...Object.entries(OD.roomsType)],x.roomsType)}</select></label>
       <label class="f"><span>Жилая площадь, м²</span><input name="livingArea" type="number" step="0.1" value="${esc(x.livingArea)}"></label>
@@ -1074,19 +1090,38 @@ function drawObject(){const c=dlgCtx,x=c.o,o=c.orig,OD=D.dict.obj,res=['flat','h
       <div class="f full"><span style="font-size:12px;color:var(--muted)">Парковка</span>${chk('parking',OD.parking,x.parking)}</div>
       <label class="f full"><span>Застройщик / бизнес-центр / ЖК</span><input name="developer" value="${esc(x.developer)}"></label>
       <label class="f full"><span>Описание — текст объявления <b class="${descLen&&descLen<300?'warn':descLen>5000?'neg':''}" id="desc-n">${descLen} / 300–5000</b></span><textarea name="description" rows="9" maxlength="5000" placeholder="Текст для ЦИАН, Авито, Яндекса: от 300 до 5000 символов">${esc(x.description)}</textarea></label></div>
-      <datalist id="walls">${OD.walls.map(s=>`<option value="${esc(s)}">`).join('')}</datalist><datalist id="slabs">${OD.slabs.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
-    ${P('promo',`<h3>Советы по работе с объектом</h3><p class="note" style="margin:0 0 6px">Отмечайте сделанное или превращайте совет в задачу ответственному${o?'':' (после сохранения объекта)'}.</p>
-      <div class="tips">${tipsHtml}</div>${can()?`<div class="r2" style="margin-top:6px"><input id="tip-new" placeholder="Свой совет: например, «сделать 3D-тур»"><button type="button" data-tip-add>+ Добавить</button></div>`:''}
-      `)}
+      <datalist id="walls">${OD.walls.map(s=>`<option value="${esc(s)}">`).join('')}</datalist><datalist id="slabs">${OD.slabs.map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+      <datalist id="obj-src">${srcs.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
+    ${P('own',`<h3>Собственники</h3>${ownersHtml}<div class="fg3" style="margin-top:12px">
+      <label class="f"><span>Кадастровый номер</span><input name="cadastral" value="${esc(x.cadastral)}" placeholder="77:01:0001001:1234"></label>
+      <label class="f"><span>Право собственности с</span><input name="ownershipDate" type="date" value="${esc(x.ownershipDate)}"></label>
+      <label class="f"><span>Основание собственности</span><input name="ownershipBasis" list="own-basis" value="${esc(x.ownershipBasis)}"></label>
+      <label class="f full"><span>Обременения</span><textarea name="encumbrances" rows="2" placeholder="Ипотека в …, арест, зарегистрированные лица, несовершеннолетние…">${esc(x.encumbrances)}</textarea></label>
+      <label class="f"><span>Арендатор</span><select name="tenant">${opt([['','— не указано —'],...Object.entries(OD.tenant)],x.tenant)}</select></label>
+      <label class="f span2"><span>Об арендаторе</span><input name="tenantNote" value="${esc(x.tenantNote)}" placeholder="Срок договора, ставка, контакт"></label>
+      <label class="f full"><span>Причина продажи</span><input name="saleReason" value="${esc(x.saleReason)}" placeholder="Переезд, расширение, разъезд, инвестиции…"></label>
+      <label class="f full"><span>Дополнительные контакты по объекту</span><textarea name="extraContacts" rows="2" placeholder="Родственник собственника, управляющая компания, консьерж…">${esc(x.extraContacts)}</textarea></label></div>
+      <datalist id="own-basis">${OD.ownershipBasis.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>`)}
     ${P('inq',`<div id="inq-list">${inqList()}</div>`)}
     ${P('files',`<div id="files-box">${filesHtml()}</div>
       <label class="f" style="margin-top:14px"><span>Папка с исходниками на Яндекс Диске (RAW-фото, видео)</span><input name="diskLink" type="url" value="${esc(x.diskLink||'')}" placeholder="https://disk.yandex.ru/…"></label>
       ${x.diskLink?`<div class="links"><a href="${esc(x.diskLink)}" target="_blank" rel="noopener">Открыть папку ↗</a></div>`:''}`)}
     ${P('adlinks',adsLinksPane(x,o))}
     ${P('ads',`<label class="f" style="max-width:320px;margin-bottom:10px"><span>Тип продажи (для объявления)</span><select name="saleType">${opt([['free','Свободная продажа'],['alternative','Альтернатива']],x.saleType||'free')}</select></label><div id="cian-box">${cianHtml()}</div>`)}
-    ${P('hist',o?sidePanel({objectId:o.id}):'<p class="muted">Сохраните объект, чтобы вести задачи и историю.</p>')}
-    <div class="acts" style="margin-top:4px"><div>${o&&can()?`<button type="button" class="danger" data-del>${c.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
+    ${P('hist',o?`<div class="side"><div class="rec-box"><h3>Рекомендации по продвижению</h3>
+      <p class="note" style="margin:0 0 8px">Что стоит сделать по объекту. Отметьте выполненное или превратите совет в задачу — она появится у ответственного.</p>
+      <h3>Советы по работе с объектом</h3><p class="note" style="margin:0 0 6px">Отмечайте сделанное или превращайте совет в задачу ответственному${o?'':' (после сохранения объекта)'}.</p>
+      <div class="tips">${tipsHtml}</div>${can()?`<div class="r2" style="margin-top:6px"><input id="tip-new" placeholder="Свой совет: например, «сделать 3D-тур»"><button type="button" data-tip-add>+ Добавить</button></div>`:''}
+      </div></div>`+sidePanel({objectId:o.id}):'<p class="muted">Сохраните объект, чтобы вести задачи, рекомендации и историю.</p>')}
+    <div class="acts" style="margin-top:4px"><div>${o&&can()?`<button type="button" class="primary" data-new-deal-from-object ${D.deals.some(d=>d.objectId===o.id&&d.status==='work')?'':'title="Создать сделку по этому объекту"'}>+ Сделка по объекту</button> <button type="button" class="danger" data-del>${c.confirmDel?'Точно удалить?':'Удалить'}</button>`:''}</div>
       <div><button type="button" data-close>${can()?'Закрыть':'Закрыть'}</button>${can()?'<button type="submit" class="primary">Сохранить</button>':''}</div></div>`;
+  // режим просмотра: поля только для чтения, кнопки правки скрыты
+  if(c.mode==='view'){
+    form.querySelectorAll('input:not([type=checkbox]),textarea').forEach(el=>{el.readOnly=true});
+    form.querySelectorAll('select,input[type=checkbox]').forEach(el=>{el.disabled=true});
+    form.querySelectorAll('[data-tip-add],[data-tip-del],[data-nown-add],[data-nown-del],[data-own-del],[data-del],[data-ph-add],[data-ph-del]').forEach(el=>{el.style.display='none'});
+  }
+  discMount();
 }
 function priceHistHtml(x){const h=(x.priceHistory||[]).slice().sort((a,b)=>a.at-b.at);
   const start=h[0],cur=h.length?h[h.length-1]:null,tot=start&&cur&&start.price?Math.round((cur.price-start.price)/start.price*1000)/10:0;
@@ -1135,6 +1170,15 @@ form.addEventListener('click',async e=>{const c=dlgCtx;if(!c||c.kind!=='object')
   if(b.hasAttribute('data-keys-check')){if(!c.orig)return toast('Сначала сохраните объект.');
     const where=(c.o.access&&c.o.access.keysAt)||'';
     try{const r=await api('keysVerified',c.orig.id,where);apply(r);c.orig=obj(c.orig.id);c.o=JSON.parse(JSON.stringify(c.orig));c.draw();toast('Ключи отмечены как проверенные. Ответственный уведомлён.')}catch(err){toast(err.message)}return}
+  if(b.hasAttribute('data-mode-edit')){c.mode='edit';c.draw();return}
+  if(b.hasAttribute('data-mode-view')){c.mode='view';c.draw();return}
+  if(b.hasAttribute('data-fullscreen')){c.full=!c.full;dlg.classList.toggle('fullscr',c.full);c.draw();return}
+  if(b.hasAttribute('data-new-deal-from-object')){
+    if(!c.orig)return toast('Сначала сохраните объект.');
+    const ob=c.orig;
+    dlg.close();
+    openDeal(null,{objectId:ob.id,clientId:(ob.owners&&ob.owners[0])||'',expected:ob.price||'',object:ob.address||ob.title||''});
+    return}
   if(b.dataset.paneBtn){readObjForm();c.pane=b.dataset.paneBtn;c.draw();if(c.pane==='hist')loadFeed();if(c.pane==='inq'&&c.orig)loadInq();if(c.pane==='files'&&c.orig&&!c.files)loadFiles();if(c.pane==='ads'&&c.orig)loadCian();return}
   if(b.hasAttribute('data-nown-add')){readObjForm();c.newOwners.push({name:'',birth:'',phone:'',email:''});c.draw();return}
   if(b.dataset.nownDel!=null){readObjForm();c.newOwners.splice(+b.dataset.nownDel,1);c.draw();return}
@@ -2487,8 +2531,13 @@ init();
     const r=await fetch('/api/siteLinks',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:'[]'});
     const d=await r.json(); const links=(d.result||[]);
     const box=document.createElement('footer'); box.className='site-foot';
-    box.innerHTML='<div class="in"><nav>'+links.map(l=>`<a href="${l.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">${l.label.replace(/</g,'&lt;')}</a>`).join('')+'</nav>'
-      +'<a class="req" href="/requisites">Реквизиты ООО «Дорогой Город»</a><div class="copy">© Дорогой Город · '+new Date().getFullYear()+'</div></div>';
+    const disk=links.find(l=>l.key==='yandexdisk');
+    const rest=links.filter(l=>l.key!=='yandexdisk');
+    box.innerHTML='<div class="in"><nav>'+rest.map(l=>`<a href="${l.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener">${l.label.replace(/</g,'&lt;')}</a>`).join('')+'</nav>'
+      +'<div class="foot-actions">'
+      +(disk?`<a class="disk-btn" href="${disk.url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener" title="Открыть папку на Яндекс Диске"><span class="ico">☁</span> Яндекс Диск</a>`:'')
+      +'<a class="req" href="/requisites">Реквизиты ООО «Дорогой Город»</a>'
+      +'</div><div class="copy">© Дорогой Город · '+new Date().getFullYear()+'</div></div>';
     document.body.appendChild(box);
   }catch(_){}
 })();
