@@ -622,6 +622,9 @@ const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===S
 const usersOpt=sel=>opt(D.users.filter(u=>u.active||u.id===sel).map(u=>[u.id,u.name]),sel);
 const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).forEach(c=>{(by[cpGroup(c)]=by[cpGroup(c)]||[]).push(c)});
   return opt([['',empty||'— не выбран —']],sel)+CP_GROUPS.filter(([g])=>by[g]).map(([g,l])=>`<optgroup label="${l}">${opt(by[g].map(c=>[c.id,c.name]),sel)}</optgroup>`).join('')};
+const objAddrOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o,o])
+  .map(([o])=>[o.id,(o.address||o.title||'Объект')+(o.metro?' · м. '+o.metro:'')])
+  .sort((a,b)=>a[1].localeCompare(b[1],'ru'))],sel);
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
@@ -2042,7 +2045,7 @@ function drawCallForm(){
   let body = '';
   if (f.kind === 'object') {
     body = `<div class="fg">
-      <label class="f full"><span>По какому объекту звонили</span><select data-cf="objectId">${objectsOpt(f.objectId)}</select></label>
+      <label class="f full"><span>По какому объекту звонили</span><select data-cf="objectId">${objAddrOpt(f.objectId)}</select></label>
       <label class="f"><span>Кто звонил</span><select data-cf="who">${opt(Object.entries(OD.inqWho), f.who)}</select></label>
       ${f.who === 'agent'
         ? `<label class="f"><span>Агентство</span><input data-cf="agency" value="${esc(f.agency)}" placeholder="Название агентства"></label>`
