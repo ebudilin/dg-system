@@ -622,9 +622,17 @@ const opt=(arr,sel)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===S
 const usersOpt=sel=>opt(D.users.filter(u=>u.active||u.id===sel).map(u=>[u.id,u.name]),sel);
 const clientsOpt=(sel,empty)=>{const by={};D.clients.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru')).forEach(c=>{(by[cpGroup(c)]=by[cpGroup(c)]||[]).push(c)});
   return opt([['',empty||'— не выбран —']],sel)+CP_GROUPS.filter(([g])=>by[g]).map(([g,l])=>`<optgroup label="${l}">${opt(by[g].map(c=>[c.id,c.name]),sel)}</optgroup>`).join('')};
-const objAddrOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o,o])
-  .map(([o])=>[o.id,(o.address||o.title||'Объект')+(o.metro?' · м. '+o.metro:'')])
-  .sort((a,b)=>a[1].localeCompare(b[1],'ru'))],sel);
+const objAddrOpt=sel=>{
+  const OD=D.dict.obj, groups=[['sale','Продажа'],['rent','Аренда']];
+  const label=o=>[(o.address||o.title||'Объект')+(o.metro?' · м. '+o.metro:''),OD.kinds[o.kind]||'',o.area?NF.format(o.area)+' м²':'',
+    o.price?money(o.price)+(o.offer==='rent'?'/мес':''):''].filter(Boolean).join(' · ');
+  const body=groups.map(([k,title])=>{
+    const items=D.objects.filter(o=>(o.offer==='rent'?'rent':'sale')===k)
+      .sort((a,b)=>(a.address||a.title||'').localeCompare(b.address||b.title||'','ru'));
+    return items.length?`<optgroup label="${esc(title)} · ${items.length}">${items.map(o=>`<option value="${esc(o.id)}" ${o.id===sel?'selected':''}>${esc(label(o))}</option>`).join('')}</optgroup>`:'';
+  }).join('');
+  return `<option value="">— не выбран —</option>${body}`;
+};
 const objectsOpt=sel=>opt([['','— не выбран —'],...D.objects.map(o=>[o.id,objName(o)+(o.status!=='active'?' ('+(D.dict.objStatus[o.status]||'')+')':'')])],sel);
 
 /* ---------- шапка и вкладки ---------- */
