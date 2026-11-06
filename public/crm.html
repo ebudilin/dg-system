@@ -497,6 +497,37 @@ dialog,.dlg{border-radius:12px}
   background:var(--accent-soft);color:var(--accent);text-decoration:none;white-space:nowrap;letter-spacing:.01em}
 a.ad-mini:hover{filter:brightness(.94);color:var(--accent)}
 .ad-mini.off{border:1px dashed #B8C3D3;background:transparent;color:#8A97AB;font-weight:500;text-decoration:line-through;text-decoration-color:#B8C3D3;opacity:.85}
+
+/* ===== футер: ссылки компании и реквизиты ===== */
+.site-foot{margin-top:40px;border-top:1px solid var(--line);background:var(--surface)}
+.site-foot .in{max-width:1320px;margin:0 auto;padding:18px 24px;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;justify-content:space-between}
+.site-foot nav{display:flex;flex-wrap:wrap;gap:6px 18px}
+.site-foot nav a{font-size:13px;color:var(--muted);text-decoration:none;white-space:nowrap}
+.site-foot nav a:hover{color:var(--accent)}
+.site-foot .req{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-soft);padding:7px 12px;border-radius:6px;text-decoration:none;white-space:nowrap}
+.site-foot .req:hover{filter:brightness(.97)}
+.site-foot .copy{font-size:12px;color:var(--muted);width:100%;text-align:right}
+@media (max-width:760px){.site-foot .in{padding:16px 14px}.site-foot .copy{text-align:left}}
+/* ===== карточка звонка: выбор типа ===== */
+.ck-kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ck-kind{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;min-width:0;height:auto;white-space:normal;font-weight:400}
+.ck-kind:hover{border-color:#AAB7C9}
+.ck-kind.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
+.ck-kind b{display:block;font-size:13px;font-weight:600;white-space:normal}
+.ck-kind span{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;white-space:normal}
+@media (max-width:900px){.ck-kinds{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ck-kinds{grid-template-columns:1fr}}
+.disc-box{margin-top:20px;border:1px solid var(--line);border-radius:10px;padding:14px 15px;background:var(--surface)}
+.disc-box h3{margin:0 0 10px}
+a.call-open{color:var(--accent);text-decoration:underline dotted;text-underline-offset:3px}
+/* ===== доступ к объекту ===== */
+.access-card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px;margin-top:12px}
+.access-card h3{margin-bottom:10px}
+.keycheck{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 11px;border-radius:7px;font-size:13px}
+.keycheck.ok{background:var(--pos-soft,#E1F1ED);color:var(--pos,#2F7A5F)}
+.keycheck.warn{background:var(--warn-soft,#FBF1DC);color:var(--warn,#9A6B12)}
+.keycheck.none{background:var(--sunk);color:var(--muted)}
+.keycheck .grow{flex:1}
 </style></head>
 <body>
 <header class="top">
